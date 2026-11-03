@@ -1,0 +1,21 @@
+.icon {
+    display: inline-flex;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    color: inherit;
+}
+
+.icon svg {
+    display: block;
+}
+
+.placeholder {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: currentColor;
+    opacity: 0.25;
+}

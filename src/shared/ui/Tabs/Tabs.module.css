@@ -1,0 +1,19 @@
+.tabs {
+    display: flex;
+    gap: 8px;
+    overflow: auto;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 20px;
+}
+
+.tab {
+    padding: 10px 12px;
+    color: var(--color-secondary-text);
+    font-weight: var(--font-weight-semibold);
+    border-bottom: 2px solid transparent;
+}
+
+.active {
+    color: var(--color-primary-dark);
+    border-bottom-color: var(--color-primary-accent);
+}

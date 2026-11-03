@@ -1,0 +1,29 @@
+.logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+
+    color: var(--color-primary-dark);
+}
+
+.icon {
+    display: block;
+
+    width: 32px;
+    height: 32px;
+
+    object-fit: contain;
+}
+
+.name {
+    font-size: 24px;
+    font-weight: var(--font-weight-bold);
+    line-height: 1;
+
+    color: var(--color-primary-dark);
+}
+
+.inverted,
+.inverted .name {
+    color: var(--color-surface);
+}

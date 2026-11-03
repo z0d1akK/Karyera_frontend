@@ -1,0 +1,60 @@
+.label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 13px;
+    color: var(--color-secondary-text);
+}
+
+.label strong {
+    color: var(--color-primary-dark);
+}
+
+.track {
+    height: 8px;
+    border-radius: 999px;
+    background: #f0e6d6;
+    overflow: hidden;
+}
+
+.fill {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--color-primary-accent);
+}
+
+.ringWrap {
+    position: relative;
+    width: 72px;
+    height: 72px;
+}
+
+.ring {
+    width: 72px;
+    height: 72px;
+    transform: rotate(-90deg);
+}
+
+.ringTrack,
+.ringValue {
+    fill: none;
+    stroke-width: 6;
+}
+
+.ringTrack {
+    stroke: #f0e6d6;
+}
+
+.ringValue {
+    stroke: var(--color-primary-accent);
+    stroke-linecap: round;
+}
+
+.ringWrap strong {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+}

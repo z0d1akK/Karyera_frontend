@@ -1,0 +1,269 @@
+.back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 12px;
+    color: var(--color-accent);
+    font-weight: 700;
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.back:hover {
+    color: var(--color-primary-dark);
+}
+
+.hero {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 16px 24px;
+    align-items: flex-start;
+    padding: 24px 28px;
+    margin-bottom: 20px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+}
+
+.hero h1 {
+    margin: 0 0 8px;
+    font-size: 28px;
+}
+
+.hero p {
+    margin: 0;
+    color: var(--color-secondary-text);
+    max-width: 560px;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+    gap: 12px 20px;
+    flex: 1 1 280px;
+    max-width: 100%;
+}
+
+.stat {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    min-width: 0;
+    padding: 0 0 0 16px;
+    border-left: 1px solid var(--color-border);
+}
+
+.stat span {
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--color-secondary-text);
+}
+
+.stat strong {
+    font-size: 28px;
+}
+
+.inProgress {
+    color: var(--color-accent);
+}
+
+.done {
+    color: var(--color-success);
+}
+
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.chip {
+    min-height: 36px;
+    padding: 0 14px;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    background: var(--color-surface);
+    color: var(--color-primary-dark);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.chipActive {
+    border-color: var(--color-primary-accent);
+    background: rgba(212, 163, 44, 0.12);
+}
+
+.sectionTitle {
+    margin: 8px 0 14px;
+    font-size: 18px;
+}
+
+.stack {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.block {
+    margin-top: 24px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.gridTwo {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.card,
+.panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+}
+
+.card {
+    min-height: 220px;
+}
+
+.cardHead {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.card h2,
+.panel h2 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.description {
+    margin: 0;
+    color: var(--color-secondary-text);
+    font-size: 14px;
+    flex: 1;
+}
+
+.row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 13px;
+    color: var(--color-secondary-text);
+}
+
+.row strong {
+    color: var(--color-primary-dark);
+    font-weight: 600;
+    text-align: right;
+}
+
+.more {
+    margin-top: auto;
+    align-self: flex-end;
+    color: var(--color-accent);
+    font-weight: 700;
+    font-size: 14px;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.footer {
+    margin-top: 16px;
+    color: var(--color-secondary-text);
+    font-size: 13px;
+}
+
+.fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px 24px;
+}
+
+.field {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.label {
+    display: block;
+    margin-bottom: 2px;
+    color: var(--color-secondary-text);
+    font-size: 12px;
+}
+
+.value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-primary-dark);
+}
+
+.progress {
+    height: 8px;
+    border-radius: 999px;
+    background: #f0e6d6;
+    overflow: hidden;
+}
+
+.progressFill {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--color-primary-accent);
+}
+
+.empty {
+    margin: 0;
+    color: var(--color-secondary-text);
+    font-size: 14px;
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: auto;
+}
+
+@media (max-width: 1100px) {
+    .grid,
+    .gridTwo,
+    .fields {
+        grid-template-columns: 1fr;
+    }
+
+    .hero {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .stat {
+        align-items: flex-start;
+        border-left: 0;
+        padding: 0;
+    }
+}

@@ -1,0 +1,170 @@
+.shell {
+    display: grid;
+    grid-template-columns: var(--sidebar-width) 1fr;
+    min-height: 100vh;
+    background: var(--color-background);
+}
+
+.collapsed {
+    grid-template-columns: var(--sidebar-width-collapsed) 1fr;
+}
+
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    padding: 20px 12px 16px;
+    background: var(--color-primary-dark);
+    color: rgba(255, 255, 255, 0.82);
+}
+
+.brand {
+    padding: 8px 12px 24px;
+}
+
+.brand :global(.name),
+.brand span {
+    color: var(--color-surface);
+}
+
+.brandMark {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--color-primary-accent);
+}
+
+.nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+.link,
+.collapse {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 44px;
+    padding: 0 12px;
+    border-radius: var(--radius-md);
+    color: rgba(255, 255, 255, 0.78);
+}
+
+.link:hover,
+.collapse:hover {
+    background: rgba(212, 163, 44, 0.14);
+    color: var(--color-surface);
+}
+
+.active {
+    background: rgba(212, 163, 44, 0.22);
+    color: var(--color-primary-accent);
+}
+
+.main {
+    min-width: 0;
+}
+
+.content {
+    max-width: var(--content-max-width);
+    margin: 0 auto;
+    padding: 28px;
+}
+
+.sidebarFooter {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.lang {
+    align-self: flex-start;
+    color: rgba(255, 255, 255, 0.7);
+    min-height: 32px;
+    padding: 0 12px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.account {
+    position: relative;
+}
+
+.accountBtn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 48px;
+    padding: 6px 8px;
+    border-radius: var(--radius-md);
+    color: var(--color-surface);
+    text-align: left;
+}
+
+.accountBtn:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.avatar,
+.avatarFallback {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    object-fit: cover;
+}
+
+.avatarFallback {
+    background: linear-gradient(180deg, #d4a32c, #8b7d70);
+}
+
+.accountMeta {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.accountMeta strong {
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.accountMeta em {
+    font-style: normal;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.55);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.menu {
+    position: absolute;
+    left: 0;
+    bottom: 56px;
+    min-width: 180px;
+    padding: 8px;
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-primary-dark);
+    box-shadow: var(--shadow-md);
+    z-index: 20;
+}
+
+.menu button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 8px 10px;
+    border-radius: 6px;
+}
+
+.menu button:hover {
+    background: rgba(212, 163, 44, 0.12);
+}
