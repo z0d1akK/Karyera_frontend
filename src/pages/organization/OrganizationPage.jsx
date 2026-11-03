@@ -7,6 +7,8 @@ import { employeeApi } from '../../features/employees/api/employeeApi.js';
 import { queryKeys } from '../../shared/api/queryKeys.js';
 import { unwrapPage } from '../../shared/lib/queryParams.js';
 import { catalogName, fullName } from '../../shared/lib/format.js';
+import { canSeeDirectory } from '../../shared/lib/roles.js';
+import { useAuthStore } from '../../store/authStore.js';
 import { Badge } from '../../shared/ui/Badge/Badge.jsx';
 import { Button } from '../../shared/ui/Button/Button.jsx';
 import { Input } from '../../shared/ui/Input/Input.jsx';
@@ -18,6 +20,8 @@ import { Pagination } from '../../shared/ui/DataTable/DataTable.jsx';
 
 function DepartmentMembers({ departmentId }) {
     const { t } = useTranslation();
+    const role = useAuthStore((state) => state.session?.role);
+    const canOpenProfile = canSeeDirectory(role);
     const [pageNumber, setPageNumber] = useState(0);
     const [size, setSize] = useState(20);
     const members = useQuery({
@@ -43,10 +47,17 @@ function DepartmentMembers({ departmentId }) {
         <>
             <Badge tone="accent">{t('organization.membersCount', { count: total })}</Badge>
             {rows.length ? rows.map((employee) => (
-                <Link key={employee.id} className={styles.person} to={`/app/employees/${employee.id}`}>
-                    <span className={styles.name}>{fullName(employee)}</span>
-                    <span className={styles.role}>{catalogName(employee.position)}</span>
-                </Link>
+                canOpenProfile ? (
+                    <Link key={employee.id} className={styles.person} to={`/app/employees/${employee.id}`}>
+                        <span className={styles.name}>{fullName(employee)}</span>
+                        <span className={styles.role}>{catalogName(employee.position)}</span>
+                    </Link>
+                ) : (
+                    <div key={employee.id} className={styles.person}>
+                        <span className={styles.name}>{fullName(employee)}</span>
+                        <span className={styles.role}>{catalogName(employee.position)}</span>
+                    </div>
+                )
             )) : <p className={styles.empty}>{t('organization.emptyMembers')}</p>}
             {shown < total ? (
                 <Button variant="ghost" onClick={() => setSize((current) => Math.min(100, current + 20))}>

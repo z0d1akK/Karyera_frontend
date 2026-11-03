@@ -20,6 +20,7 @@ import { Input, Select, Textarea } from '../../shared/ui/Input/Input.jsx';
 import { Badge } from '../../shared/ui/Badge/Badge.jsx';
 import { ProgressBar } from '../../shared/ui/Progress/Progress.jsx';
 import { Skeleton } from '../../shared/ui/PageState/PageState.jsx';
+import { CollapsePanel } from '../../shared/ui/ListFilters/ListFilters.jsx';
 import page from '../../shared/styles/page.module.css';
 
 const ACTIVITY_TYPES = ['TRAINING', 'CERTIFICATION', 'PROJECT_PRACTICE', 'PRACTICAL_TASK', 'MENTORING', 'SELF_STUDY'];
@@ -104,8 +105,7 @@ export function DevelopmentPlanPage() {
                     <ProgressBar value={plan.progressPercent ?? 0} label={t('development.progress')} />
                 </div>
                 {draft ? (
-                    <div className={page.stack}>
-                        <h3 className={page.sectionTitle}>{t('development.editDraft')}</h3>
+                    <CollapsePanel label={t('development.editDraft')} open onOpenChange={(next) => { if (!next) setDraft(null); }}>
                         <div className={page.grid}>
                         <Input label={t('development.name')} value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
                         <Input type="date" label={t('development.deadline')} value={draft.targetDate || ''} onChange={(e) => setDraft({ ...draft, targetDate: e.target.value })} />
@@ -117,7 +117,7 @@ export function DevelopmentPlanPage() {
                             <Button onClick={() => saveDraft.mutate()}>{t('common.save')}</Button>
                             <Button variant="ghost" onClick={() => setDraft(null)}>{t('common.cancel')}</Button>
                         </div>
-                    </div>
+                    </CollapsePanel>
                 ) : null}
                     {canManagePlan ? (
                     <div className={page.stack}>
@@ -178,8 +178,7 @@ export function DevelopmentPlanPage() {
                     ))}
                 </div>
                 {canManagePlan ? (
-                <div className={page.stack}>
-                    <h3 className={page.sectionTitle}>{t('development.addActivity')}</h3>
+                <CollapsePanel label={t('development.addActivity')}>
                     <div className={page.grid}>
                     <Input label={t('development.name')} value={activity.title} onChange={(e) => setActivity({ ...activity, title: e.target.value })} />
                     <Select label={t('development.activityType')} value={activity.activityType} onChange={(e) => setActivity({ ...activity, activityType: e.target.value })}>
@@ -199,10 +198,9 @@ export function DevelopmentPlanPage() {
                     <div className={page.row}>
                         <Button onClick={() => add.mutate()}>{t('development.addActivity')}</Button>
                     </div>
-                </div>
+                </CollapsePanel>
                 ) : null}
-                <div className={page.stack}>
-                    <h3 className={page.sectionTitle}>{t('development.evidence')}</h3>
+                <CollapsePanel label={t('development.evidence')}>
                     <div className={page.grid}>
                         <Select label={t('development.activities')} value={evidence.activityId} onChange={(e) => setEvidence({ ...evidence, activityId: e.target.value })}>
                             <option value="">{t('common.select')}</option>
@@ -217,7 +215,7 @@ export function DevelopmentPlanPage() {
                     <div className={page.row}>
                         <Button onClick={() => addEvidence.mutate()} disabled={!evidence.activityId}>{t('common.add')}</Button>
                     </div>
-                </div>
+                </CollapsePanel>
                 <div className={page.stack}>
                     <h3 className={page.sectionTitle}>{t('development.reviews')}</h3>
                     {reviewList.map((item) => (

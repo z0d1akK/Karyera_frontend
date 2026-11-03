@@ -76,10 +76,19 @@
 .toolbar {
     display: flex;
     justify-content: space-between;
-    gap: 12px;
+    gap: 16px;
     margin-bottom: 16px;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+}
+
+.toolbarActions {
+    display: flex;
     flex-wrap: wrap;
-    align-items: center;
+    justify-content: flex-end;
+    align-items: flex-start;
+    gap: 12px;
+    flex: 0 0 auto;
 }
 
 .chips {
@@ -245,11 +254,16 @@
 .actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 12px;
     margin-top: auto;
+    padding-top: 12px;
 }
 
 @media (max-width: 1100px) {
+    .toolbar {
+        flex-wrap: wrap;
+    }
+
     .grid,
     .gridTwo,
     .fields {

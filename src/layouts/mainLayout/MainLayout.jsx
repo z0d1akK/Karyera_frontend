@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import { AuthLogo } from '../../features/auth/components/AuthLogo/AuthLogo.jsx';
@@ -15,6 +15,7 @@ import styles from './MainLayout.module.css';
 export function MainLayout() {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
+    const location = useLocation();
     const session = useAuthStore((state) => state.session);
     const employee = useAuthStore((state) => state.employee);
     const logout = useAuthStore((state) => state.logout);
@@ -46,7 +47,7 @@ export function MainLayout() {
                         <NavLink
                             key={item.to}
                             to={item.to}
-                            className={({ isActive }) => `${styles.link} ${isActive ? styles.active : ''}`}
+                            className={({ isActive }) => `${styles.link} ${isActive || (item.matchPrefix && location.pathname.startsWith(item.matchPrefix)) ? styles.active : ''}`}
                         >
                             <SidebarIcon name={item.icon} label={t(item.labelKey)} />
                             {!collapsed ? <span>{t(item.labelKey)}</span> : null}

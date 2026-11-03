@@ -12,8 +12,11 @@ import { getApiError } from '../../shared/api/errors.js';
 import { fullName } from '../../shared/lib/format.js';
 import { enumLabel } from '../../shared/lib/enums.js';
 import { useToastStore } from '../../store/toastStore.js';
+import { canManageAdmin } from '../../shared/lib/roles.js';
+import { useAuthStore } from '../../store/authStore.js';
 import { PageHeader } from '../../shared/ui/PageHeader/PageHeader.jsx';
 import { BackLink } from '../../shared/ui/BackLink/BackLink.jsx';
+import { AdminNav } from './AdminNav.jsx';
 import { Card } from '../../shared/ui/Card/Card.jsx';
 import { Tabs } from '../../shared/ui/Tabs/Tabs.jsx';
 import { Select } from '../../shared/ui/Input/Input.jsx';
@@ -25,6 +28,8 @@ import page from '../../shared/styles/page.module.css';
 export function CreateUserPage() {
     const { t } = useTranslation();
     const catalogs = useCatalogs();
+    const sessionRole = useAuthStore((s) => s.session?.role);
+    const accountRoles = canManageAdmin(sessionRole) ? ['EMPLOYEE', 'MANAGER', 'HR', 'ADMIN'] : ['EMPLOYEE', 'MANAGER'];
     const navigate = useNavigate();
     const push = useToastStore((s) => s.push);
     const [tab, setTab] = useState('employee');
@@ -68,6 +73,7 @@ export function CreateUserPage() {
         <section>
             <BackLink to="/app/admin/users">{t('common.back')}</BackLink>
             <PageHeader title={t('admin.createTitle')} description={t('admin.createHint')} />
+            <AdminNav />
             <Tabs
                 items={[
                     { id: 'employee', label: t('admin.tabEmployee') },
@@ -106,7 +112,7 @@ export function CreateUserPage() {
                             onChange={(e) => setAccount({ ...account, employeeId: e.target.value })}
                         />
                         <Select label={t('admin.role')} value={account.role} onChange={(e) => setAccount({ ...account, role: e.target.value })}>
-                            {['EMPLOYEE', 'MANAGER', 'HR', 'ADMIN'].map((role) => (
+                            {accountRoles.map((role) => (
                                 <option key={role} value={role}>{enumLabel(t, 'role', role)}</option>
                             ))}
                         </Select>

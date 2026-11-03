@@ -150,23 +150,25 @@ export function ProjectsPage() {
                         </button>
                     ))}
                 </div>
-                {canCreateProject(role) ? (
-                    <Button onClick={() => setOpen(true)}>{t('projects.create')}</Button>
-                ) : null}
+                <div className={styles.toolbarActions}>
+                    <ListFilters overlay>
+                        <SortField
+                            value={queryState.sortBy}
+                            direction={queryState.sortDirection}
+                            options={[
+                                { value: 'name', label: t('projects.name') },
+                                { value: 'code', label: t('projects.code') },
+                                { value: 'startDate', label: t('projects.startDate') },
+                            ]}
+                            onChange={(sortBy, sortDirection) => setQueryState({ ...queryState, sortBy, sortDirection, page: 0 })}
+                        />
+                        <PageSizeField value={queryState.size} onChange={(size) => setQueryState({ ...queryState, size, page: 0 })} />
+                    </ListFilters>
+                    {canCreateProject(role) ? (
+                        <Button onClick={() => setOpen(true)}>{t('projects.create')}</Button>
+                    ) : null}
+                </div>
             </div>
-            <ListFilters>
-                <SortField
-                    value={queryState.sortBy}
-                    direction={queryState.sortDirection}
-                    options={[
-                        { value: 'name', label: t('projects.name') },
-                        { value: 'code', label: t('projects.code') },
-                        { value: 'startDate', label: t('projects.startDate') },
-                    ]}
-                    onChange={(sortBy, sortDirection) => setQueryState({ ...queryState, sortBy, sortDirection, page: 0 })}
-                />
-                <PageSizeField value={queryState.size} onChange={(size) => setQueryState({ ...queryState, size, page: 0 })} />
-            </ListFilters>
             {query.isLoading ? <Skeleton rows={6} /> : null}
             {query.isError ? (
                 <PageState title={t('projects.loadFailed')} onAction={query.refetch} actionLabel={t('common.retry')} />

@@ -14,6 +14,8 @@ import { DataTable, Pagination } from '../../shared/ui/DataTable/DataTable.jsx';
 import { Badge } from '../../shared/ui/Badge/Badge.jsx';
 import { StatRow, StatTile } from '../../shared/ui/StatTile/StatTile.jsx';
 import { ListFilters, PageSizeField, SortField } from '../../shared/ui/ListFilters/ListFilters.jsx';
+import { Skeleton } from '../../shared/ui/PageState/PageState.jsx';
+import { AdminNav } from './AdminNav.jsx';
 
 export function UsersPage() {
     const { t } = useTranslation();
@@ -31,14 +33,10 @@ export function UsersPage() {
     return (
         <section>
             <PageHeader
-                title={t('admin.usersTitle')}
-                actions={
-                    <>
-                        <Button variant="secondary" onClick={() => navigate('/app/admin/dictionaries')}>{t('admin.dictionaries')}</Button>
-                        <Button onClick={() => navigate('/app/admin/users/new')}>{t('admin.createAccount')}</Button>
-                    </>
-                }
+                title={t('navigation.admin')}
+                actions={<Button onClick={() => navigate('/app/admin/users/new')}>{t('admin.createAccount')}</Button>}
             />
+            <AdminNav />
             <StatRow>
                 <StatTile label={t('admin.usersTitle')} value={query.data?.totalElements ?? 0} />
                 <StatTile label={`${t('admin.active')} · ${t('common.onPage')}`} tone="success" value={(query.data?.content || []).filter((row) => row.active).length} />

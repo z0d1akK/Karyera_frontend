@@ -12,6 +12,7 @@ import { canManageAdmin } from '../../shared/lib/roles.js';
 import { useAuthStore } from '../../store/authStore.js';
 import { PageHeader } from '../../shared/ui/PageHeader/PageHeader.jsx';
 import { BackLink } from '../../shared/ui/BackLink/BackLink.jsx';
+import { AdminNav } from './AdminNav.jsx';
 import { Card } from '../../shared/ui/Card/Card.jsx';
 import { Button } from '../../shared/ui/Button/Button.jsx';
 import { Select } from '../../shared/ui/Input/Input.jsx';
@@ -72,6 +73,7 @@ export function UserDetailsPage() {
         <section>
             <BackLink to="/app/admin/users">{t('common.back')}</BackLink>
             <PageHeader title={user.email} description={t('admin.passwordHidden')} />
+            <AdminNav />
             <Card>
                 <div className={page.stack}>
                     <div>{t('admin.role')}: {enumLabel(t, 'role', user.role)}</div>

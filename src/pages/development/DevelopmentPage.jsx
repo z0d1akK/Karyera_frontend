@@ -75,12 +75,14 @@ export function DevelopmentPage() {
                     </div>
                 </div>
             </div>
-            <ListFilters>
-                <PageSizeField value={listQuery.size} onChange={(size) => setListQuery({ ...listQuery, size, page: 0 })} />
-            </ListFilters>
             <div className={styles.toolbar}>
                 <p className={styles.empty}>{t('development.hint')}</p>
-                {canManageDevelopmentPlans(role) ? <Button onClick={() => setOpen(true)} disabled={!employee}>{t('development.create')}</Button> : null}
+                <div className={styles.toolbarActions}>
+                    <ListFilters overlay>
+                        <PageSizeField value={listQuery.size} onChange={(size) => setListQuery({ ...listQuery, size, page: 0 })} />
+                    </ListFilters>
+                    {canManageDevelopmentPlans(role) ? <Button onClick={() => setOpen(true)} disabled={!employee}>{t('development.create')}</Button> : null}
+                </div>
             </div>
             {plans.isLoading ? <Skeleton rows={6} /> : null}
             {plans.isError ? (

@@ -1,4 +1,4 @@
-import { canSeeAdminNav, canSeeAnalyticsNav, canSeeDevelopment, canSeeDirectory, canSeeTalent } from '../../shared/lib/roles.js';
+import { canSeeAdminNav, canSeeAnalyticsNav, canSeeDevelopment, canSeeDirectory, canSeeOrganization, canSeeTalent } from '../../shared/lib/roles.js';
 
 export function getNavItems(role) {
     const items = [
@@ -6,10 +6,11 @@ export function getNavItems(role) {
     ];
 
     if (canSeeDirectory(role)) {
-        items.push(
-            { to: '/app/employees', icon: 'employees', labelKey: 'navigation.employees' },
-            { to: '/app/organization', icon: 'organization', labelKey: 'navigation.organization' },
-        );
+        items.push({ to: '/app/employees', icon: 'employees', labelKey: 'navigation.employees' });
+    }
+
+    if (canSeeOrganization(role)) {
+        items.push({ to: '/app/organization', icon: 'organization', labelKey: 'navigation.organization' });
     }
 
     items.push(
@@ -32,7 +33,7 @@ export function getNavItems(role) {
     }
 
     if (canSeeAdminNav(role)) {
-        items.push({ to: '/app/admin/users', icon: 'admin', labelKey: 'navigation.admin' });
+        items.push({ to: '/app/admin/users', icon: 'admin', labelKey: 'navigation.admin', matchPrefix: '/app/admin' });
     }
 
     return items;

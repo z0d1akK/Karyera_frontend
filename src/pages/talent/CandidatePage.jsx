@@ -21,6 +21,7 @@ import { Select, Textarea } from '../../shared/ui/Input/Input.jsx';
 import { Badge } from '../../shared/ui/Badge/Badge.jsx';
 import { Pagination } from '../../shared/ui/DataTable/DataTable.jsx';
 import { Skeleton } from '../../shared/ui/PageState/PageState.jsx';
+import { CollapsePanel } from '../../shared/ui/ListFilters/ListFilters.jsx';
 import page from '../../shared/styles/page.module.css';
 
 export function CandidatePage() {
@@ -74,6 +75,7 @@ export function CandidatePage() {
                     onSizeChange={(size) => setDecisionQuery({ ...decisionQuery, size, page: 0 })}
                 />
                 {canManageHr(role) ? (
+                    <CollapsePanel label={t('talent.decide')}>
                     <div className={page.grid}>
                         <Select label={t('talent.decide')} value={decision.decision} onChange={(e) => setDecision({ ...decision, decision: e.target.value })}>
                             {['APPROVE', 'REJECT', 'REQUEST_REVIEW', 'REMOVE'].map((item) => (
@@ -85,6 +87,7 @@ export function CandidatePage() {
                         </div>
                         <Button onClick={() => decide.mutate()}>{t('talent.decide')}</Button>
                     </div>
+                    </CollapsePanel>
                 ) : null}
             </Card>
         </section>

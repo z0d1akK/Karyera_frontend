@@ -3,6 +3,7 @@
     gap: 8px;
     overflow: auto;
     border-bottom: 1px solid var(--color-border);
+    margin-top: 8px;
     margin-bottom: 20px;
 }
 
@@ -11,6 +12,8 @@
     color: var(--color-secondary-text);
     font-weight: var(--font-weight-semibold);
     border-bottom: 2px solid transparent;
+    text-decoration: none;
+    white-space: nowrap;
 }
 
 .active {

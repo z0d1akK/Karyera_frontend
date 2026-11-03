@@ -20,6 +20,7 @@ import { Badge } from '../../../shared/ui/Badge/Badge.jsx';
 import { Button } from '../../../shared/ui/Button/Button.jsx';
 import { Input, Select, Textarea } from '../../../shared/ui/Input/Input.jsx';
 import { PageState, Skeleton } from '../../../shared/ui/PageState/PageState.jsx';
+import { CollapsePanel } from '../../../shared/ui/ListFilters/ListFilters.jsx';
 import { EmployeeForm } from './EmployeeForm.jsx';
 import styles from './EmployeeProfile.module.css';
 
@@ -344,7 +345,7 @@ function SkillsTab({ employee, canEdit, skills, onSaved, onError }) {
             ))}
             {!employee.skills?.length ? <p className={styles.empty}>{t('profile.noSkills')}</p> : null}
             {canEdit ? (
-                <div className={styles.panel}>
+                <CollapsePanel label={t('common.add')}>
                     <div className={styles.formRow}>
                         <Select value={form.skillId} onChange={(event) => setForm({ ...form, skillId: event.target.value })}>
                             <option value="">{t('profile.skill')}</option>
@@ -354,7 +355,7 @@ function SkillsTab({ employee, canEdit, skills, onSaved, onError }) {
                         <Input type="number" placeholder={t('profile.yearsOfExperience')} value={form.yearsOfExperience} onChange={(event) => setForm({ ...form, yearsOfExperience: event.target.value })} />
                         <Button onClick={() => add.mutate()} disabled={!form.skillId}>{t('common.add')}</Button>
                     </div>
-                </div>
+                </CollapsePanel>
             ) : null}
         </div>
     );
@@ -414,9 +415,9 @@ function ExperienceTab({ employee, canEdit, onSaved, onError }) {
             ))}
             {!employee.experiences?.length ? <p className={styles.empty}>{t('profile.noExperience')}</p> : null}
             {canEdit ? (
-                <div className={styles.panel}>
+                <CollapsePanel label={t('profile.addExperience')}>
                     <RecordForm value={form} onChange={setForm} onSave={() => add.mutate()} saveLabel={t('profile.addExperience')} />
-                </div>
+                </CollapsePanel>
             ) : null}
         </div>
     );
@@ -513,10 +514,10 @@ function EducationTab({ employee, canEdit, onSaved, onError }) {
             ))}
             {!employee.educations?.length ? <p className={styles.empty}>{t('profile.noEducation')}</p> : null}
             {canEdit ? (
-                <div className={styles.panel}>
+                <CollapsePanel label={t('profile.addEducation')}>
                     {fields(form, setForm)}
                     <div className={styles.actions}><Button onClick={() => add.mutate()}>{t('profile.addEducation')}</Button></div>
-                </div>
+                </CollapsePanel>
             ) : null}
         </div>
     );
@@ -637,7 +638,7 @@ function ResponsibilitiesTab({ employee, canEdit, types, people, onSaved, onErro
             ))}
             {!items.length ? <p className={styles.empty}>{t('profile.noResponsibilities')}</p> : null}
             {canEdit ? (
-                <div className={styles.panel}>
+                <CollapsePanel label={t('common.add')}>
                     <div className={styles.fields}>
                         <Select label={t('profile.responsible')} value={form.responsibleEmployeeId} onChange={(event) => setForm({ ...form, responsibleEmployeeId: event.target.value })}>
                             <option value="">{t('common.select')}</option>
@@ -652,7 +653,7 @@ function ResponsibilitiesTab({ employee, canEdit, types, people, onSaved, onErro
                     <div className={styles.actions}>
                         <Button onClick={() => add.mutate()} disabled={!form.responsibleEmployeeId || !form.responsibilityTypeId || !form.startDate}>{t('common.add')}</Button>
                     </div>
-                </div>
+                </CollapsePanel>
             ) : null}
         </div>
     );

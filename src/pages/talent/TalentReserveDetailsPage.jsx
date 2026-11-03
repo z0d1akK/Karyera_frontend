@@ -23,6 +23,7 @@ import { Badge } from '../../shared/ui/Badge/Badge.jsx';
 import { Skeleton } from '../../shared/ui/PageState/PageState.jsx';
 import { Alert } from '../../shared/ui/Alert/Alert.jsx';
 import { Input } from '../../shared/ui/Input/Input.jsx';
+import { CollapsePanel } from '../../shared/ui/ListFilters/ListFilters.jsx';
 import page from '../../shared/styles/page.module.css';
 
 export function TalentReserveDetailsPage() {
@@ -129,7 +130,7 @@ export function TalentReserveDetailsPage() {
                     </div>
                 ) : null}
                 {edit ? (
-                    <div className={page.stack}>
+                    <CollapsePanel label={t('talent.edit')} open onOpenChange={(next) => { if (!next) setEdit(null); }}>
                         <div className={page.grid}>
                             <Input label={t('talent.name')} value={edit.name} onChange={(e) => setEdit({ ...edit, name: e.target.value })} />
                             <Select label={t('talent.position')} value={edit.targetPositionId || ''} onChange={(e) => setEdit({ ...edit, targetPositionId: e.target.value })}>
@@ -150,7 +151,7 @@ export function TalentReserveDetailsPage() {
                             <Button onClick={() => save.mutate()}>{t('common.save')}</Button>
                             <Button variant="ghost" onClick={() => setEdit(null)}>{t('common.cancel')}</Button>
                         </div>
-                    </div>
+                    </CollapsePanel>
                 ) : null}
                 <DataTable
                     rows={candidates.data?.content || []}
@@ -166,13 +167,15 @@ export function TalentReserveDetailsPage() {
                     ]}
                 />
                 {canManageHr(role) ? (
-                    <div className={page.grid}>
+                    <CollapsePanel label={t('talent.nominate')}>
+                        <div className={page.grid}>
                         <EmployeePicker label={t('talent.employee')} value={nomination.employeeId} onChange={(e) => setNomination({ ...nomination, employeeId: e.target.value })} />
                         <div className={page.spanAll}>
                         <Textarea label={t('talent.comment')} value={nomination.comment} onChange={(e) => setNomination({ ...nomination, comment: e.target.value })} />
                         </div>
                         <Button onClick={() => nominate.mutate()}>{t('talent.nominate')}</Button>
-                    </div>
+                        </div>
+                    </CollapsePanel>
                 ) : null}
                 <Pagination
                     page={candidates.data?.number || 0}

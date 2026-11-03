@@ -18,6 +18,7 @@ import { Button } from '../../shared/ui/Button/Button.jsx';
 import { Input, Select } from '../../shared/ui/Input/Input.jsx';
 import { Modal } from '../../shared/ui/Modal/Modal.jsx';
 import { Skeleton } from '../../shared/ui/PageState/PageState.jsx';
+import { CollapsePanel } from '../../shared/ui/ListFilters/ListFilters.jsx';
 import page from '../../shared/styles/page.module.css';
 import styles from './Board.module.css';
 
@@ -181,7 +182,7 @@ export function ProjectBoardPage() {
                                 <span>{column.taskCount ?? column.tasks?.length ?? 0}</span>
                             </header>
                             {canEdit ? (
-                                <div className={page.stack}>
+                                <div className={styles.columnActions}>
                                     {renaming?.id === column.id ? (
                                         <div className={page.row}>
                                             <Input label={t('projects.renameColumn')} value={renaming.name} onChange={(e) => setRenaming({ ...renaming, name: e.target.value })} />
@@ -226,6 +227,7 @@ export function ProjectBoardPage() {
                 </div>
             </DndContext>
             {canEdit ? (
+                <CollapsePanel label={t('projects.addColumn')}>
                 <form className={page.stack} onSubmit={(event) => { event.preventDefault(); addColumn.mutate(); }}>
                     <div className={page.grid}>
                         <Input label={t('projects.columnCode')} value={columnForm.code} onChange={(e) => setColumnForm({ ...columnForm, code: e.target.value })} />
@@ -241,6 +243,7 @@ export function ProjectBoardPage() {
                     </div>
                     <Button type="submit" disabled={!columnForm.code || !columnForm.name}>{t('projects.addColumn')}</Button>
                 </form>
+                </CollapsePanel>
             ) : null}
             <Modal open={open} title={t('projects.newTask')} onClose={() => setOpen(false)}>
                 <div className={page.stack}>

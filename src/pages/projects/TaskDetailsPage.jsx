@@ -21,6 +21,7 @@ import { Input, Select, Textarea } from '../../shared/ui/Input/Input.jsx';
 import { Button } from '../../shared/ui/Button/Button.jsx';
 import { Badge } from '../../shared/ui/Badge/Badge.jsx';
 import { Skeleton } from '../../shared/ui/PageState/PageState.jsx';
+import { CollapsePanel } from '../../shared/ui/ListFilters/ListFilters.jsx';
 import page from '../../shared/styles/page.module.css';
 
 const listOf = (data) => (Array.isArray(data) ? data : data?.content || []);
@@ -201,18 +202,20 @@ export function TaskDetailsPage() {
                                 </p>
                             ))}
                             {canEdit ? (
-                                <div className={page.row}>
+                                <CollapsePanel label={t('common.add')}>
+                                    <div className={page.row}>
                                     <Select value={skillId} onChange={(e) => setSkillId(e.target.value)}>
                                         <option value="">{t('common.select')}</option>
                                         {(catalogSkills.data || []).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
                                     </Select>
                                     <Button onClick={() => addSkill.mutate()} disabled={!skillId}>{t('common.add')}</Button>
-                                </div>
+                                    </div>
+                                </CollapsePanel>
                             ) : null}
                         </div>
                         {canEdit ? (
                             edit ? (
-                                <div className={page.stack}>
+                                <CollapsePanel label={t('common.edit')} open onOpenChange={(next) => { if (!next) setEdit(null); }}>
                                     <Input label={t('projects.name')} value={edit.title} onChange={(e) => setEdit({ ...edit, title: e.target.value })} />
                                     <Textarea label={t('projects.description')} value={edit.description || ''} onChange={(e) => setEdit({ ...edit, description: e.target.value })} />
                                     <Select label={t('projects.priority')} value={edit.priority || 'MEDIUM'} onChange={(e) => setEdit({ ...edit, priority: e.target.value })}>
@@ -228,7 +231,7 @@ export function TaskDetailsPage() {
                                         <Button onClick={() => save.mutate()}>{t('projects.saveTask')}</Button>
                                         <Button variant="ghost" onClick={() => setEdit(null)}>{t('common.cancel')}</Button>
                                     </div>
-                                </div>
+                                </CollapsePanel>
                             ) : (
                                 <div className={page.row}>
                                     <Button onClick={() => setEdit({
@@ -260,6 +263,7 @@ export function TaskDetailsPage() {
                             return <p key={item.id}>{assignment?.employeeFullName || assignment?.employeeId || item.assignmentId}</p>;
                         })}
                         {canEdit ? (
+                            <CollapsePanel label={t('common.add')}>
                             <div className={page.row}>
                                 <Select value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)}>
                                     <option value="">{t('common.select')}</option>
@@ -274,6 +278,7 @@ export function TaskDetailsPage() {
                                     {t('common.add')}
                                 </Button>
                             </div>
+                            </CollapsePanel>
                         ) : null}
                     </div>
                 )}
@@ -282,8 +287,10 @@ export function TaskDetailsPage() {
                         {commentList.map((item) => (
                             <p key={item.id}>{item.content} · {formatDateTime(item.createdAt)}</p>
                         ))}
+                        <CollapsePanel label={t('projects.addComment')}>
                         <Textarea value={comment} onChange={(e) => setComment(e.target.value)} />
                         <Button onClick={() => addComment.mutate()} disabled={!employee?.id}>{t('projects.addComment')}</Button>
+                        </CollapsePanel>
                     </div>
                 )}
                 {tab === 'history' && (

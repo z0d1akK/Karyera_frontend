@@ -5,6 +5,7 @@
     gap: 16px;
     overflow: auto;
     align-items: start;
+    margin-bottom: 8px;
 }
 
 .column {
@@ -19,6 +20,13 @@
     display: flex;
     justify-content: space-between;
     margin-bottom: 12px;
+}
+
+.columnActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
 }
 
 .card {

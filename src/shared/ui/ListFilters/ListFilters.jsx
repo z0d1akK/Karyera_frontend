@@ -5,17 +5,47 @@ import { Button } from '../Button/Button.jsx';
 import { Select } from '../Input/Input.jsx';
 import styles from './ListFilters.module.css';
 
-export function ListFilters({ children }) {
-    const { t } = useTranslation();
-    const [open, setOpen] = useState(false);
+export function CollapsePanel({ label, children, open, onOpenChange, variant = 'form', align = 'start', overlay = false }) {
+    const [internalOpen, setInternalOpen] = useState(false);
+    const controlled = open !== undefined;
+    const shown = controlled ? open : internalOpen;
+
+    const toggle = () => {
+        const next = !shown;
+        if (!controlled) {
+            setInternalOpen(next);
+        }
+        onOpenChange?.(next);
+    };
+
+    const className = [
+        styles.wrap,
+        align === 'end' ? styles.wrapEnd : '',
+        overlay ? styles.wrapOverlay : '',
+    ].filter(Boolean).join(' ');
 
     return (
-        <div className={styles.wrap}>
-            <Button variant="secondary" onClick={() => setOpen((value) => !value)}>
-                {t('common.filters')}
-            </Button>
-            {open ? <div className={styles.panel}>{children}</div> : null}
+        <div className={className}>
+            <div className={styles.toggleRow}>
+                <Button variant="secondary" onClick={toggle}>
+                    {label}
+                </Button>
+            </div>
+            {shown ? (
+                <div className={variant === 'filters' ? styles.panel : styles.formPanel}>
+                    {children}
+                </div>
+            ) : null}
         </div>
+    );
+}
+
+export function ListFilters({ children, overlay = false }) {
+    const { t } = useTranslation();
+    return (
+        <CollapsePanel label={t('common.filters')} variant="filters" align="end" overlay={overlay}>
+            {children}
+        </CollapsePanel>
     );
 }
 

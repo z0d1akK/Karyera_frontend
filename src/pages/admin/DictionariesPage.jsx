@@ -10,14 +10,14 @@ import { canWriteCatalogs } from '../../shared/lib/roles.js';
 import { useAuthStore } from '../../store/authStore.js';
 import { useToastStore } from '../../store/toastStore.js';
 import { PageHeader } from '../../shared/ui/PageHeader/PageHeader.jsx';
-import { BackLink } from '../../shared/ui/BackLink/BackLink.jsx';
+import { AdminNav } from './AdminNav.jsx';
 import { Card } from '../../shared/ui/Card/Card.jsx';
 import { Tabs } from '../../shared/ui/Tabs/Tabs.jsx';
 import { Input, Select, Textarea } from '../../shared/ui/Input/Input.jsx';
 import { Button } from '../../shared/ui/Button/Button.jsx';
 import { DataTable, Pagination } from '../../shared/ui/DataTable/DataTable.jsx';
 import { StatRow, StatTile } from '../../shared/ui/StatTile/StatTile.jsx';
-import { ListFilters, PageSizeField, SortField } from '../../shared/ui/ListFilters/ListFilters.jsx';
+import { CollapsePanel, ListFilters, PageSizeField, SortField } from '../../shared/ui/ListFilters/ListFilters.jsx';
 import page from '../../shared/styles/page.module.css';
 
 const catalogs = {
@@ -167,8 +167,8 @@ export function DictionariesPage() {
 
     return (
         <section>
-            <BackLink to="/app/admin/users">{t('common.back')}</BackLink>
-            <PageHeader title={t('dictionaries.title')} />
+            <PageHeader title={t('navigation.admin')} />
+            <AdminNav />
             <StatRow>
                 <StatTile label={t(`dictionaries.${tab}`)} value={query.data?.totalElements ?? rows.length} />
             </StatRow>
@@ -197,30 +197,36 @@ export function DictionariesPage() {
                 />
                 <PageSizeField value={filters.size} onChange={(size) => setFilters({ ...filters, size, page: 0 })} />
             </ListFilters>
+            {canWrite ? (
+                <CollapsePanel label={t('dictionaries.create')}>
+                    <div className={page.grid}>
+                        <CatalogFields catalog={catalog} value={form} onChange={setForm} t={t} />
+                    </div>
+                    <div className={page.row}>
+                        <Button onClick={() => create.mutate()} disabled={!form.name}>{t('dictionaries.create')}</Button>
+                    </div>
+                </CollapsePanel>
+            ) : null}
+            {editing && canWrite ? (
+                <CollapsePanel
+                    label={t('common.edit')}
+                    open
+                    onOpenChange={(next) => {
+                        if (!next) {
+                            setEditing(null);
+                        }
+                    }}
+                >
+                    <div className={page.grid}>
+                        <CatalogFields catalog={catalog} value={editing} onChange={setEditing} t={t} />
+                    </div>
+                    <div className={page.row}>
+                        <Button onClick={() => update.mutate()}>{t('dictionaries.save')}</Button>
+                        <Button variant="ghost" onClick={() => setEditing(null)}>{t('common.cancel')}</Button>
+                    </div>
+                </CollapsePanel>
+            ) : null}
             <Card>
-                {canWrite && !editing ? (
-                    <div className={page.stack}>
-                        <h3 className={page.sectionTitle}>{t('dictionaries.create')}</h3>
-                        <div className={page.grid}>
-                            <CatalogFields catalog={catalog} value={form} onChange={setForm} t={t} />
-                        </div>
-                        <div className={page.row}>
-                            <Button onClick={() => create.mutate()} disabled={!form.name}>{t('dictionaries.create')}</Button>
-                        </div>
-                    </div>
-                ) : null}
-                {editing && canWrite ? (
-                    <div className={page.stack}>
-                        <h3 className={page.sectionTitle}>{t('common.edit')}</h3>
-                        <div className={page.grid}>
-                            <CatalogFields catalog={catalog} value={editing} onChange={setEditing} t={t} />
-                        </div>
-                        <div className={page.row}>
-                            <Button onClick={() => update.mutate()}>{t('dictionaries.save')}</Button>
-                            <Button variant="ghost" onClick={() => setEditing(null)}>{t('common.cancel')}</Button>
-                        </div>
-                    </div>
-                ) : null}
                 <DataTable
                     rows={rows}
                     columns={[

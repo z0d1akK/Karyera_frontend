@@ -17,7 +17,7 @@ import { Select, Input, Textarea } from '../../shared/ui/Input/Input.jsx';
 import { Badge } from '../../shared/ui/Badge/Badge.jsx';
 import { Skeleton, PageState } from '../../shared/ui/PageState/PageState.jsx';
 import { Pagination } from '../../shared/ui/DataTable/DataTable.jsx';
-import { ListFilters, PageSizeField, SortField } from '../../shared/ui/ListFilters/ListFilters.jsx';
+import { CollapsePanel, ListFilters, PageSizeField, SortField } from '../../shared/ui/ListFilters/ListFilters.jsx';
 import page from '../../shared/styles/page.module.css';
 import styles from '../../shared/styles/catalog.module.css';
 
@@ -161,8 +161,15 @@ export function CareerPage() {
                             {t('career.toDevelopment')}
                         </button>
                     </article>
-                    <article className={styles.panel}>
-                        <h2>{editingId ? t('career.saveChanges') : t('career.newGoal')}</h2>
+                    <CollapsePanel
+                        label={editingId ? t('career.saveChanges') : t('career.newGoal')}
+                        open={Boolean(editingId) || undefined}
+                        onOpenChange={(next) => {
+                            if (!next) {
+                                setEditingId(null);
+                            }
+                        }}
+                    >
                         <div className={page.grid}>
                         <Select label={t('career.targetPosition')} value={form.targetPositionId} onChange={(e) => setForm({ ...form, targetPositionId: e.target.value })}>
                             <option value="">{t('common.select')}</option>
@@ -185,7 +192,7 @@ export function CareerPage() {
                             )}
                             {editingId ? <Button variant="ghost" onClick={() => setEditingId(null)}>{t('common.cancel')}</Button> : null}
                         </div>
-                    </article>
+                    </CollapsePanel>
                 </div>
             )}
 
@@ -208,20 +215,22 @@ export function CareerPage() {
 
             <div className={`${styles.toolbar} ${styles.block}`}>
                 <h2 className={styles.sectionTitle}>{t('career.tracksTitle')}</h2>
-                <Button variant="ghost" onClick={() => navigate('/app/career/tracks')}>{t('career.allTracks')}</Button>
+                <div className={styles.toolbarActions}>
+                    <ListFilters overlay>
+                        <SortField
+                            value={trackQuery.sortBy}
+                            direction={trackQuery.sortDirection}
+                            options={[
+                                { value: 'name', label: t('career.name') },
+                                { value: 'code', label: t('career.code') },
+                            ]}
+                            onChange={(sortBy, sortDirection) => setTrackQuery({ ...trackQuery, sortBy, sortDirection, page: 0 })}
+                        />
+                        <PageSizeField value={trackQuery.size} onChange={(size) => setTrackQuery({ ...trackQuery, size, page: 0 })} />
+                    </ListFilters>
+                    <Button variant="ghost" onClick={() => navigate('/app/career/tracks')}>{t('career.allTracks')}</Button>
+                </div>
             </div>
-            <ListFilters>
-                <SortField
-                    value={trackQuery.sortBy}
-                    direction={trackQuery.sortDirection}
-                    options={[
-                        { value: 'name', label: t('career.name') },
-                        { value: 'code', label: t('career.code') },
-                    ]}
-                    onChange={(sortBy, sortDirection) => setTrackQuery({ ...trackQuery, sortBy, sortDirection, page: 0 })}
-                />
-                <PageSizeField value={trackQuery.size} onChange={(size) => setTrackQuery({ ...trackQuery, size, page: 0 })} />
-            </ListFilters>
             {tracks.isLoading ? <Skeleton rows={4} /> : (
                 <div className={styles.grid}>
                     {trackList.map((track) => (

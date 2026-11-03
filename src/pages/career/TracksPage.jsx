@@ -71,24 +71,26 @@ export function TracksPage() {
                     </div>
                 </div>
             </div>
-            <ListFilters>
-                <Select label={t('form.status')} value={listQuery.status} onChange={(e) => setListQuery({ ...listQuery, status: e.target.value, page: 0 })}>
-                    <option value="">{t('common.all')}</option>
-                    {['DRAFT', 'PUBLISHED', 'ARCHIVED'].map((status) => (
-                        <option key={status} value={status}>{enumLabel(t, 'trackStatus', status)}</option>
-                    ))}
-                </Select>
-                <SortField
-                    value={listQuery.sortBy}
-                    direction={listQuery.sortDirection}
-                    options={[{ value: 'name', label: t('career.name') }, { value: 'code', label: t('career.code') }]}
-                    onChange={(sortBy, sortDirection) => setListQuery({ ...listQuery, sortBy, sortDirection, page: 0 })}
-                />
-                <PageSizeField value={listQuery.size} onChange={(size) => setListQuery({ ...listQuery, size, page: 0 })} />
-            </ListFilters>
             <div className={styles.toolbar}>
                 <p className={styles.empty}>{t('career.openTrackHint')}</p>
-                {canManageHr(role) ? <Button onClick={() => setOpen(true)}>{t('career.createTrack')}</Button> : null}
+                <div className={styles.toolbarActions}>
+                    <ListFilters overlay>
+                        <Select label={t('form.status')} value={listQuery.status} onChange={(e) => setListQuery({ ...listQuery, status: e.target.value, page: 0 })}>
+                            <option value="">{t('common.all')}</option>
+                            {['DRAFT', 'PUBLISHED', 'ARCHIVED'].map((status) => (
+                                <option key={status} value={status}>{enumLabel(t, 'trackStatus', status)}</option>
+                            ))}
+                        </Select>
+                        <SortField
+                            value={listQuery.sortBy}
+                            direction={listQuery.sortDirection}
+                            options={[{ value: 'name', label: t('career.name') }, { value: 'code', label: t('career.code') }]}
+                            onChange={(sortBy, sortDirection) => setListQuery({ ...listQuery, sortBy, sortDirection, page: 0 })}
+                        />
+                        <PageSizeField value={listQuery.size} onChange={(size) => setListQuery({ ...listQuery, size, page: 0 })} />
+                    </ListFilters>
+                    {canManageHr(role) ? <Button onClick={() => setOpen(true)}>{t('career.createTrack')}</Button> : null}
+                </div>
             </div>
             {query.isLoading ? <Skeleton rows={6} /> : null}
             {query.isError ? (

@@ -18,6 +18,7 @@ import { Button } from '../../shared/ui/Button/Button.jsx';
 import { Input, Select, Textarea } from '../../shared/ui/Input/Input.jsx';
 import { Badge } from '../../shared/ui/Badge/Badge.jsx';
 import { Skeleton } from '../../shared/ui/PageState/PageState.jsx';
+import { CollapsePanel } from '../../shared/ui/ListFilters/ListFilters.jsx';
 import page from '../../shared/styles/page.module.css';
 import styles from './TrackGraph.module.css';
 
@@ -110,8 +111,7 @@ export function TrackDetailsPage() {
             </Card>
             {canManageHr(role) ? (
                 <Card>
-                    <div className={page.stack}>
-                        <h3 className={page.sectionTitle}>{t('career.editTrack')}</h3>
+                    <CollapsePanel label={t('career.editTrack')}>
                         <div className={page.grid}>
                             <Input label={t('career.name')} value={trackName || track.name} onChange={(e) => setTrackName(e.target.value)} />
                             <Input label={t('career.description')} value={trackDescription || track.description || ''} onChange={(e) => setTrackDescription(e.target.value)} />
@@ -119,10 +119,9 @@ export function TrackDetailsPage() {
                         <div className={page.row}>
                             <Button onClick={() => saveTrack.mutate({ name: trackName || track.name, description: trackDescription || track.description || '' })}>{t('career.saveChanges')}</Button>
                         </div>
-                    </div>
+                    </CollapsePanel>
                     {editingNode ? (
-                        <div className={page.stack}>
-                            <h3 className={page.sectionTitle}>{t('common.edit')}</h3>
+                        <CollapsePanel label={t('common.edit')} open onOpenChange={(next) => { if (!next) setEditingNode(null); }}>
                             <div className={page.grid}>
                                 <Select label={t('form.position')} value={editingNode.positionId || ''} onChange={(e) => setEditingNode({ ...editingNode, positionId: e.target.value })}>
                                     <option value="">{t('common.select')}</option>
@@ -146,10 +145,9 @@ export function TrackDetailsPage() {
                                 <Button onClick={() => saveNode.mutate()}>{t('common.save')}</Button>
                                 <Button variant="ghost" onClick={() => setEditingNode(null)}>{t('common.cancel')}</Button>
                             </div>
-                        </div>
+                        </CollapsePanel>
                     ) : null}
-                    <div className={page.stack}>
-                        <h3 className={page.sectionTitle}>{t('career.editor')}</h3>
+                    <CollapsePanel label={t('career.editor')}>
                         <div className={page.grid}>
                             <Select label={t('form.position')} value={node.positionId} onChange={(e) => setNode({ ...node, positionId: e.target.value })}>
                                 <option value="">{t('common.select')}</option>
@@ -172,9 +170,8 @@ export function TrackDetailsPage() {
                         <div className={page.row}>
                             <Button onClick={() => addNode.mutate()}>{t('career.addNode')}</Button>
                         </div>
-                    </div>
-                    <div className={page.stack}>
-                        <h3 className={page.sectionTitle}>{t('career.addTransition')}</h3>
+                    </CollapsePanel>
+                    <CollapsePanel label={t('career.addTransition')}>
                         <div className={page.grid}>
                             <Select label={t('career.fromNode')} value={transition.sourceNodeId} onChange={(e) => setTransition({ ...transition, sourceNodeId: e.target.value })}>
                                 <option value="">{t('career.node')}</option>
@@ -195,7 +192,7 @@ export function TrackDetailsPage() {
                             <Button variant="coral" onClick={() => publish.mutate()}>{t('career.publish')}</Button>
                             <Button variant="ghost" onClick={() => archive.mutate()}>{t('career.archive')}</Button>
                         </div>
-                    </div>
+                    </CollapsePanel>
                 </Card>
             ) : null}
         </section>

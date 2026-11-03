@@ -22,7 +22,7 @@ export function canManageAdmin(role) {
 }
 
 export function canCreateAccounts(role) {
-    return canManageAdmin(role);
+    return hasRole(role, [ROLES.HR, ROLES.ADMIN]);
 }
 
 export function canManageDevelopmentPlans(role) {
@@ -38,11 +38,15 @@ export function canSeeAnalyticsNav(role) {
 }
 
 export function canSeeAdminNav(role) {
-    return canManageAdmin(role);
+    return hasRole(role, [ROLES.HR, ROLES.ADMIN]);
 }
 
 export function canSeeDirectory(role) {
     return hasRole(role, [ROLES.MANAGER, ROLES.HR, ROLES.ADMIN]);
+}
+
+export function canSeeOrganization(role) {
+    return hasRole(role, [ROLES.EMPLOYEE, ROLES.MANAGER, ROLES.HR, ROLES.ADMIN]);
 }
 
 export function canSeeTalent(role) {

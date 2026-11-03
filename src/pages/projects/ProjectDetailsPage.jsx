@@ -14,7 +14,7 @@ import { Tabs } from '../../shared/ui/Tabs/Tabs.jsx';
 import { Button } from '../../shared/ui/Button/Button.jsx';
 import { Input, Select, Textarea } from '../../shared/ui/Input/Input.jsx';
 import { Pagination } from '../../shared/ui/DataTable/DataTable.jsx';
-import { ListFilters, PageSizeField } from '../../shared/ui/ListFilters/ListFilters.jsx';
+import { CollapsePanel, ListFilters, PageSizeField } from '../../shared/ui/ListFilters/ListFilters.jsx';
 import { EmployeePicker } from '../../features/employees/components/EmployeePicker.jsx';
 import { Badge } from '../../shared/ui/Badge/Badge.jsx';
 import { BackLink } from '../../shared/ui/BackLink/BackLink.jsx';
@@ -299,7 +299,7 @@ export function ProjectDetailsPage() {
                         ))}
                     </div>
                     {!team.length ? <p className={styles.footer}>{t('projects.emptyTeam')}</p> : null}
-                    <ListFilters>
+                    <ListFilters overlay>
                         <PageSizeField value={teamQuery.size} onChange={(size) => setTeamQuery({ ...teamQuery, size, page: 0 })} />
                     </ListFilters>
                     <Pagination
@@ -308,8 +308,7 @@ export function ProjectDetailsPage() {
                         onChange={(pageNumber) => setTeamQuery({ ...teamQuery, page: pageNumber })}
                     />
                     {canMembers ? (
-                    <article className={styles.panel}>
-                        <h2>{t('projects.assign')}</h2>
+                    <CollapsePanel label={t('projects.assign')}>
                         <div className={styles.gridTwo}>
                             <EmployeePicker label={t('projects.employee')} value={assignment.employeeId} onChange={(e) => setAssignment({ ...assignment, employeeId: e.target.value })} />
                             <Select label={t('projects.role')} value={assignment.projectRoleId} onChange={(e) => setAssignment({ ...assignment, projectRoleId: e.target.value })}>
@@ -322,7 +321,7 @@ export function ProjectDetailsPage() {
                         <div className={styles.actions}>
                             <Button onClick={() => assign.mutate()} disabled={!assignment.employeeId || !assignment.projectRoleId}>{t('projects.assignAction')}</Button>
                         </div>
-                    </article>
+                    </CollapsePanel>
                     ) : null}
                 </div>
             )}
@@ -342,7 +341,7 @@ export function ProjectDetailsPage() {
                         ))}
                     </div>
                     {!taskList.length ? <p className={styles.footer}>{t('projects.emptyTasks')}</p> : null}
-                    <ListFilters>
+                    <ListFilters overlay>
                         <PageSizeField value={taskQuery.size} onChange={(size) => setTaskQuery({ ...taskQuery, size, page: 0 })} />
                     </ListFilters>
                     <Pagination
@@ -376,7 +375,7 @@ export function ProjectDetailsPage() {
                             ) : null}
                         </article>
                     ))}
-                    <ListFilters>
+                    <ListFilters overlay>
                         <PageSizeField value={milestoneQuery.size} onChange={(size) => setMilestoneQuery({ ...milestoneQuery, size, page: 0 })} />
                     </ListFilters>
                     <Pagination
@@ -385,11 +384,11 @@ export function ProjectDetailsPage() {
                         onChange={(pageNumber) => setMilestoneQuery({ ...milestoneQuery, page: pageNumber })}
                     />
                     {canEdit ? (
-                        <article className={styles.panel}>
+                        <CollapsePanel label={t('projects.addMilestone')}>
                             <Input label={t('projects.name')} value={milestone.title} onChange={(e) => setMilestone({ ...milestone, title: e.target.value })} />
                             <Input type="date" label={t('projects.dueDate')} value={milestone.dueDate} onChange={(e) => setMilestone({ ...milestone, dueDate: e.target.value })} />
                             <Button onClick={() => addMilestone.mutate()} disabled={!milestone.title}>{t('projects.addMilestone')}</Button>
-                        </article>
+                        </CollapsePanel>
                     ) : null}
                 </div>
             )}
@@ -414,11 +413,11 @@ export function ProjectDetailsPage() {
                         </article>
                     ))}
                     {canEdit ? (
-                        <article className={styles.panel}>
+                        <CollapsePanel label={t('projects.addLink')}>
                             <Input label={t('projects.label')} value={link.label} onChange={(e) => setLink({ ...link, label: e.target.value })} />
                             <Input label={t('projects.url')} value={link.url} onChange={(e) => setLink({ ...link, url: e.target.value })} />
                             <Button onClick={() => addLink.mutate()} disabled={!link.url}>{t('projects.addLink')}</Button>
-                        </article>
+                        </CollapsePanel>
                     ) : null}
                 </div>
             )}

@@ -78,19 +78,21 @@ export function TalentReservePage() {
                     </div>
                 </div>
             </div>
-            <ListFilters>
-                <Input label={t('dictionaries.search')} value={listQuery.name} onChange={(e) => setListQuery({ ...listQuery, name: e.target.value, page: 0 })} />
-                <SortField
-                    value={listQuery.sortBy}
-                    direction={listQuery.sortDirection}
-                    options={[{ value: 'name', label: t('talent.name') }]}
-                    onChange={(sortBy, sortDirection) => setListQuery({ ...listQuery, sortBy, sortDirection, page: 0 })}
-                />
-                <PageSizeField value={listQuery.size} onChange={(size) => setListQuery({ ...listQuery, size, page: 0 })} />
-            </ListFilters>
             <div className={styles.toolbar}>
                 <p className={styles.empty}>{t('talent.hint')}</p>
-                {canManageHr(role) ? <Button onClick={() => setOpen(true)}>{t('talent.create')}</Button> : null}
+                <div className={styles.toolbarActions}>
+                    <ListFilters overlay>
+                        <Input label={t('dictionaries.search')} value={listQuery.name} onChange={(e) => setListQuery({ ...listQuery, name: e.target.value, page: 0 })} />
+                        <SortField
+                            value={listQuery.sortBy}
+                            direction={listQuery.sortDirection}
+                            options={[{ value: 'name', label: t('talent.name') }]}
+                            onChange={(sortBy, sortDirection) => setListQuery({ ...listQuery, sortBy, sortDirection, page: 0 })}
+                        />
+                        <PageSizeField value={listQuery.size} onChange={(size) => setListQuery({ ...listQuery, size, page: 0 })} />
+                    </ListFilters>
+                    {canManageHr(role) ? <Button onClick={() => setOpen(true)}>{t('talent.create')}</Button> : null}
+                </div>
             </div>
             {query.isLoading ? <Skeleton rows={6} /> : null}
             {query.isError ? (

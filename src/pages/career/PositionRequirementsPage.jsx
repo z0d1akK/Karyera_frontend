@@ -19,6 +19,7 @@ import { Button } from '../../shared/ui/Button/Button.jsx';
 import { Input, Select, Textarea } from '../../shared/ui/Input/Input.jsx';
 import { DataTable, Pagination } from '../../shared/ui/DataTable/DataTable.jsx';
 import { Badge } from '../../shared/ui/Badge/Badge.jsx';
+import { CollapsePanel } from '../../shared/ui/ListFilters/ListFilters.jsx';
 import page from '../../shared/styles/page.module.css';
 
 export function PositionRequirementsPage() {
@@ -135,8 +136,7 @@ export function PositionRequirementsPage() {
                     ]}
                 />
                 {canManageHr(role) ? (
-                    <div className={page.stack}>
-                        <h3>{t('career.newRequirement')}</h3>
+                    <CollapsePanel label={t('career.newRequirement')}>
                         <Textarea label={t('career.description')} value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
                         <Input type="number" label={t('career.minExperience')} value={draft.minExperienceMonths} onChange={(e) => setDraft({ ...draft, minExperienceMonths: e.target.value })} />
                         <Select label={t('career.skill')} value={draft.skillId} onChange={(e) => setDraft({ ...draft, skillId: e.target.value })}>
@@ -155,7 +155,7 @@ export function PositionRequirementsPage() {
                             {selected?.status === 'DRAFT' ? <Button variant="secondary" onClick={() => update.mutate()}>{t('common.save')}</Button> : null}
                             {selected?.status === 'DRAFT' ? <Button variant="coral" onClick={() => publish.mutate()}>{t('career.publishRequirement')}</Button> : null}
                         </div>
-                    </div>
+                    </CollapsePanel>
                 ) : null}
                 <h3>{t('career.history')}</h3>
                 <DataTable

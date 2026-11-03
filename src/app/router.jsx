@@ -56,6 +56,11 @@ export const router = createBrowserRouter([
                         children: [
                             { path: '/app/employees', element: <EmployeesPage /> },
                             { path: '/app/employees/:id', element: <EmployeeDetailsPage /> },
+                        ],
+                    },
+                    {
+                        element: <RoleRoute roles={[ROLES.EMPLOYEE, ROLES.MANAGER, ROLES.HR, ROLES.ADMIN]} />,
+                        children: [
                             { path: '/app/organization', element: <OrganizationPage /> },
                         ],
                     },
@@ -96,7 +101,7 @@ export const router = createBrowserRouter([
                         ],
                     },
                     {
-                        element: <RoleRoute roles={[ROLES.ADMIN]} />,
+                        element: <RoleRoute roles={[ROLES.HR, ROLES.ADMIN]} />,
                         children: [
                             { path: '/app/admin/users', element: <UsersPage /> },
                             { path: '/app/admin/users/new', element: <CreateUserPage /> },

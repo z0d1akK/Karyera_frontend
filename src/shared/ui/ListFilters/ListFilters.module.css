@@ -3,7 +3,33 @@
     flex-direction: column;
     align-items: flex-start;
     width: 100%;
+    margin-top: 20px;
     margin-bottom: 16px;
+}
+
+.wrapEnd {
+    align-items: flex-end;
+}
+
+.toggleRow {
+    display: flex;
+}
+
+.wrapOverlay {
+    position: relative;
+    z-index: 4;
+    width: auto;
+    margin: 0;
+}
+
+.wrapOverlay .panel,
+.wrapOverlay .formPanel {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: min(560px, calc(100vw - 64px));
+    z-index: 5;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
 }
 
 .panel {
@@ -24,4 +50,17 @@
     flex: 0 1 240px;
     width: 240px;
     max-width: 100%;
+}
+
+.formPanel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 12px;
+    padding: 16px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
 }
