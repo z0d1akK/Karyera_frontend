@@ -1,0 +1,18 @@
+.graph {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.node {
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-background);
+}
+
+.arrow {
+    text-align: center;
+    color: var(--color-primary-accent);
+    font-size: 20px;
+}
