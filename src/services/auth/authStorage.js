@@ -24,8 +24,4 @@ export const authStorage = {
         localStorage.removeItem(ACCESS_TOKEN_KEY);
         localStorage.removeItem(REFRESH_TOKEN_KEY);
     },
-
-    hasAccessToken() {
-        return Boolean(this.getAccessToken());
-    },
 };

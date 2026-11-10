@@ -42,6 +42,24 @@ const TONES = {
         COMPLETED: 'success',
         CANCELLED: 'danger',
     },
+    timeEntryStatus: {
+        DRAFT: 'neutral',
+        SUBMITTED: 'warning',
+        APPROVED: 'success',
+        REJECTED: 'danger',
+        VOIDED: 'neutral',
+    },
+    timesheetStatus: {
+        DRAFT: 'neutral',
+        SUBMITTED: 'warning',
+        APPROVED: 'success',
+        REJECTED: 'danger',
+    },
+    recommendationStatus: {
+        RUNNING: 'warning',
+        COMPLETED: 'success',
+        FAILED: 'danger',
+    },
     reserveStatus: {
         DRAFT: 'neutral',
         ACTIVE: 'success',

@@ -42,7 +42,15 @@ export function canSeeAdminNav(role) {
 }
 
 export function canSeeDirectory(role) {
+    return hasRole(role, [ROLES.EMPLOYEE, ROLES.MANAGER, ROLES.HR, ROLES.ADMIN]);
+}
+
+export function canApproveTimesheets(role) {
     return hasRole(role, [ROLES.MANAGER, ROLES.HR, ROLES.ADMIN]);
+}
+
+export function canSeeMilitary(role) {
+    return hasRole(role, [ROLES.HR, ROLES.ADMIN]);
 }
 
 export function canSeeOrganization(role) {

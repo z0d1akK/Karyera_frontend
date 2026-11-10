@@ -1,0 +1,18 @@
+.nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.link {
+    color: var(--color-secondary-text);
+    text-decoration: none;
+    padding: 6px 2px;
+    border-bottom: 2px solid transparent;
+}
+
+.active {
+    color: var(--color-primary-dark);
+    border-bottom-color: var(--color-primary-accent);
+}

@@ -11,7 +11,7 @@ import { queryKeys } from '../../../shared/api/queryKeys.js';
 import { unwrapPage } from '../../../shared/lib/queryParams.js';
 import { catalogName, formatDate, formatMonthYear, fullName, valueOrDash } from '../../../shared/lib/format.js';
 import { enumLabel, statusTone } from '../../../shared/lib/enums.js';
-import { canManageHr } from '../../../shared/lib/roles.js';
+import { canManageHr, canSeeMilitary } from '../../../shared/lib/roles.js';
 import { useAuthStore } from '../../../store/authStore.js';
 import { useToastStore } from '../../../store/toastStore.js';
 import { getApiError } from '../../../shared/api/errors.js';
@@ -151,7 +151,7 @@ export function EmployeeProfile({ employeeId, isSelf = false }) {
         { id: 'military', label: t('profile.tabMilitary') },
         { id: 'responsibilities', label: t('profile.tabResponsibilities') },
         { id: 'projects', label: t('profile.tabProjects') },
-    ];
+    ].filter((item) => item.id !== 'military' || isSelf || canSeeMilitary(role));
 
     return (
         <section>

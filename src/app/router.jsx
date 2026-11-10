@@ -27,6 +27,19 @@ import { CreateUserPage } from '../pages/admin/CreateUserPage.jsx';
 import { UserDetailsPage } from '../pages/admin/UserDetailsPage.jsx';
 import { DictionariesPage } from '../pages/admin/DictionariesPage.jsx';
 import { ROLES } from '../shared/lib/roles.js';
+import { EntriesPage } from '../pages/time/EntriesPage.jsx';
+import { EntryPage } from '../pages/time/EntryPage.jsx';
+import { CalendarPage } from '../pages/time/CalendarPage.jsx';
+import { TimesheetsPage } from '../pages/time/TimesheetsPage.jsx';
+import { TimesheetDetailsPage } from '../pages/time/TimesheetDetailsPage.jsx';
+import { ApprovalsPage } from '../pages/time/ApprovalsPage.jsx';
+import { AnalyticsOverviewPage } from '../pages/analytics/OverviewPage.jsx';
+import { EmployeesAnalyticsPage } from '../pages/analytics/EmployeesAnalyticsPage.jsx';
+import { EmployeeAnalyticsPage } from '../pages/analytics/EmployeeAnalyticsPage.jsx';
+import { CareerAnalyticsPage } from '../pages/analytics/CareerAnalyticsPage.jsx';
+import { AssessmentPage } from '../pages/analytics/AssessmentPage.jsx';
+import { RecommendationsPage } from '../pages/analytics/RecommendationsPage.jsx';
+import { MyStatsPage } from '../pages/analytics/MyStatsPage.jsx';
 
 export const router = createBrowserRouter([
     {
@@ -51,13 +64,8 @@ export const router = createBrowserRouter([
                 children: [
                     { path: '/app', element: <Navigate to="/app/profile" replace /> },
                     { path: '/app/profile', element: <ProfilePage /> },
-                    {
-                        element: <RoleRoute roles={[ROLES.MANAGER, ROLES.HR, ROLES.ADMIN]} />,
-                        children: [
-                            { path: '/app/employees', element: <EmployeesPage /> },
-                            { path: '/app/employees/:id', element: <EmployeeDetailsPage /> },
-                        ],
-                    },
+                    { path: '/app/employees', element: <EmployeesPage /> },
+                    { path: '/app/employees/:id', element: <EmployeeDetailsPage /> },
                     {
                         element: <RoleRoute roles={[ROLES.EMPLOYEE, ROLES.MANAGER, ROLES.HR, ROLES.ADMIN]} />,
                         children: [
@@ -72,7 +80,8 @@ export const router = createBrowserRouter([
                     { path: '/app/career/tracks', element: <TracksPage /> },
                     { path: '/app/career/tracks/:id', element: <TrackDetailsPage /> },
                     { path: '/app/career/positions/:id', element: <PositionRequirementsPage /> },
-                    { path: '/app/career/assessments/:id', element: <StubPage titleKey="stubs.assessmentTitle" textKey="stubs.assessment" /> },
+                    { path: '/app/career/assessments/:id/recommendations', element: <RecommendationsPage /> },
+                    { path: '/app/career/assessments/:id', element: <AssessmentPage /> },
                     {
                         element: <RoleRoute roles={[ROLES.EMPLOYEE, ROLES.MANAGER, ROLES.HR]} />,
                         children: [
@@ -88,16 +97,26 @@ export const router = createBrowserRouter([
                             { path: '/app/talent-reserve/:id', element: <TalentReserveDetailsPage /> },
                         ],
                     },
-                    { path: '/app/time/entries', element: <StubPage titleKey="navigation.timesheet" textKey="stubs.time" /> },
-                    { path: '/app/time/calendar', element: <StubPage titleKey="navigation.timesheet" textKey="stubs.time" /> },
-                    { path: '/app/time/timesheets', element: <StubPage titleKey="navigation.timesheet" textKey="stubs.time" /> },
-                    { path: '/app/time/approvals', element: <StubPage titleKey="navigation.timesheet" textKey="stubs.time" /> },
+                    { path: '/app/time/entries', element: <EntriesPage /> },
+                    { path: '/app/time/entries/new', element: <EntryPage /> },
+                    { path: '/app/time/entries/:id', element: <EntryPage /> },
+                    { path: '/app/time/calendar', element: <CalendarPage /> },
+                    { path: '/app/time/timesheets', element: <TimesheetsPage /> },
+                    { path: '/app/time/timesheets/:id', element: <TimesheetDetailsPage /> },
                     {
                         element: <RoleRoute roles={[ROLES.MANAGER, ROLES.HR, ROLES.ADMIN]} />,
                         children: [
-                            { path: '/app/analytics', element: <StubPage titleKey="navigation.analytics" textKey="stubs.analytics" /> },
-                            { path: '/app/analytics/employees', element: <StubPage titleKey="navigation.analytics" textKey="stubs.analytics" /> },
-                            { path: '/app/analytics/career', element: <StubPage titleKey="navigation.analytics" textKey="stubs.analytics" /> },
+                            { path: '/app/time/approvals', element: <ApprovalsPage /> },
+                        ],
+                    },
+                    { path: '/app/analytics/me', element: <MyStatsPage /> },
+                    {
+                        element: <RoleRoute roles={[ROLES.MANAGER, ROLES.HR, ROLES.ADMIN]} />,
+                        children: [
+                            { path: '/app/analytics', element: <AnalyticsOverviewPage /> },
+                            { path: '/app/analytics/employees', element: <EmployeesAnalyticsPage /> },
+                            { path: '/app/analytics/employees/:id', element: <EmployeeAnalyticsPage /> },
+                            { path: '/app/analytics/career', element: <CareerAnalyticsPage /> },
                         ],
                     },
                     {

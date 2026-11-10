@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -110,6 +110,8 @@ export function CareerPage() {
                     </div>
                 </div>
             </div>
+
+            <p><Link to="/app/analytics/me">{t('analyticsUi.recommendations')}</Link></p>
 
             {goals.isError ? (
                 <PageState title={t('career.goalsFailed')} onAction={goals.refetch} actionLabel={t('common.retry')} />

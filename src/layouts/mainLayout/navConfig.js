@@ -27,6 +27,7 @@ export function getNavItems(role) {
     }
 
     items.push({ to: '/app/time/entries', icon: 'timesheet', labelKey: 'navigation.timesheet' });
+    items.push({ to: '/app/analytics/me', icon: 'analytics', labelKey: 'navigation.myStats' });
 
     if (canSeeAnalyticsNav(role)) {
         items.push({ to: '/app/analytics', icon: 'analytics', labelKey: 'navigation.analytics' });
