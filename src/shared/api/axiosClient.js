@@ -2,7 +2,6 @@ import axios from 'axios';
 
 import { env } from '../config/env.js';
 import { authStorage } from '../../services/auth/authStorage.js';
-import { getSessionFromAccessToken } from '../lib/jwt.js';
 import { useAuthStore } from '../../store/authStore.js';
 
 export const axiosClient = axios.create({
@@ -86,7 +85,3 @@ axiosClient.interceptors.response.use(
         }
     },
 );
-
-export function getCurrentSession() {
-    return getSessionFromAccessToken(authStorage.getAccessToken());
-}

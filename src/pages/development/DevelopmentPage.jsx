@@ -1,15 +1,18 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery } from '@tanstack/react-query';
 
 import { careerApi } from '../../features/career/api/careerApi.js';
+import { employeeApi } from '../../features/employees/api/employeeApi.js';
+import { EmployeePicker } from '../../features/employees/components/EmployeePicker.jsx';
 import { queryKeys } from '../../shared/api/queryKeys.js';
 import { unwrapPage } from '../../shared/lib/queryParams.js';
-import { formatDate } from '../../shared/lib/format.js';
+import { formatDate, fullName } from '../../shared/lib/format.js';
 import { enumLabel, statusTone } from '../../shared/lib/enums.js';
 import { getApiError } from '../../shared/api/errors.js';
 import { canManageDevelopmentPlans } from '../../shared/lib/roles.js';
+import { useEmployeeNames } from '../../shared/lib/displayNames.js';
 import { useAuthStore } from '../../store/authStore.js';
 import { useToastStore } from '../../store/toastStore.js';
 import { Button } from '../../shared/ui/Button/Button.jsx';
@@ -25,27 +28,65 @@ import styles from '../../shared/styles/catalog.module.css';
 
 export function DevelopmentPage() {
     const { t } = useTranslation();
-    const employee = useAuthStore((s) => s.employee);
+    const self = useAuthStore((s) => s.employee);
     const role = useAuthStore((s) => s.session?.role);
     const navigate = useNavigate();
     const push = useToastStore((s) => s.push);
+    const employeeName = useEmployeeNames();
+    const manage = canManageDevelopmentPlans(role);
+    const [selectedEmployeeId, setSelectedEmployeeId] = useState(self?.id || '');
     const [open, setOpen] = useState(false);
-    const [form, setForm] = useState({ title: '', description: '', startDate: '', targetDate: '' });
+    const [form, setForm] = useState({
+        title: '',
+        description: '',
+        startDate: '',
+        targetDate: '',
+        employeeId: self?.id || '',
+    });
     const [listQuery, setListQuery] = useState({ page: 0, size: 20, sortBy: 'createdAt', sortDirection: 'DESC' });
 
+    const employeeId = manage ? selectedEmployeeId : (self?.id || '');
+    const extraOptions = self?.id
+        ? [{ id: self.id, label: t('development.myPlans') }]
+        : [];
+    const team = useQuery({
+        queryKey: ['employees', 'development-team'],
+        enabled: manage,
+        queryFn: async () => unwrapPage(await employeeApi.list({ page: 0, size: 100, sortBy: 'lastName' })).content || [],
+    });
+    const resolveName = (id) => {
+        if (self?.id && String(self.id) === String(id)) {
+            return fullName(self);
+        }
+        const fromTeam = (team.data || []).find((item) => String(item.id) === String(id));
+        return fromTeam ? fullName(fromTeam) : employeeName(id) || '—';
+    };
+
+    useEffect(() => {
+        if (!selectedEmployeeId && self?.id) {
+            setSelectedEmployeeId(self.id);
+        }
+        if (!form.employeeId && self?.id) {
+            setForm((current) => ({ ...current, employeeId: current.employeeId || self.id }));
+        }
+    }, [self?.id]);
+
     const progress = useQuery({
-        queryKey: queryKeys.career.progress(employee?.id),
-        enabled: Boolean(employee?.id),
-        queryFn: () => careerApi.getProgress(employee.id),
+        queryKey: queryKeys.career.progress(employeeId),
+        enabled: Boolean(employeeId),
+        queryFn: () => careerApi.getProgress(employeeId),
     });
     const plans = useQuery({
-        queryKey: [...queryKeys.career.plans(employee?.id), listQuery],
-        enabled: Boolean(employee?.id),
-        queryFn: async () => unwrapPage(await careerApi.listPlans(employee.id, listQuery)),
+        queryKey: [...queryKeys.career.plans(employeeId), listQuery],
+        enabled: Boolean(employeeId),
+        queryFn: async () => unwrapPage(await careerApi.listPlans(employeeId, listQuery)),
     });
 
     const create = useMutation({
-        mutationFn: () => careerApi.createPlan({ ...form, employeeId: employee.id }),
+        mutationFn: () => careerApi.createPlan({
+            ...form,
+            employeeId: manage ? (form.employeeId || employeeId) : self.id,
+        }),
         onSuccess: (data) => navigate(`/app/development/plans/${data.id}`),
         onError: (error) => push({ type: 'error', message: getApiError(error).message }),
     });
@@ -63,7 +104,7 @@ export function DevelopmentPage() {
                 <div className={styles.stats}>
                     <div className={styles.stat}>
                         <span>{t('development.total')}</span>
-                        <strong>{plans.data?.totalElements ?? list.length}</strong>
+                        <strong>{employeeId ? (plans.data?.totalElements ?? list.length) : 0}</strong>
                     </div>
                     <div className={styles.stat}>
                         <span>{t('development.inProgress')} · {t('common.onPage')}</span>
@@ -71,28 +112,53 @@ export function DevelopmentPage() {
                     </div>
                     <div className={styles.stat}>
                         <span>{t('development.progress')}</span>
-                        <ProgressRing value={progress.data?.progressPercent ?? progress.data?.overallProgress ?? 0} />
+                        <ProgressRing value={employeeId ? (progress.data?.progressPercent ?? progress.data?.overallProgress ?? 0) : 0} />
                     </div>
                 </div>
             </div>
             <div className={styles.toolbar}>
-                <p className={styles.empty}>{t('development.hint')}</p>
+                {manage ? (
+                    <div className={styles.toolbarFilter}>
+                        <EmployeePicker
+                            searchable
+                            label={t('development.employee')}
+                            value={selectedEmployeeId}
+                            extraOptions={extraOptions}
+                            onChange={(event) => {
+                                setSelectedEmployeeId(event.target.value);
+                                setListQuery({ ...listQuery, page: 0 });
+                            }}
+                        />
+                    </div>
+                ) : (
+                    <p className={styles.empty}>{t('development.hint')}</p>
+                )}
                 <div className={styles.toolbarActions}>
                     <ListFilters overlay>
                         <PageSizeField value={listQuery.size} onChange={(size) => setListQuery({ ...listQuery, size, page: 0 })} />
                     </ListFilters>
-                    {canManageDevelopmentPlans(role) ? <Button onClick={() => setOpen(true)} disabled={!employee}>{t('development.create')}</Button> : null}
+                    {manage ? (
+                        <Button
+                            onClick={() => {
+                                setForm((current) => ({ ...current, employeeId: selectedEmployeeId || self?.id || '' }));
+                                setOpen(true);
+                            }}
+                            disabled={!self}
+                        >
+                            {t('development.create')}
+                        </Button>
+                    ) : null}
                 </div>
             </div>
-            {plans.isLoading ? <Skeleton rows={6} /> : null}
-            {plans.isError ? (
+            {employeeId && plans.isLoading ? <Skeleton rows={6} /> : null}
+            {employeeId && plans.isError ? (
                 <PageState title={t('development.loadFailed')} onAction={plans.refetch} actionLabel={t('common.retry')} />
             ) : null}
-            {!plans.isLoading && !plans.isError ? (
+            {employeeId && !plans.isLoading && !plans.isError ? (
                 <>
                     <div className={styles.grid}>
                         {list.map((plan) => {
-                            const progress = Number(plan.progressPercent ?? 0);
+                            const value = Number(plan.progressPercent ?? 0);
                             return (
                                 <article key={plan.id} className={styles.card}>
                                     <div className={styles.cardHead}>
@@ -102,12 +168,18 @@ export function DevelopmentPage() {
                                         </Badge>
                                     </div>
                                     <p className={styles.description}>{plan.description || t('organization.noDescription')}</p>
+                                    {manage ? (
+                                        <div className={styles.row}>
+                                            <span>{t('development.employee')}</span>
+                                            <strong>{resolveName(plan.employeeId)}</strong>
+                                        </div>
+                                    ) : null}
                                     <div className={styles.progress}>
-                                        <div className={styles.progressFill} style={{ width: `${Math.min(100, progress)}%` }} />
+                                        <div className={styles.progressFill} style={{ width: `${Math.min(100, value)}%` }} />
                                     </div>
                                     <div className={styles.row}>
                                         <span>{t('development.progress')}</span>
-                                        <strong>{progress}%</strong>
+                                        <strong>{value}%</strong>
                                     </div>
                                     <div className={styles.row}>
                                         <span>{t('development.deadline')}</span>
@@ -131,6 +203,17 @@ export function DevelopmentPage() {
             <Modal open={open} title={t('development.newTitle')} onClose={() => setOpen(false)}>
                 <form className={page.stack} onSubmit={(e) => { e.preventDefault(); create.mutate(); }}>
                     <div className={page.grid}>
+                    {manage ? (
+                        <div className={page.spanAll}>
+                            <EmployeePicker
+                                searchable
+                                label={t('development.employee')}
+                                value={form.employeeId}
+                                extraOptions={extraOptions}
+                                onChange={(event) => setForm({ ...form, employeeId: event.target.value })}
+                            />
+                        </div>
+                    ) : null}
                     <Input label={t('development.name')} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
                     <div className={page.spanAll}>
                         <Textarea label={t('development.description')} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
@@ -139,7 +222,7 @@ export function DevelopmentPage() {
                     <Input type="date" label={t('development.deadline')} value={form.targetDate} onChange={(e) => setForm({ ...form, targetDate: e.target.value })} />
                     </div>
                     <div className={page.row}>
-                        <Button type="submit">{t('development.create')}</Button>
+                        <Button type="submit" disabled={manage && !form.employeeId}>{t('development.create')}</Button>
                         <Button type="button" variant="ghost" onClick={() => setOpen(false)}>{t('common.cancel')}</Button>
                     </div>
                 </form>

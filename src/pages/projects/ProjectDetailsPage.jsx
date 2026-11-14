@@ -23,7 +23,7 @@ import { Badge } from '../../shared/ui/Badge/Badge.jsx';
 import { NamedLink } from '../../shared/ui/NamedLink/NamedLink.jsx';
 import { BackLink } from '../../shared/ui/BackLink/BackLink.jsx';
 import { PageState, Skeleton } from '../../shared/ui/PageState/PageState.jsx';
-import { canManageProjectMembers, isProjectEditor } from '../../shared/lib/roles.js';
+import { canManageProjectMembers, isAssignedToProject, isProjectEditor } from '../../shared/lib/roles.js';
 import { useAuthStore } from '../../store/authStore.js';
 import styles from '../../shared/styles/catalog.module.css';
 
@@ -195,8 +195,9 @@ export function ProjectDetailsPage() {
     };
     const team = assignments.data?.content || [];
     const taskList = tasks.data?.content || [];
-    const canEdit = isProjectEditor(role, data, employeeId);
-    const canMembers = canManageProjectMembers(role, data, employeeId);
+    const assigned = isAssignedToProject(team, employeeId);
+    const canEdit = isProjectEditor(role, data, employeeId, { assigned });
+    const canMembers = canManageProjectMembers(role, data, employeeId, { assigned });
     const milestoneList = Array.isArray(milestones.data) ? milestones.data : milestones.data?.content || [];
     const linkList = Array.isArray(links.data) ? links.data : links.data?.content || [];
 
@@ -293,19 +294,6 @@ export function ProjectDetailsPage() {
                                 <p className={styles.description}>{row.projectRoleName || t('projects.roleMissing')}</p>
                                 <div className={styles.row}><span>{t('projects.from')}</span><strong>{formatDate(row.startDate)}</strong></div>
                                 <div className={styles.row}><span>{t('projects.to')}</span><strong>{formatDate(row.endDate)}</strong></div>
-                                {canMembers && editingAssignment?.id === row.id ? (
-                                    <div className={styles.stack}>
-                                        <Select label={t('projects.role')} value={editingAssignment.projectRoleId || ''} onChange={(e) => setEditingAssignment({ ...editingAssignment, projectRoleId: e.target.value })}>
-                                            <option value="">{t('common.select')}</option>
-                                            {(roles.data || []).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-                                        </Select>
-                                        <Input type="date" label={t('projects.from')} value={editingAssignment.startDate || ''} onChange={(e) => setEditingAssignment({ ...editingAssignment, startDate: e.target.value })} />
-                                        <Input type="date" label={t('projects.to')} value={editingAssignment.endDate || ''} onChange={(e) => setEditingAssignment({ ...editingAssignment, endDate: e.target.value })} />
-                                        <Input type="number" label={t('projects.allocation')} value={editingAssignment.allocationPercent ?? ''} onChange={(e) => setEditingAssignment({ ...editingAssignment, allocationPercent: e.target.value })} />
-                                        <Button onClick={() => saveAssignment.mutate()}>{t('common.save')}</Button>
-                                        <Button variant="ghost" onClick={() => setEditingAssignment(null)}>{t('common.cancel')}</Button>
-                                    </div>
-                                ) : null}
                                 {canMembers && !row.endDate ? (
                                     <div className={styles.actions}>
                                         <Button variant="ghost" onClick={() => setEditingAssignment({
@@ -315,7 +303,7 @@ export function ProjectDetailsPage() {
                                             endDate: row.endDate || '',
                                             allocationPercent: row.allocationPercent ?? '',
                                         })}>{t('common.edit')}</Button>
-                                        <Button variant="ghost" onClick={() => endAssignment.mutate(row)}>{t('projects.endAssignment')}</Button>
+                                        <Button variant="danger" onClick={() => endAssignment.mutate(row)}>{t('projects.endAssignment')}</Button>
                                     </div>
                                 ) : null}
                                 <Link className={styles.more} to={`/app/employees/${row.employeeId}`}>{t('projects.toProfile')}</Link>
@@ -365,15 +353,6 @@ export function ProjectDetailsPage() {
                             <h2>{item.title}</h2>
                             <p className={styles.description}>{item.description}</p>
                             <div className={styles.row}><span>{t('projects.dueDate')}</span><strong>{formatDate(item.dueDate)}</strong></div>
-                            {canEdit && editingMilestone?.id === item.id ? (
-                                <div className={styles.stack}>
-                                    <Input label={t('projects.name')} value={editingMilestone.title || ''} onChange={(e) => setEditingMilestone({ ...editingMilestone, title: e.target.value })} />
-                                    <Textarea label={t('projects.description')} value={editingMilestone.description || ''} onChange={(e) => setEditingMilestone({ ...editingMilestone, description: e.target.value })} />
-                                    <Input type="date" label={t('projects.dueDate')} value={editingMilestone.dueDate || ''} onChange={(e) => setEditingMilestone({ ...editingMilestone, dueDate: e.target.value })} />
-                                    <Button onClick={() => saveMilestone.mutate()}>{t('common.save')}</Button>
-                                    <Button variant="ghost" onClick={() => setEditingMilestone(null)}>{t('common.cancel')}</Button>
-                                </div>
-                            ) : null}
                             {canEdit ? (
                                 <div className={styles.actions}>
                                     <Button variant="ghost" onClick={() => setEditingMilestone({ id: item.id, title: item.title, description: item.description || '', dueDate: item.dueDate || '', status: item.status || 'PLANNED' })}>{t('common.edit')}</Button>
@@ -499,6 +478,36 @@ export function ProjectDetailsPage() {
                         <div className={styles.actions}>
                             <Button onClick={() => saveProject.mutate()}>{t('projects.saveProject')}</Button>
                             <Button variant="ghost" onClick={() => setEdit(null)}>{t('common.cancel')}</Button>
+                        </div>
+                    </div>
+                ) : null}
+            </Modal>
+            <Modal open={Boolean(editingAssignment)} title={t('common.edit')} onClose={() => setEditingAssignment(null)}>
+                {editingAssignment ? (
+                    <div className={styles.stack}>
+                        <Select label={t('projects.role')} value={editingAssignment.projectRoleId || ''} onChange={(e) => setEditingAssignment({ ...editingAssignment, projectRoleId: e.target.value })}>
+                            <option value="">{t('common.select')}</option>
+                            {(roles.data || []).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+                        </Select>
+                        <Input type="date" label={t('projects.from')} value={editingAssignment.startDate || ''} onChange={(e) => setEditingAssignment({ ...editingAssignment, startDate: e.target.value })} />
+                        <Input type="date" label={t('projects.to')} value={editingAssignment.endDate || ''} onChange={(e) => setEditingAssignment({ ...editingAssignment, endDate: e.target.value })} />
+                        <Input type="number" label={t('projects.allocation')} value={editingAssignment.allocationPercent ?? ''} onChange={(e) => setEditingAssignment({ ...editingAssignment, allocationPercent: e.target.value })} />
+                        <div className={styles.actions}>
+                            <Button onClick={() => saveAssignment.mutate()}>{t('common.save')}</Button>
+                            <Button variant="ghost" onClick={() => setEditingAssignment(null)}>{t('common.cancel')}</Button>
+                        </div>
+                    </div>
+                ) : null}
+            </Modal>
+            <Modal open={Boolean(editingMilestone)} title={t('common.edit')} onClose={() => setEditingMilestone(null)}>
+                {editingMilestone ? (
+                    <div className={styles.stack}>
+                        <Input label={t('projects.name')} value={editingMilestone.title || ''} onChange={(e) => setEditingMilestone({ ...editingMilestone, title: e.target.value })} />
+                        <Textarea label={t('projects.description')} value={editingMilestone.description || ''} onChange={(e) => setEditingMilestone({ ...editingMilestone, description: e.target.value })} />
+                        <Input type="date" label={t('projects.dueDate')} value={editingMilestone.dueDate || ''} onChange={(e) => setEditingMilestone({ ...editingMilestone, dueDate: e.target.value })} />
+                        <div className={styles.actions}>
+                            <Button onClick={() => saveMilestone.mutate()}>{t('common.save')}</Button>
+                            <Button variant="ghost" onClick={() => setEditingMilestone(null)}>{t('common.cancel')}</Button>
                         </div>
                     </div>
                 ) : null}

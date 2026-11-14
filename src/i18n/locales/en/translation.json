@@ -79,10 +79,6 @@
     "confirmRequired": "Confirm the password",
     "passwordsMismatch": "Passwords do not match"
   },
-  "landing": {
-    "title": "Karyera",
-    "subtitle": "Career track analysis and talent reserve planning for a distributed IT team."
-  },
   "errors": {
     "forbidden": "You do not have access to this section.",
     "notFound": "Page not found.",
@@ -318,6 +314,12 @@
       "COMPLETED": "Completed",
       "CANCELLED": "Cancelled"
     },
+    "planReviewDecision": {
+      "APPROVED": "Approved",
+      "CHANGES_REQUESTED": "Changes requested",
+      "COMPLETION_CONFIRMED": "Completion confirmed",
+      "COMPLETION_REJECTED": "Completion rejected"
+    },
     "reserveStatus": {
       "DRAFT": "Draft",
       "ACTIVE": "Active",
@@ -406,6 +408,11 @@
       "COMPLETED": "Verified",
       "REJECTED": "Rejected",
       "CANCELLED": "Cancelled"
+    },
+    "evidenceVerification": {
+      "PENDING": "Pending review",
+      "VERIFIED": "Accepted",
+      "REJECTED": "Rejected"
     }
   },
   "profile": {
@@ -646,6 +653,7 @@
     "weight": "Weight",
     "activateGoal": "Activate",
     "achieveGoal": "Mark achieved",
+    "achieveHint": "A manager or HR confirms that the goal is achieved.",
     "cancelGoal": "Cancel goal",
     "saveChanges": "Save changes",
     "archive": "Archive",
@@ -661,7 +669,14 @@
     "newRequirement": "New requirement revision",
     "requirementsTitle": "Position requirements",
     "entryPoint": "Entry point",
-    "nodeDescription": "Node description"
+    "nodeDescription": "Node description",
+    "transitions": "Transitions",
+    "noNodes": "No track nodes yet.",
+    "noTransitions": "No transitions between nodes yet.",
+    "loadTrackFailed": "Failed to load the track",
+    "backToTrack": "Back to track",
+    "editSkills": "Edit skills",
+    "skillsInRevision": "Revision skills"
   },
   "development": {
     "title": "Development plan",
@@ -695,7 +710,15 @@
     "evidence": "Evidence",
     "evidenceType": "Evidence type",
     "externalUrl": "Link",
-    "editDraft": "Plan draft"
+    "editDraft": "Plan draft",
+    "employee": "Employee",
+    "myPlans": "My plans",
+    "pickEmployee": "Select an employee to open their plans or create a new one.",
+    "noActivities": "No activities yet.",
+    "noReviews": "No review records yet.",
+    "noEvidence": "No evidence attached yet.",
+    "addEvidence": "Add evidence",
+    "reviewComment": "Decision comment"
   },
   "talent": {
     "title": "Talent reserve",

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -21,15 +21,19 @@ import { DataTable, Pagination } from '../../shared/ui/DataTable/DataTable.jsx';
 import { Badge } from '../../shared/ui/Badge/Badge.jsx';
 import { Modal } from '../../shared/ui/Modal/Modal.jsx';
 import page from '../../shared/styles/page.module.css';
+import formStyles from './PositionRequirementsPage.module.css';
 
 export function PositionRequirementsPage() {
     const { t } = useTranslation();
     const { id } = useParams();
+    const location = useLocation();
+    const [searchParams] = useSearchParams();
+    const fromTrack = location.state?.fromTrack;
     const role = useAuthStore((s) => s.session?.role);
     const catalogs = useCatalogs();
     const push = useToastStore((s) => s.push);
     const queryClient = useQueryClient();
-    const [gradeId, setGradeId] = useState('');
+    const [gradeId, setGradeId] = useState(searchParams.get('gradeId') || '');
     const [listQuery, setListQuery] = useState({ page: 0, size: 20, sortBy: 'revision', sortDirection: 'DESC' });
     const [draft, setDraft] = useState({
         description: '',
@@ -84,7 +88,24 @@ export function PositionRequirementsPage() {
                 description: '',
             },
         ]);
+        setDraft((current) => ({ ...current, skillId: '' }));
     };
+    const removeSkill = (skillId) => {
+        setSkillRows((rows) => rows.filter((item) => item.skillId !== skillId));
+    };
+    const openEditor = () => {
+        setDraft({
+            description: selected?.description || current.data?.description || '',
+            minExperienceMonths: selected?.minExperienceMonths ?? current.data?.minExperienceMonths ?? 0,
+            skillId: '',
+            requiredLevel: 3,
+            weight: 1,
+            mandatory: true,
+        });
+        setSkillRows(selected?.skills || current.data?.skills || []);
+        setFormOpen(true);
+    };
+    const skillName = (skillId) => catalogs.skills.find((item) => item.id === skillId)?.name || '—';
 
     const payload = () => ({
         positionId: id,
@@ -117,18 +138,20 @@ export function PositionRequirementsPage() {
     });
 
     const historyRows = Array.isArray(history.data) ? history.data : history.data?.content || [];
+    const status = (gradeId && current.data?.status) || selected?.status;
 
     return (
         <section>
-            <BackLink to="/app/career/tracks">{t('career.backToTracks')}</BackLink>
+            <BackLink to={fromTrack || '/app/career/tracks'}>
+                {fromTrack ? t('career.backToTrack') : t('career.backToTracks')}
+            </BackLink>
             <PageHeader title={t('career.requirementsTitle')} description={catalogs.positions.find((item) => item.id === id)?.name} />
             <Card>
                 <Select label={t('form.grade')} value={gradeId} onChange={(e) => setGradeId(e.target.value)}>
                     <option value="">{t('common.all')}</option>
                     {catalogs.grades.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
                 </Select>
-                {current.data?.status ? <Badge>{enumLabel(t, 'requirementStatus', current.data.status)}</Badge> : null}
-                {selected ? <Badge>{enumLabel(t, 'requirementStatus', selected.status)}</Badge> : null}
+                {status ? <Badge>{enumLabel(t, 'requirementStatus', status)}</Badge> : null}
                 <DataTable
                     rows={skills}
                     empty={t('career.noRequirements')}
@@ -141,7 +164,10 @@ export function PositionRequirementsPage() {
                 />
                 {canManageHr(role) ? (
                     <div className={page.row}>
-                        <Button onClick={() => setFormOpen(true)}>{t('career.newRequirement')}</Button>
+                        <Button onClick={openEditor}>{t('career.newRequirement')}</Button>
+                        {selected?.status === 'DRAFT' ? (
+                            <Button variant="secondary" onClick={openEditor}>{t('career.editSkills')}</Button>
+                        ) : null}
                         {selected?.status === 'DRAFT' ? <Button onClick={() => publish.mutate()}>{t('career.publishRequirement')}</Button> : null}
                     </div>
                 ) : null}
@@ -162,24 +188,47 @@ export function PositionRequirementsPage() {
                 />
             </Card>
             <Modal open={formOpen} title={t('career.newRequirement')} onClose={() => setFormOpen(false)}>
-                <div className={page.stack}>
-                    <Textarea label={t('career.description')} value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
+                <div className={formStyles.form}>
+                    <Textarea rows={3} label={t('career.description')} value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
                     <Input type="number" label={t('career.minExperience')} value={draft.minExperienceMonths} onChange={(e) => setDraft({ ...draft, minExperienceMonths: e.target.value })} />
-                    <Select label={t('career.skill')} value={draft.skillId} onChange={(e) => setDraft({ ...draft, skillId: e.target.value })}>
-                        <option value="">{t('common.select')}</option>
-                        {catalogs.skills.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-                    </Select>
-                    <Input type="number" label={t('career.level')} value={draft.requiredLevel} onChange={(e) => setDraft({ ...draft, requiredLevel: e.target.value })} />
-                    <Input type="number" label={t('career.weight')} value={draft.weight} onChange={(e) => setDraft({ ...draft, weight: e.target.value })} />
-                    <label>
-                        <input type="checkbox" checked={Boolean(draft.mandatory)} onChange={(e) => setDraft({ ...draft, mandatory: e.target.checked })} />
-                        {' '}{t('career.mandatory')}
-                    </label>
-                    <div className={page.row}>
-                        <Button type="button" variant="secondary" onClick={addSkill} disabled={!draft.skillId}>{t('common.add')}</Button>
-                        <Button onClick={() => create.mutate()} disabled={!gradeId}>{t('common.create')}</Button>
-                        {selected?.status === 'DRAFT' ? <Button variant="secondary" onClick={() => update.mutate()}>{t('common.save')}</Button> : null}
+                    <div className={formStyles.composer}>
+                        <Select label={t('career.skill')} value={draft.skillId} onChange={(e) => setDraft({ ...draft, skillId: e.target.value })}>
+                            <option value="">{t('common.select')}</option>
+                            {catalogs.skills.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+                        </Select>
+                        <Input type="number" min="1" label={t('career.level')} value={draft.requiredLevel} onChange={(e) => setDraft({ ...draft, requiredLevel: e.target.value })} />
+                        <Input type="number" min="0" label={t('career.weight')} value={draft.weight} onChange={(e) => setDraft({ ...draft, weight: e.target.value })} />
+                        <label className={formStyles.check}>
+                            <input type="checkbox" checked={Boolean(draft.mandatory)} onChange={(e) => setDraft({ ...draft, mandatory: e.target.checked })} />
+                            {t('career.mandatory')}
+                        </label>
+                        <Button className={formStyles.add} type="button" variant="secondary" onClick={addSkill} disabled={!draft.skillId}>
+                            {t('common.add')}
+                        </Button>
+                    </div>
+                    <div>
+                        <p className={formStyles.listTitle}>{t('career.skillsInRevision')}</p>
+                        <div className={formStyles.list}>
+                            {skillRows.map((item) => (
+                                <div key={item.skillId} className={formStyles.skill}>
+                                    <div className={formStyles.skillBody}>
+                                        <span className={formStyles.skillName}>{skillName(item.skillId)}</span>
+                                        <span className={formStyles.skillMeta}>
+                                            <span>{t('career.level')}: {item.requiredLevel}</span>
+                                            <span>{t('career.weight')}: {item.weight}</span>
+                                            {item.mandatory ? <span>{t('career.mandatory')}</span> : null}
+                                        </span>
+                                    </div>
+                                    <Button type="button" variant="danger" onClick={() => removeSkill(item.skillId)}>{t('common.delete')}</Button>
+                                </div>
+                            ))}
+                            {!skillRows.length ? <p className={formStyles.empty}>{t('career.noRequirements')}</p> : null}
+                        </div>
+                    </div>
+                    <div className={formStyles.footer}>
                         <Button variant="ghost" onClick={() => setFormOpen(false)}>{t('common.cancel')}</Button>
+                        {selected?.status === 'DRAFT' ? <Button variant="secondary" onClick={() => update.mutate()}>{t('common.save')}</Button> : null}
+                        <Button onClick={() => create.mutate()} disabled={!gradeId}>{t('common.create')}</Button>
                     </div>
                 </div>
             </Modal>

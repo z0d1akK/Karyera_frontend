@@ -8,21 +8,30 @@ import { employeeApi } from '../../features/employees/api/employeeApi.js';
 import { queryKeys } from '../../shared/api/queryKeys.js';
 import { unwrapPage } from '../../shared/lib/queryParams.js';
 import { getApiError } from '../../shared/api/errors.js';
-import { enumLabel } from '../../shared/lib/enums.js';
-import { formatDate } from '../../shared/lib/format.js';
+import { enumLabel, statusTone } from '../../shared/lib/enums.js';
+import { formatDate, formatDateTime } from '../../shared/lib/format.js';
 import { canManageDevelopmentPlans, canManageHr, canUpdateOwnDevelopment } from '../../shared/lib/roles.js';
 import { useAuthStore } from '../../store/authStore.js';
 import { useToastStore } from '../../store/toastStore.js';
 import { PageHeader } from '../../shared/ui/PageHeader/PageHeader.jsx';
 import { BackLink } from '../../shared/ui/BackLink/BackLink.jsx';
-import { Card } from '../../shared/ui/Card/Card.jsx';
 import { Button } from '../../shared/ui/Button/Button.jsx';
 import { Input, Select, Textarea } from '../../shared/ui/Input/Input.jsx';
 import { Badge } from '../../shared/ui/Badge/Badge.jsx';
 import { ProgressBar } from '../../shared/ui/Progress/Progress.jsx';
-import { Skeleton } from '../../shared/ui/PageState/PageState.jsx';
+import { PageState, Skeleton } from '../../shared/ui/PageState/PageState.jsx';
+import { useEmployeeNames } from '../../shared/lib/displayNames.js';
 import { Modal } from '../../shared/ui/Modal/Modal.jsx';
 import page from '../../shared/styles/page.module.css';
+import catalog from '../../shared/styles/catalog.module.css';
+import styles from './DevelopmentPlanPage.module.css';
+
+function evidenceHref(url) {
+    if (!url) {
+        return '';
+    }
+    return /^https?:\/\//i.test(url) ? url : `https://${url}`;
+}
 
 const ACTIVITY_TYPES = ['TRAINING', 'CERTIFICATION', 'PROJECT_PRACTICE', 'PRACTICAL_TASK', 'MENTORING', 'SELF_STUDY'];
 
@@ -30,8 +39,10 @@ export function DevelopmentPlanPage() {
     const { t } = useTranslation();
     const { id } = useParams();
     const role = useAuthStore((s) => s.session?.role);
+    const selfId = useAuthStore((s) => s.employee?.id);
     const push = useToastStore((s) => s.push);
     const queryClient = useQueryClient();
+    const employeeName = useEmployeeNames();
     const [activity, setActivity] = useState({ title: '', description: '', activityType: 'TRAINING', dueDate: '' });
     const [draft, setDraft] = useState(null);
     const [evidence, setEvidence] = useState({ activityId: '', evidenceType: 'LINK', externalUrl: '', description: '' });
@@ -74,9 +85,21 @@ export function DevelopmentPlanPage() {
         },
         onError,
     });
-    const submitActivity = useMutation({ mutationFn: (activityId) => careerApi.submitActivity(activityId, { expectedVersion: query.data?.version }), onSuccess: invalidate, onError });
-    const verifyActivity = useMutation({ mutationFn: (activityId) => careerApi.verifyActivity(activityId, { comment, expectedVersion: query.data?.version }), onSuccess: invalidate, onError });
-    const rejectActivity = useMutation({ mutationFn: (activityId) => careerApi.rejectActivity(activityId, { comment, expectedVersion: query.data?.version }), onSuccess: invalidate, onError });
+    const submitActivity = useMutation({
+        mutationFn: (item) => careerApi.submitActivity(item.id, { expectedVersion: item.version }),
+        onSuccess: invalidate,
+        onError,
+    });
+    const verifyActivity = useMutation({
+        mutationFn: (item) => careerApi.verifyActivity(item.id, { comment, expectedVersion: item.version }),
+        onSuccess: invalidate,
+        onError,
+    });
+    const rejectActivity = useMutation({
+        mutationFn: (item) => careerApi.rejectActivity(item.id, { comment, expectedVersion: item.version }),
+        onSuccess: invalidate,
+        onError,
+    });
     const saveActivity = useMutation({
         mutationFn: ({ id: activityId, ...payload }) => careerApi.updateActivity(
             activityId,
@@ -101,79 +124,224 @@ export function DevelopmentPlanPage() {
         return <Skeleton />;
     }
 
+    if (query.isError || !query.data) {
+        return <PageState title={t('development.loadFailed')} onAction={query.refetch} actionLabel={t('common.retry')} />;
+    }
+
     const plan = query.data;
     const activities = plan.activities || [];
     const reviewList = Array.isArray(reviews.data) ? reviews.data : reviews.data?.content || [];
     const hr = canManageHr(role);
     const canManagePlan = canManageDevelopmentPlans(role);
-    const canOwnActions = canUpdateOwnDevelopment(role);
+    const isOwner = Boolean(selfId && plan.employeeId && String(plan.employeeId) === String(selfId));
+    const canReview = hr || (canManagePlan && !isOwner);
+    const canOwnActions = canUpdateOwnDevelopment(role) && isOwner;
     const closed = plan.status === 'COMPLETED' || plan.status === 'CANCELLED';
     const draftLike = plan.status === 'DRAFT' || plan.status === 'CHANGES_REQUESTED';
     const submitted = plan.status === 'SUBMITTED';
     const active = plan.status === 'ACTIVE';
+    const skillName = (skillId) => (skills.data || []).find((item) => String(item.id) === String(skillId))?.name;
+    const showReviewComment = (submitted || active) && canReview && !closed;
+    const showPlanActions = (canManagePlan || isOwner) && !closed;
 
     return (
-        <section>
-            <BackLink to="/app/development">{t('development.back')}</BackLink>
-            <PageHeader title={plan.title} actions={<Badge>{enumLabel(t, 'planStatus', plan.status)}</Badge>} />
-            <Card>
-                <div className={page.stack}>
-                    <p>{plan.description}</p>
+        <section className={styles.layout}>
+            <div>
+                <BackLink to="/app/development">{t('development.back')}</BackLink>
+                <PageHeader
+                    title={plan.title}
+                    description={employeeName(plan.employeeId) || undefined}
+                    actions={(
+                        <Badge tone={statusTone('planStatus', plan.status)}>
+                            {enumLabel(t, 'planStatus', plan.status)}
+                        </Badge>
+                    )}
+                />
+            </div>
+            <article className={`${catalog.card} ${catalog.compactCard}`}>
+                <div className={styles.overview}>
+                    <p className={catalog.description}>{plan.description || t('organization.noDescription')}</p>
+                    <div className={styles.meta}>
+                        <div className={catalog.field}>
+                            <span className={catalog.label}>{t('development.employee')}</span>
+                            <span className={catalog.value}>{employeeName(plan.employeeId) || '—'}</span>
+                        </div>
+                        <div className={catalog.field}>
+                            <span className={catalog.label}>{t('development.start')}</span>
+                            <span className={catalog.value}>{formatDate(plan.startDate)}</span>
+                        </div>
+                        <div className={catalog.field}>
+                            <span className={catalog.label}>{t('development.deadline')}</span>
+                            <span className={catalog.value}>{formatDate(plan.targetDate)}</span>
+                        </div>
+                    </div>
                     <ProgressBar value={plan.progressPercent ?? 0} label={t('development.progress')} />
+                    {showReviewComment ? (
+                        <div className={styles.comment}>
+                            <Textarea
+                                rows={3}
+                                label={t('development.reviewComment')}
+                                value={comment}
+                                onChange={(e) => setComment(e.target.value)}
+                            />
+                        </div>
+                    ) : null}
+                    {showPlanActions ? (
+                        <div className={styles.planActions}>
+                            {draftLike && canManagePlan ? (
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => setDraft({
+                                        title: plan.title,
+                                        description: plan.description || '',
+                                        targetDate: plan.targetDate || '',
+                                        careerGoalId: plan.careerGoalId,
+                                    })}
+                                >
+                                    {t('development.editDraft')}
+                                </Button>
+                            ) : null}
+                            {draftLike && (canManagePlan || isOwner) ? (
+                                <Button onClick={() => submit.mutate()}>{t('development.submit')}</Button>
+                            ) : null}
+                            {submitted && canReview ? <Button onClick={() => approve.mutate()}>{t('development.approve')}</Button> : null}
+                            {submitted && canReview ? (
+                                <Button variant="ghost" onClick={() => requestChanges.mutate()}>{t('development.requestChanges')}</Button>
+                            ) : null}
+                            {active && canReview ? (
+                                <Button variant="secondary" onClick={() => complete.mutate()}>{t('development.complete')}</Button>
+                            ) : null}
+                            {canManagePlan || isOwner ? (
+                                <Button className={styles.planActionsCancel} variant="danger" onClick={() => cancel.mutate()}>
+                                    {t('development.cancel')}
+                                </Button>
+                            ) : null}
+                        </div>
+                    ) : null}
                 </div>
-                {canManagePlan && !closed ? (
-                    <div className={page.stack}>
-                    {(submitted || active) ? <Textarea label={t('talent.comment')} value={comment} onChange={(e) => setComment(e.target.value)} /> : null}
-                    <div className={page.row}>
-                        {draftLike ? <Button variant="secondary" onClick={() => setDraft({ title: plan.title, description: plan.description || '', targetDate: plan.targetDate || '', careerGoalId: plan.careerGoalId })}>{t('development.editDraft')}</Button> : null}
-                        {draftLike ? <Button onClick={() => submit.mutate()}>{t('development.submit')}</Button> : null}
-                        {submitted && hr ? <Button onClick={() => approve.mutate()}>{t('development.approve')}</Button> : null}
-                        {submitted && hr ? <Button variant="ghost" onClick={() => requestChanges.mutate()}>{t('development.requestChanges')}</Button> : null}
-                        {active ? <Button variant="secondary" onClick={() => complete.mutate()}>{t('development.complete')}</Button> : null}
-                        <Button variant="danger" onClick={() => cancel.mutate()}>{t('development.cancel')}</Button>
+            </article>
+            <div>
+                <div className={catalog.toolbar}>
+                    <h2 className={catalog.sectionTitle}>{t('development.activities')}</h2>
+                    <div className={catalog.toolbarActions}>
+                        {canManagePlan && draftLike ? (
+                            <Button onClick={() => setActivityOpen(true)}>{t('development.addActivity')}</Button>
+                        ) : null}
+                        {canOwnActions && !closed ? (
+                            <Button variant="secondary" onClick={() => setEvidenceOpen(true)}>{t('development.addEvidence')}</Button>
+                        ) : null}
                     </div>
-                    </div>
-                    ) : null}
-                <div className={page.stack}>
-                    <h3 className={page.sectionTitle}>{t('development.activities')}</h3>
-                    {activities.map((item) => (
-                        <article key={item.id} className={page.stack}>
-                            <p>{item.title} · {enumLabel(t, 'activityStatus', item.status)} · {enumLabel(t, 'activityType', item.activityType)}{item.dueDate ? ` · ${formatDate(item.dueDate)}` : ''}</p>
-                            <div className={page.row}>
-                                {canOwnActions && ['PLANNED', 'IN_PROGRESS', 'REJECTED'].includes(item.status) ? (
-                                    <Button variant="ghost" onClick={() => submitActivity.mutate(item.id)}>{t('development.submitActivity')}</Button>
-                                ) : null}
-                                {hr && item.status === 'SUBMITTED' ? <Button variant="ghost" onClick={() => verifyActivity.mutate(item.id)}>{t('development.verify')}</Button> : null}
-                                {hr && item.status === 'SUBMITTED' ? <Button variant="ghost" onClick={() => rejectActivity.mutate(item.id)}>{t('development.reject')}</Button> : null}
-                                {canManagePlan && !closed && item.status !== 'COMPLETED' ? (
-                                <Button variant="secondary" onClick={() => setEditingActivity({
-                                    id: item.id,
-                                    title: item.title || '',
-                                    description: item.description || '',
-                                    activityType: item.activityType || 'TRAINING',
-                                    dueDate: item.dueDate || '',
-                                    skillId: item.skillId || '',
-                                })}>{t('common.edit')}</Button>
-                                ) : null}
-                            </div>
-                        </article>
-                    ))}
                 </div>
-                <div className={page.row}>
-                    {canManagePlan && (draftLike || active) ? (
-                        <Button onClick={() => setActivityOpen(true)}>{t('development.addActivity')}</Button>
-                    ) : null}
-                    {canOwnActions && !closed ? (
-                        <Button variant="secondary" onClick={() => setEvidenceOpen(true)}>{t('development.evidence')}</Button>
-                    ) : null}
-                </div>
+                {!activities.length ? <p className={catalog.empty}>{t('development.noActivities')}</p> : null}
                 <div className={page.stack}>
-                    <h3 className={page.sectionTitle}>{t('development.reviews')}</h3>
+                    {activities.map((item) => {
+                        const evidenceList = item.evidence || [];
+                        const canEditActivity = canManagePlan && !closed && item.status !== 'COMPLETED';
+                        const canSubmitItem = canOwnActions && active && ['PLANNED', 'IN_PROGRESS', 'REJECTED'].includes(item.status);
+                        const canDecideItem = canReview && active && ['PLANNED', 'IN_PROGRESS', 'SUBMITTED'].includes(item.status);
+                        return (
+                            <article key={item.id} className={`${catalog.card} ${catalog.compactCard} ${styles.activity}`}>
+                                <div className={catalog.cardHead}>
+                                    <h2>{item.title}</h2>
+                                    <div className={styles.badges}>
+                                        <Badge tone={statusTone('activityStatus', item.status)}>
+                                            {enumLabel(t, 'activityStatus', item.status)}
+                                        </Badge>
+                                    </div>
+                                </div>
+                                {item.description ? <p className={catalog.description}>{item.description}</p> : null}
+                                <div className={catalog.row}>
+                                    <span>{t('development.activityType')}</span>
+                                    <strong>{enumLabel(t, 'activityType', item.activityType)}</strong>
+                                </div>
+                                {item.skillId ? (
+                                    <div className={catalog.row}>
+                                        <span>{t('career.skill')}</span>
+                                        <strong>{skillName(item.skillId) || '—'}</strong>
+                                    </div>
+                                ) : null}
+                                <div className={catalog.row}>
+                                    <span>{t('development.deadline')}</span>
+                                    <strong>{item.dueDate ? formatDate(item.dueDate) : '—'}</strong>
+                                </div>
+                                {evidenceList.length ? (
+                                    <div className={styles.evidenceList}>
+                                        {evidenceList.map((entry) => (
+                                            <div key={entry.id} className={styles.evidenceItem}>
+                                                <div className={styles.evidenceMeta}>
+                                                    <strong>{enumLabel(t, 'evidenceType', entry.evidenceType)}</strong>
+                                                    {entry.externalUrl ? (
+                                                        <a href={evidenceHref(entry.externalUrl)} target="_blank" rel="noreferrer">
+                                                            {entry.externalUrl}
+                                                        </a>
+                                                    ) : null}
+                                                    {entry.description ? <span className={catalog.description}>{entry.description}</span> : null}
+                                                </div>
+                                                <Badge tone={statusTone('evidenceVerification', entry.verificationStatus)}>
+                                                    {enumLabel(t, 'evidenceVerification', entry.verificationStatus)}
+                                                </Badge>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : null}
+                                {canSubmitItem || canDecideItem || canEditActivity ? (
+                                    <div className={catalog.actions}>
+                                        {canSubmitItem ? (
+                                            <Button variant="ghost" onClick={() => submitActivity.mutate(item)}>
+                                                {t('development.submitActivity')}
+                                            </Button>
+                                        ) : null}
+                                        {canDecideItem ? (
+                                            <Button onClick={() => verifyActivity.mutate(item)}>
+                                                {t('development.verify')}
+                                            </Button>
+                                        ) : null}
+                                        {canDecideItem ? (
+                                            <Button variant="danger" onClick={() => rejectActivity.mutate(item)}>
+                                                {t('development.reject')}
+                                            </Button>
+                                        ) : null}
+                                        {canEditActivity ? (
+                                            <Button
+                                                variant="secondary"
+                                                onClick={() => setEditingActivity({
+                                                    id: item.id,
+                                                    title: item.title || '',
+                                                    description: item.description || '',
+                                                    activityType: item.activityType || 'TRAINING',
+                                                    dueDate: item.dueDate || '',
+                                                    skillId: item.skillId || '',
+                                                })}
+                                            >
+                                                {t('common.edit')}
+                                            </Button>
+                                        ) : null}
+                                    </div>
+                                ) : null}
+                            </article>
+                        );
+                    })}
+                </div>
+            </div>
+            <article className={`${catalog.card} ${catalog.compactCard}`}>
+                <h2 className={catalog.sectionTitle}>{t('development.reviews')}</h2>
+                {!reviewList.length ? <p className={catalog.empty}>{t('development.noReviews')}</p> : null}
+                <div className={styles.reviews}>
                     {reviewList.map((item) => (
-                        <p key={item.id}>{enumLabel(t, 'planStatus', item.decision)} · {item.comment}</p>
+                        <div key={item.id} className={styles.reviewItem}>
+                            <div className={styles.reviewHead}>
+                                <Badge tone={statusTone('planReviewDecision', item.decision)}>
+                                    {enumLabel(t, 'planReviewDecision', item.decision)}
+                                </Badge>
+                                <span className={catalog.empty}>
+                                    {[employeeName(item.reviewerEmployeeId), formatDateTime(item.reviewedAt)].filter(Boolean).join(' · ')}
+                                </span>
+                            </div>
+                            <p className={catalog.description}>{item.comment || '—'}</p>
+                        </div>
                     ))}
                 </div>
-            </Card>
+            </article>
             <Modal open={Boolean(draft)} title={t('development.editDraft')} onClose={() => setDraft(null)}>
                 {draft ? (
                     <div className={page.stack}>

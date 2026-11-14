@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 
 import styles from './Modal.module.css';
@@ -8,7 +9,7 @@ export function Modal({ open, title, children, onClose }) {
         return null;
     }
 
-    return (
+    return createPortal(
         <div className={styles.backdrop} onClick={onClose}>
             <div className={styles.dialog} onClick={(event) => event.stopPropagation()}>
                 <div className={styles.head}>
@@ -19,6 +20,7 @@ export function Modal({ open, title, children, onClose }) {
                 </div>
                 {children}
             </div>
-        </div>
+        </div>,
+        document.body,
     );
 }

@@ -46,9 +46,12 @@ export function CandidatePage() {
     });
     const decide = useMutation({
         mutationFn: () => careerApi.decide(id, { ...decision, expectedVersion: query.data.version }),
-        onSuccess: () => {
+        onSuccess: (data) => {
             setDecideOpen(false);
+            queryClient.setQueryData(queryKeys.career.candidate(id), data);
             queryClient.invalidateQueries({ queryKey: queryKeys.career.candidate(id) });
+            queryClient.invalidateQueries({ queryKey: ['career', 'reserves'] });
+            queryClient.invalidateQueries({ queryKey: ['career', 'candidates'] });
         },
         onError: (error) => push({ type: 'error', message: getApiError(error).message }),
     });

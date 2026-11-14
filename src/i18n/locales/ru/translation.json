@@ -79,10 +79,6 @@
     "confirmRequired": "Подтвердите пароль",
     "passwordsMismatch": "Пароли не совпадают"
   },
-  "landing": {
-    "title": "Karyera",
-    "subtitle": "Анализ карьерных треков и планирование кадрового резерва в распределённой IT-команде."
-  },
   "errors": {
     "forbidden": "Недостаточно прав для этого раздела.",
     "notFound": "Страница не найдена.",
@@ -318,6 +314,12 @@
       "COMPLETED": "Завершён",
       "CANCELLED": "Отменён"
     },
+    "planReviewDecision": {
+      "APPROVED": "Утверждён",
+      "CHANGES_REQUESTED": "Нужны правки",
+      "COMPLETION_CONFIRMED": "Завершение подтверждено",
+      "COMPLETION_REJECTED": "Завершение отклонено"
+    },
     "reserveStatus": {
       "DRAFT": "Черновик",
       "ACTIVE": "Активен",
@@ -406,6 +408,11 @@
       "COMPLETED": "Проверено",
       "REJECTED": "Отклонено",
       "CANCELLED": "Отменено"
+    },
+    "evidenceVerification": {
+      "PENDING": "Ожидает проверки",
+      "VERIFIED": "Принято",
+      "REJECTED": "Отклонено"
     }
   },
   "profile": {
@@ -646,6 +653,7 @@
     "weight": "Вес",
     "activateGoal": "Активировать",
     "achieveGoal": "Достигнута",
+    "achieveHint": "Достижение цели подтверждает руководитель или HR.",
     "cancelGoal": "Отменить цель",
     "saveChanges": "Сохранить изменения",
     "archive": "В архив",
@@ -661,7 +669,14 @@
     "newRequirement": "Новая редакция требований",
     "requirementsTitle": "Требования к должности",
     "entryPoint": "Точка входа",
-    "nodeDescription": "Описание узла"
+    "nodeDescription": "Описание узла",
+    "transitions": "Переходы",
+    "noNodes": "Узлы трека ещё не добавлены.",
+    "noTransitions": "Переходы между узлами ещё не заданы.",
+    "loadTrackFailed": "Не удалось загрузить трек",
+    "backToTrack": "К треку",
+    "editSkills": "Редактировать навыки",
+    "skillsInRevision": "Навыки редакции"
   },
   "development": {
     "title": "План развития",
@@ -695,7 +710,15 @@
     "evidence": "Доказательство",
     "evidenceType": "Тип доказательства",
     "externalUrl": "Ссылка",
-    "editDraft": "Черновик плана"
+    "editDraft": "Черновик плана",
+    "employee": "Сотрудник",
+    "myPlans": "Мои планы",
+    "pickEmployee": "Выберите сотрудника, чтобы открыть его планы или создать новый.",
+    "noActivities": "Мероприятий пока нет.",
+    "noReviews": "Записей согласования пока нет.",
+    "noEvidence": "Доказательства ещё не добавлены.",
+    "addEvidence": "Добавить доказательство",
+    "reviewComment": "Комментарий к решению"
   },
   "talent": {
     "title": "Кадровый резерв",

@@ -152,31 +152,33 @@ export function CareerPage() {
                                         <Button onClick={() => transition.mutate({ id: active.id, action: 'activateGoal', version: active.version })}>{t('career.activateGoal')}</Button>
                                     ) : null}
                                     {active.status === 'ACTIVE' ? (
-                                        <Button onClick={() => transition.mutate({ id: active.id, action: 'achieveGoal', version: active.version })}>{t('career.achieveGoal')}</Button>
+                                        <p className={styles.empty}>{t('career.achieveHint')}</p>
                                     ) : null}
                                     {active.status !== 'CANCELLED' && active.status !== 'ACHIEVED' ? (
                                         <Button variant="danger" onClick={() => transition.mutate({ id: active.id, action: 'cancelGoal', version: active.version })}>{t('career.cancelGoal')}</Button>
-                                    ) : null}
-                                    {active.status !== 'CANCELLED' && active.status !== 'ACHIEVED' ? (
-                                    <Button variant="secondary" onClick={() => {
-                                        setEditingId(active.id);
-                                        setForm({
-                                            targetPositionId: active.targetPositionId || '',
-                                            targetGradeId: active.targetGradeId || '',
-                                            motivation: active.motivation || '',
-                                            targetDate: active.targetDate || '',
-                                        });
-                                        setGoalOpen(true);
-                                    }}>{t('common.edit')}</Button>
                                     ) : null}
                                 </div>
                             </>
                         ) : (
                             <p className={styles.empty}>{t('career.noGoal')}</p>
                         )}
-                        <button type="button" className={styles.more} onClick={() => navigate('/app/development')}>
-                            {t('career.toDevelopment')}
-                        </button>
+                        <div className={styles.cardFooter}>
+                            {active && active.status !== 'CANCELLED' && active.status !== 'ACHIEVED' ? (
+                                <Button variant="secondary" onClick={() => {
+                                    setEditingId(active.id);
+                                    setForm({
+                                        targetPositionId: active.targetPositionId || '',
+                                        targetGradeId: active.targetGradeId || '',
+                                        motivation: active.motivation || '',
+                                        targetDate: active.targetDate || '',
+                                    });
+                                    setGoalOpen(true);
+                                }}>{t('common.edit')}</Button>
+                            ) : <span />}
+                            <button type="button" className={styles.more} onClick={() => navigate('/app/development')}>
+                                {t('career.toDevelopment')}
+                            </button>
+                        </div>
                     </article>
                     <article className={`${styles.card} ${styles.compactCard}`}>
                         <div className={styles.cardHead}>

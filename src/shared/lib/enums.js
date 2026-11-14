@@ -42,6 +42,25 @@ const TONES = {
         COMPLETED: 'success',
         CANCELLED: 'danger',
     },
+    planReviewDecision: {
+        APPROVED: 'success',
+        CHANGES_REQUESTED: 'danger',
+        COMPLETION_CONFIRMED: 'success',
+        COMPLETION_REJECTED: 'danger',
+    },
+    activityStatus: {
+        PLANNED: 'neutral',
+        IN_PROGRESS: 'warning',
+        SUBMITTED: 'warning',
+        COMPLETED: 'success',
+        REJECTED: 'danger',
+        CANCELLED: 'neutral',
+    },
+    evidenceVerification: {
+        PENDING: 'warning',
+        VERIFIED: 'success',
+        REJECTED: 'danger',
+    },
     timeEntryStatus: {
         DRAFT: 'neutral',
         SUBMITTED: 'warning',

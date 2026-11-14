@@ -1,0 +1,100 @@
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.composer {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) 88px 88px auto auto;
+    gap: 12px;
+    align-items: end;
+}
+
+.check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-primary-dark);
+    white-space: nowrap;
+}
+
+.add {
+    width: auto;
+    justify-self: start;
+}
+
+.listTitle {
+    margin: 0 0 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-primary-dark);
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.skill {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.skill:last-child {
+    border-bottom: 0;
+}
+
+.skillBody {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.skillName {
+    font-weight: 700;
+    color: var(--color-primary-dark);
+}
+
+.skillMeta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    color: var(--color-secondary-text);
+    font-size: 13px;
+}
+
+.empty {
+    margin: 0;
+    padding: 14px;
+    color: var(--color-secondary-text);
+    font-size: 14px;
+}
+
+.footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+@media (max-width: 720px) {
+    .composer {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .composer > :first-child {
+        grid-column: 1 / -1;
+    }
+}

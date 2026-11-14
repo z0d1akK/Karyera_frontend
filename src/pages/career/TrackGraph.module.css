@@ -1,18 +1,80 @@
+.layout {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
 .graph {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.node {
     display: flex;
     flex-direction: column;
     gap: 12px;
 }
 
-.node {
-    padding: 16px;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    background: var(--color-background);
+.nodeFooter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 4px;
+    flex-wrap: wrap;
+}
+
+.nodeFooter a {
+    margin-top: 0;
+    align-self: center;
+}
+
+.nodeFooterActions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-left: auto;
 }
 
 .arrow {
-    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 28px;
     color: var(--color-primary-accent);
     font-size: 20px;
+    line-height: 1;
+}
+
+.transitions {
+    display: flex;
+    flex-direction: column;
+}
+
+.transition {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.transition:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+}
+
+.transitionMeta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.path {
+    font-weight: 600;
+    color: var(--color-primary-dark);
 }

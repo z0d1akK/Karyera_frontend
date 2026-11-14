@@ -105,7 +105,7 @@ export function ReportsPage() {
                     {ASSESSMENT_TYPES.has(type) ? (
                         <Select label={t('analyticsUi.assessment')} value={assessmentId} onChange={(event) => setAssessmentId(event.target.value)}>
                             <option value="">{t('common.select')}</option>
-                            {(assessments.data || []).map((item) => (
+                            {(assessments.data || []).slice(0, 10).map((item) => (
                                 <option key={item.id} value={item.id}>
                                     {formatAssessment(item)}
                                 </option>

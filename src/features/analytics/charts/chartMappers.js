@@ -1,4 +1,4 @@
-import { formatDate, formatGrainDate, formatScorePercent, scoreToPercent } from '../../../shared/lib/format.js';
+import { formatGrainDate, scoreToPercent } from '../../../shared/lib/format.js';
 import { hoursLabel } from '../../time/api/timeApi.js';
 
 const READINESS_KEYS = {
@@ -140,5 +140,3 @@ export function inPeriod(value, from, to) {
     }
     return true;
 }
-
-export { formatDate, formatGrainDate, formatScorePercent };

@@ -12,7 +12,7 @@ import { formatDate, formatDateTime } from '../../shared/lib/format.js';
 import { enumLabel } from '../../shared/lib/enums.js';
 import { useEmployeeNames } from '../../shared/lib/displayNames.js';
 import { getApiError } from '../../shared/api/errors.js';
-import { isProjectEditor } from '../../shared/lib/roles.js';
+import { isAssignedToProject, isProjectEditor } from '../../shared/lib/roles.js';
 import { useAuthStore } from '../../store/authStore.js';
 import { useToastStore } from '../../store/toastStore.js';
 import { PageHeader } from '../../shared/ui/PageHeader/PageHeader.jsx';
@@ -202,7 +202,9 @@ export function TaskDetailsPage() {
     const timeRows = taskTime.data?.content || [];
     const loggedMinutes = timeRows.reduce((sum, row) => sum + (Number(row.durationMinutes) || 0), 0);
     const myAssignment = assignmentList.find((item) => item.employeeId === employee?.id);
-    const canEdit = isProjectEditor(role, project.data, employee?.id)
+    const canEdit = isProjectEditor(role, project.data, employee?.id, {
+        assigned: isAssignedToProject(assignmentList, employee?.id),
+    })
         || assigneeList.some((item) => item.assignmentId === myAssignment?.id);
 
     const taskName = (taskId) => {

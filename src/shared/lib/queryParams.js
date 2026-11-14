@@ -12,23 +12,6 @@ export function toSearchParams(params = {}) {
     return search;
 }
 
-export function toggleSort(filters, field) {
-    if (filters.sortBy === field) {
-        return {
-            ...filters,
-            sortDirection: filters.sortDirection === 'DESC' ? 'ASC' : 'DESC',
-            page: 0,
-        };
-    }
-
-    return {
-        ...filters,
-        sortBy: field,
-        sortDirection: 'ASC',
-        page: 0,
-    };
-}
-
 export function toSpringSort(sortBy, sortDirection = 'ASC') {
     if (!sortBy) {
         return undefined;

@@ -82,14 +82,24 @@
     align-items: center;
 }
 
+.toolbar .sectionTitle {
+    margin: 0;
+}
+
 .toolbarActions {
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-end;
-    align-items: center;
+    align-items: flex-end;
     gap: 12px;
     flex: 0 0 auto;
     margin-left: auto;
+}
+
+.toolbarFilter {
+    flex: 1 1 240px;
+    max-width: 320px;
+    min-width: 200px;
 }
 
 .toolbarActions :global(.wrap),
@@ -174,7 +184,12 @@
     display: flex;
     justify-content: space-between;
     gap: 12px;
-    align-items: center;
+    align-items: flex-start;
+}
+
+.cardHead h2 {
+    min-width: 0;
+    flex: 1 1 auto;
 }
 
 .detailFields {
@@ -242,6 +257,19 @@
     gap: 8px;
     flex-wrap: wrap;
     text-align: right;
+}
+
+.cardFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: auto;
+}
+
+.cardFooter .more {
+    margin-top: 0;
+    align-self: center;
 }
 
 .more {

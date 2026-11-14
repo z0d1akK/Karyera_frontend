@@ -50,11 +50,20 @@ export function TalentReserveDetailsPage() {
         queryFn: async () => unwrapPage(await careerApi.listCandidates(id, candidateQuery)),
     });
 
+    const invalidateReserve = (data) => {
+        if (data && String(data.id) === String(id) && data.name != null) {
+            queryClient.setQueryData(queryKeys.career.reserve(id), data);
+        }
+        queryClient.invalidateQueries({ queryKey: ['career', 'reserves'] });
+        queryClient.invalidateQueries({ queryKey: ['talent-analysis', id] });
+        queryClient.invalidateQueries({ queryKey: ['talent-screening', id] });
+    };
+
     const nominate = useMutation({
         mutationFn: () => careerApi.nominate(id, nomination),
         onSuccess: () => {
             setNominationOpen(false);
-            queryClient.invalidateQueries({ queryKey: queryKeys.career.candidates(id) });
+            invalidateReserve();
         },
         onError: (error) => push({ type: 'error', message: getApiError(error).message }),
     });
@@ -70,7 +79,7 @@ export function TalentReserveDetailsPage() {
         onSuccess: (data) => {
             setScreeningError('');
             setScreeningJob(data);
-            queryClient.invalidateQueries({ queryKey: queryKeys.career.reserve(id) });
+            invalidateReserve();
             push({ type: 'success', message: t('talent.screeningStarted') });
         },
         onError: (error) => {
@@ -86,19 +95,19 @@ export function TalentReserveDetailsPage() {
     });
     const activate = useMutation({
         mutationFn: () => careerApi.activateReserve(id, { expectedVersion: reserve.data?.version }),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.career.reserve(id) }),
+        onSuccess: invalidateReserve,
         onError: (error) => push({ type: 'error', message: getApiError(error).message }),
     });
     const close = useMutation({
         mutationFn: () => careerApi.closeReserve(id, { expectedVersion: reserve.data?.version }),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.career.reserve(id) }),
+        onSuccess: invalidateReserve,
         onError: (error) => push({ type: 'error', message: getApiError(error).message }),
     });
     const save = useMutation({
         mutationFn: () => careerApi.updateReserve(id, Object.fromEntries(Object.entries(edit).filter(([, value]) => value !== ''))),
-        onSuccess: () => {
+        onSuccess: (data) => {
             setEdit(null);
-            queryClient.invalidateQueries({ queryKey: queryKeys.career.reserve(id) });
+            invalidateReserve(data);
         },
         onError: (error) => push({ type: 'error', message: getApiError(error).message }),
     });

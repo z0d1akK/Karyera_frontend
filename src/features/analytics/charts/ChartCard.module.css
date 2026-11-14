@@ -49,6 +49,7 @@
     height: 280px;
     min-height: 280px;
     flex: 0 0 auto;
+    overflow: hidden;
 }
 
 .compact {

@@ -45,13 +45,3 @@ export function getSessionFromAccessToken(token) {
 export function parseAccessToken(token) {
     return getSessionFromAccessToken(token);
 }
-
-export function isTokenExpired(token, skewMs = 10_000) {
-    const session = getSessionFromAccessToken(token);
-
-    if (!session?.expiresAt) {
-        return false;
-    }
-
-    return Date.now() >= session.expiresAt - skewMs;
-}

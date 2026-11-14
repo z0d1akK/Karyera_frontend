@@ -9,7 +9,8 @@ import { projectApi } from '../../features/projects/api/projectApi.js';
 import { queryKeys } from '../../shared/api/queryKeys.js';
 import { getApiError } from '../../shared/api/errors.js';
 import { enumLabel } from '../../shared/lib/enums.js';
-import { isProjectEditor } from '../../shared/lib/roles.js';
+import { unwrapPage } from '../../shared/lib/queryParams.js';
+import { isAssignedToProject, isProjectEditor } from '../../shared/lib/roles.js';
 import { useAuthStore } from '../../store/authStore.js';
 import { useToastStore } from '../../store/toastStore.js';
 import { PageHeader } from '../../shared/ui/PageHeader/PageHeader.jsx';
@@ -70,6 +71,10 @@ export function ProjectBoardPage() {
     const [columnForm, setColumnForm] = useState({ code: '', name: '', isInitial: false, isTerminal: false });
     const [renaming, setRenaming] = useState(null);
     const project = useQuery({ queryKey: queryKeys.projects.one(id), queryFn: () => projectApi.getById(id) });
+    const assignments = useQuery({
+        queryKey: [...queryKeys.projects.assignments(id), { page: 0, size: 100 }],
+        queryFn: async () => unwrapPage(await projectApi.listAssignments(id, { page: 0, size: 100 })),
+    });
     const board = useQuery({ queryKey: queryKeys.projects.board(id), queryFn: () => projectApi.getBoard(id), retry: false });
     const types = useQuery({ queryKey: queryKeys.catalogs.taskTypes, queryFn: () => projectApi.listTaskTypes() });
     const typeList = Array.isArray(types.data) ? types.data : types.data?.content || [];
@@ -121,7 +126,9 @@ export function ProjectBoardPage() {
     });
 
     const columns = board.data?.columns || [];
-    const canEdit = isProjectEditor(role, project.data, employeeId);
+    const canEdit = isProjectEditor(role, project.data, employeeId, {
+        assigned: isAssignedToProject(assignments.data?.content, employeeId),
+    });
 
     const onDragEnd = async (event) => {
         const taskId = event.active?.id;

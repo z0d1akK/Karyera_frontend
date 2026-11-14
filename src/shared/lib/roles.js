@@ -73,7 +73,15 @@ export function canWriteCatalogs(role) {
     return canManageAdmin(role);
 }
 
-export function isProjectEditor(role, project, employeeId) {
+function sameEmployee(value, employeeId) {
+    return Boolean(value && employeeId && String(value) === String(employeeId));
+}
+
+export function isAssignedToProject(assignments, employeeId) {
+    return (assignments || []).some((row) => sameEmployee(row.employeeId, employeeId) && !row.endDate);
+}
+
+export function isProjectEditor(role, project, employeeId, extras = {}) {
     if (role === ROLES.ADMIN) {
         return true;
     }
@@ -82,9 +90,20 @@ export function isProjectEditor(role, project, employeeId) {
         return false;
     }
 
-    return project.projectManagerId === employeeId || project.projectManager?.id === employeeId;
+    if (
+        sameEmployee(project.projectManagerId, employeeId)
+        || sameEmployee(project.projectManager?.employeeId, employeeId)
+        || sameEmployee(project.projectManager?.id, employeeId)
+        || sameEmployee(project.deliveryManagerId, employeeId)
+        || sameEmployee(project.deliveryManager?.employeeId, employeeId)
+        || sameEmployee(project.deliveryManager?.id, employeeId)
+    ) {
+        return true;
+    }
+
+    return role === ROLES.MANAGER && Boolean(extras.assigned);
 }
 
-export function canManageProjectMembers(role, project, employeeId) {
-    return role === ROLES.HR || isProjectEditor(role, project, employeeId);
+export function canManageProjectMembers(role, project, employeeId, extras = {}) {
+    return role === ROLES.HR || isProjectEditor(role, project, employeeId, extras);
 }
