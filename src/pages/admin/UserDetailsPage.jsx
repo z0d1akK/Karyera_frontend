@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { authApi } from '../../features/auth/api/authApi.js';
-import { formatDateTime } from '../../shared/lib/format.js';
+import { employeeApi } from '../../features/employees/api/employeeApi.js';
+import { formatDateTime, fullName } from '../../shared/lib/format.js';
 import { enumLabel } from '../../shared/lib/enums.js';
 import { getApiError } from '../../shared/api/errors.js';
 import { useToastStore } from '../../store/toastStore.js';
@@ -18,7 +19,7 @@ import { Button } from '../../shared/ui/Button/Button.jsx';
 import { Select } from '../../shared/ui/Input/Input.jsx';
 import { PasswordInput } from '../../shared/ui/PasswordInput/PasswordInput.jsx';
 import { Badge } from '../../shared/ui/Badge/Badge.jsx';
-import { Skeleton } from '../../shared/ui/PageState/PageState.jsx';
+import { Skeleton, PageState } from '../../shared/ui/PageState/PageState.jsx';
 import page from '../../shared/styles/page.module.css';
 
 export function UserDetailsPage() {
@@ -34,6 +35,11 @@ export function UserDetailsPage() {
     const query = useQuery({
         queryKey: ['users', id],
         queryFn: () => authApi.getUser(id),
+    });
+    const employee = useQuery({
+        queryKey: ['employees', query.data?.employeeId],
+        enabled: Boolean(query.data?.employeeId),
+        queryFn: () => employeeApi.getById(query.data.employeeId),
     });
 
     const invalidate = () => queryClient.invalidateQueries({ queryKey: ['users', id] });
@@ -66,6 +72,9 @@ export function UserDetailsPage() {
     if (query.isLoading) {
         return <Skeleton />;
     }
+    if (query.isError || !query.data) {
+        return <PageState title={t('errors.loadFailed')} onAction={query.refetch} actionLabel={t('common.retry')} />;
+    }
 
     const user = query.data;
 
@@ -78,7 +87,7 @@ export function UserDetailsPage() {
                 <div className={page.stack}>
                     <div>{t('admin.role')}: {enumLabel(t, 'role', user.role)}</div>
                     <div>{t('admin.status')}: <Badge tone={user.active ? 'success' : 'danger'}>{user.active ? t('admin.active') : t('admin.blocked')}</Badge></div>
-                    <div>{t('admin.employee')}: {user.employeeId ? <Link to={`/app/employees/${user.employeeId}`}>{user.employeeId}</Link> : '—'}</div>
+                    <div>{t('admin.employee')}: {user.employeeId ? <Link to={`/app/employees/${user.employeeId}`}>{employee.data ? fullName(employee.data) : '—'}</Link> : '—'}</div>
                     <div>{t('admin.createdAt')}: {formatDateTime(user.createdAt)}</div>
                     {canManageAdmin(role) ? (
                         <>

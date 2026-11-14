@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -17,7 +17,8 @@ import { Select, Input, Textarea } from '../../shared/ui/Input/Input.jsx';
 import { Badge } from '../../shared/ui/Badge/Badge.jsx';
 import { Skeleton, PageState } from '../../shared/ui/PageState/PageState.jsx';
 import { Pagination } from '../../shared/ui/DataTable/DataTable.jsx';
-import { CollapsePanel, ListFilters, PageSizeField, SortField } from '../../shared/ui/ListFilters/ListFilters.jsx';
+import { ListFilters, PageSizeField, SortField } from '../../shared/ui/ListFilters/ListFilters.jsx';
+import { Modal } from '../../shared/ui/Modal/Modal.jsx';
 import page from '../../shared/styles/page.module.css';
 import styles from '../../shared/styles/catalog.module.css';
 
@@ -30,6 +31,7 @@ export function CareerPage() {
     const queryClient = useQueryClient();
     const [form, setForm] = useState({ targetPositionId: '', targetGradeId: '', motivation: '', targetDate: '' });
     const [editingId, setEditingId] = useState(null);
+    const [goalOpen, setGoalOpen] = useState(false);
     const [goalQuery, setGoalQuery] = useState({ page: 0, size: 20, sortBy: 'createdAt', sortDirection: 'DESC' });
     const [trackQuery, setTrackQuery] = useState({ page: 0, size: 20, sortBy: 'name', sortDirection: 'ASC' });
 
@@ -51,6 +53,7 @@ export function CareerPage() {
     const create = useMutation({
         mutationFn: () => careerApi.createGoal(employee.id, Object.fromEntries(Object.entries(form).filter(([, value]) => value !== ''))),
         onSuccess: () => {
+            setGoalOpen(false);
             queryClient.invalidateQueries({ queryKey: queryKeys.career.goals(employee.id) });
             push({ type: 'success', message: t('career.goalCreated') });
         },
@@ -65,6 +68,7 @@ export function CareerPage() {
         mutationFn: () => careerApi.updateGoal(editingId, Object.fromEntries(Object.entries(form).filter(([, value]) => value !== ''))),
         onSuccess: () => {
             setEditingId(null);
+            setGoalOpen(false);
             setForm({ targetPositionId: '', targetGradeId: '', motivation: '', targetDate: '' });
             queryClient.invalidateQueries({ queryKey: queryKeys.career.goals(employee.id) });
         },
@@ -111,13 +115,21 @@ export function CareerPage() {
                 </div>
             </div>
 
-            <p><Link to="/app/analytics/me">{t('analyticsUi.recommendations')}</Link></p>
+            <div className={styles.toolbar}>
+                <div className={styles.chips}>
+                    <Button variant="ghost" onClick={() => navigate('/app/analytics/me')}>{t('analyticsUi.recommendations')}</Button>
+                    <Button variant="ghost" onClick={() => navigate('/app/analytics/me/career-options', { state: { from: '/app/career' } })}>{t('analyticsUi.careerOptions')}</Button>
+                </div>
+                <div className={styles.toolbarActions}>
+                    <Button onClick={() => { setEditingId(null); setForm({ targetPositionId: '', targetGradeId: '', motivation: '', targetDate: '' }); setGoalOpen(true); }}>{t('career.newGoal')}</Button>
+                </div>
+            </div>
 
             {goals.isError ? (
                 <PageState title={t('career.goalsFailed')} onAction={goals.refetch} actionLabel={t('common.retry')} />
             ) : (
                 <div className={styles.gridTwo}>
-                    <article className={styles.card}>
+                    <article className={`${styles.card} ${styles.compactCard}`}>
                         <div className={styles.cardHead}>
                             <h2>{t('career.currentGoal')}</h2>
                             {active ? <Badge tone={activeMeta.tone}>{activeMeta.label}</Badge> : null}
@@ -136,15 +148,16 @@ export function CareerPage() {
                                     <strong>{active.motivation || '—'}</strong>
                                 </div>
                                 <div className={styles.actions}>
-                                    {active.status !== 'ACTIVE' ? (
+                                    {active.status === 'PROPOSED' ? (
                                         <Button onClick={() => transition.mutate({ id: active.id, action: 'activateGoal', version: active.version })}>{t('career.activateGoal')}</Button>
                                     ) : null}
                                     {active.status === 'ACTIVE' ? (
                                         <Button onClick={() => transition.mutate({ id: active.id, action: 'achieveGoal', version: active.version })}>{t('career.achieveGoal')}</Button>
                                     ) : null}
                                     {active.status !== 'CANCELLED' && active.status !== 'ACHIEVED' ? (
-                                        <Button variant="ghost" onClick={() => transition.mutate({ id: active.id, action: 'cancelGoal', version: active.version })}>{t('career.cancelGoal')}</Button>
+                                        <Button variant="danger" onClick={() => transition.mutate({ id: active.id, action: 'cancelGoal', version: active.version })}>{t('career.cancelGoal')}</Button>
                                     ) : null}
+                                    {active.status !== 'CANCELLED' && active.status !== 'ACHIEVED' ? (
                                     <Button variant="secondary" onClick={() => {
                                         setEditingId(active.id);
                                         setForm({
@@ -153,7 +166,9 @@ export function CareerPage() {
                                             motivation: active.motivation || '',
                                             targetDate: active.targetDate || '',
                                         });
+                                        setGoalOpen(true);
                                     }}>{t('common.edit')}</Button>
+                                    ) : null}
                                 </div>
                             </>
                         ) : (
@@ -163,57 +178,24 @@ export function CareerPage() {
                             {t('career.toDevelopment')}
                         </button>
                     </article>
-                    <CollapsePanel
-                        label={editingId ? t('career.saveChanges') : t('career.newGoal')}
-                        open={Boolean(editingId) || undefined}
-                        onOpenChange={(next) => {
-                            if (!next) {
-                                setEditingId(null);
-                            }
-                        }}
-                    >
-                        <div className={page.grid}>
-                        <Select label={t('career.targetPosition')} value={form.targetPositionId} onChange={(e) => setForm({ ...form, targetPositionId: e.target.value })}>
-                            <option value="">{t('common.select')}</option>
-                            {catalogs.positions.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-                        </Select>
-                        <Select label={t('career.targetGrade')} value={form.targetGradeId} onChange={(e) => setForm({ ...form, targetGradeId: e.target.value })}>
-                            <option value="">{t('common.select')}</option>
-                            {catalogs.grades.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-                        </Select>
-                        <Input type="date" label={t('career.deadline')} value={form.targetDate} onChange={(e) => setForm({ ...form, targetDate: e.target.value })} />
-                        <div className={page.spanAll}>
-                            <Textarea label={t('career.motivation')} value={form.motivation} onChange={(e) => setForm({ ...form, motivation: e.target.value })} />
+                    <article className={`${styles.card} ${styles.compactCard}`}>
+                        <div className={styles.cardHead}>
+                            <h2>{t('career.availableTracks')}</h2>
                         </div>
-                        </div>
-                        <div className={styles.actions}>
-                            {editingId ? (
-                                <Button onClick={() => updateGoal.mutate()} disabled={!form.targetPositionId}>{t('career.saveChanges')}</Button>
-                            ) : (
-                                <Button onClick={() => create.mutate()} disabled={!form.targetPositionId}>{t('career.saveGoal')}</Button>
-                            )}
-                            {editingId ? <Button variant="ghost" onClick={() => setEditingId(null)}>{t('common.cancel')}</Button> : null}
-                        </div>
-                    </CollapsePanel>
+                        {(Array.isArray(available.data) ? available.data : available.data?.content || []).map((track) => (
+                            <div key={track.id || track.trackId} className={styles.row}>
+                                <span>{track.name || track.trackName || track.code}</span>
+                                <button type="button" className={styles.more} onClick={() => navigate(`/app/career/tracks/${track.id || track.trackId}`)}>
+                                    {t('common.more')}
+                                </button>
+                            </div>
+                        ))}
+                        {!available.isLoading && !(Array.isArray(available.data) ? available.data : available.data?.content || []).length ? (
+                            <p className={styles.empty}>{t('career.noAvailableTracks')}</p>
+                        ) : null}
+                    </article>
                 </div>
             )}
-
-            <div className={`${styles.toolbar} ${styles.block}`}>
-                <h2 className={styles.sectionTitle}>{t('career.availableTracks')}</h2>
-            </div>
-            <div className={styles.grid}>
-                {(Array.isArray(available.data) ? available.data : available.data?.content || []).map((track) => (
-                    <article key={track.id || track.trackId} className={styles.card}>
-                        <h2>{track.name || track.trackName || track.code}</h2>
-                        <button type="button" className={styles.more} onClick={() => navigate(`/app/career/tracks/${track.id || track.trackId}`)}>
-                            {t('common.more')}
-                        </button>
-                    </article>
-                ))}
-            </div>
-            {!available.isLoading && !(Array.isArray(available.data) ? available.data : available.data?.content || []).length ? (
-                <p className={styles.footer}>{t('career.noAvailableTracks')}</p>
-            ) : null}
 
             <div className={`${styles.toolbar} ${styles.block}`}>
                 <h2 className={styles.sectionTitle}>{t('career.tracksTitle')}</h2>
@@ -234,9 +216,9 @@ export function CareerPage() {
                 </div>
             </div>
             {tracks.isLoading ? <Skeleton rows={4} /> : (
-                <div className={styles.grid}>
+                <div className={`${styles.grid} ${styles.compactGrid}`}>
                     {trackList.map((track) => (
-                        <article key={track.id} className={styles.card}>
+                        <article key={track.id} className={`${styles.card} ${styles.compactCard}`}>
                             <div className={styles.cardHead}>
                                 <h2>{track.name}</h2>
                                 <Badge tone={statusTone('trackStatus', track.status)}>
@@ -265,6 +247,32 @@ export function CareerPage() {
                 totalPages={tracks.data?.totalPages || 0}
                 onChange={(pageNumber) => setTrackQuery({ ...trackQuery, page: pageNumber })}
             />
+            <Modal open={goalOpen} title={editingId ? t('career.saveChanges') : t('career.newGoal')} onClose={() => { setGoalOpen(false); setEditingId(null); }}>
+                <div className={page.stack}>
+                    <div className={page.grid}>
+                        <Select label={t('career.targetPosition')} value={form.targetPositionId} onChange={(e) => setForm({ ...form, targetPositionId: e.target.value })}>
+                            <option value="">{t('common.select')}</option>
+                            {catalogs.positions.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+                        </Select>
+                        <Select label={t('career.targetGrade')} value={form.targetGradeId} onChange={(e) => setForm({ ...form, targetGradeId: e.target.value })}>
+                            <option value="">{t('common.select')}</option>
+                            {catalogs.grades.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+                        </Select>
+                        <Input type="date" label={t('career.deadline')} value={form.targetDate} onChange={(e) => setForm({ ...form, targetDate: e.target.value })} />
+                        <div className={page.spanAll}>
+                            <Textarea label={t('career.motivation')} value={form.motivation} onChange={(e) => setForm({ ...form, motivation: e.target.value })} />
+                        </div>
+                    </div>
+                    <div className={page.row}>
+                        {editingId ? (
+                            <Button onClick={() => updateGoal.mutate()} disabled={!form.targetPositionId}>{t('career.saveChanges')}</Button>
+                        ) : (
+                            <Button onClick={() => create.mutate()} disabled={!form.targetPositionId}>{t('career.saveGoal')}</Button>
+                        )}
+                        <Button variant="ghost" onClick={() => { setGoalOpen(false); setEditingId(null); }}>{t('common.cancel')}</Button>
+                    </div>
+                </div>
+            </Modal>
         </section>
     );
 }

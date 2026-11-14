@@ -9,7 +9,7 @@
 }
 
 .dialog {
-    width: min(640px, calc(100vw - 48px));
+    width: min(720px, calc(100vw - 48px));
     max-height: calc(100vh - 48px);
     overflow: auto;
     padding: 24px;

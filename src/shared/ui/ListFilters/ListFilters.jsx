@@ -27,7 +27,7 @@ export function CollapsePanel({ label, children, open, onOpenChange, variant = '
     return (
         <div className={className}>
             <div className={styles.toggleRow}>
-                <Button variant="secondary" onClick={toggle}>
+                <Button variant="ghost" onClick={toggle}>
                     {label}
                 </Button>
             </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -9,6 +9,8 @@ import { EmployeePicker } from '../../features/employees/components/EmployeePick
 import { queryKeys } from '../../shared/api/queryKeys.js';
 import { unwrapPage } from '../../shared/lib/queryParams.js';
 import { enumLabel } from '../../shared/lib/enums.js';
+import { useEmployeeNames } from '../../shared/lib/displayNames.js';
+import { NamedLink } from '../../shared/ui/NamedLink/NamedLink.jsx';
 import { getApiError } from '../../shared/api/errors.js';
 import { canManageHr } from '../../shared/lib/roles.js';
 import { useAuthStore } from '../../store/authStore.js';
@@ -23,7 +25,7 @@ import { Badge } from '../../shared/ui/Badge/Badge.jsx';
 import { Skeleton } from '../../shared/ui/PageState/PageState.jsx';
 import { Alert } from '../../shared/ui/Alert/Alert.jsx';
 import { Input } from '../../shared/ui/Input/Input.jsx';
-import { CollapsePanel } from '../../shared/ui/ListFilters/ListFilters.jsx';
+import { Modal } from '../../shared/ui/Modal/Modal.jsx';
 import page from '../../shared/styles/page.module.css';
 
 export function TalentReserveDetailsPage() {
@@ -35,8 +37,11 @@ export function TalentReserveDetailsPage() {
     const queryClient = useQueryClient();
     const [nomination, setNomination] = useState({ employeeId: '', comment: '' });
     const [edit, setEdit] = useState(null);
+    const [nominationOpen, setNominationOpen] = useState(false);
     const [screeningError, setScreeningError] = useState('');
     const [screeningJob, setScreeningJob] = useState(null);
+    const employeeName = useEmployeeNames();
+    const catalogLabel = (items, itemId) => items.find((item) => item.id === itemId)?.name || '—';
 
     const reserve = useQuery({ queryKey: queryKeys.career.reserve(id), queryFn: () => careerApi.getReserve(id) });
     const [candidateQuery, setCandidateQuery] = useState({ page: 0, size: 20, sortBy: 'nominatedAt', sortDirection: 'DESC' });
@@ -47,14 +52,25 @@ export function TalentReserveDetailsPage() {
 
     const nominate = useMutation({
         mutationFn: () => careerApi.nominate(id, nomination),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.career.candidates(id) }),
+        onSuccess: () => {
+            setNominationOpen(false);
+            queryClient.invalidateQueries({ queryKey: queryKeys.career.candidates(id) });
+        },
         onError: (error) => push({ type: 'error', message: getApiError(error).message }),
+    });
+    const screeningJobId = screeningJob?.jobId || reserve.data?.lastScreeningJobId;
+    const screeningResults = useQuery({
+        queryKey: ['talent-screening', id, screeningJobId],
+        enabled: Boolean(screeningJobId),
+        refetchInterval: (query) => (query.state.data?.status === 'COMPLETED' || query.state.data?.status === 'FAILED' ? false : 2000),
+        queryFn: () => careerApi.getScreening(id, screeningJobId),
     });
     const screening = useMutation({
         mutationFn: () => careerApi.startScreening(id, {}),
         onSuccess: (data) => {
             setScreeningError('');
             setScreeningJob(data);
+            queryClient.invalidateQueries({ queryKey: queryKeys.career.reserve(id) });
             push({ type: 'success', message: t('talent.screeningStarted') });
         },
         onError: (error) => {
@@ -108,29 +124,69 @@ export function TalentReserveDetailsPage() {
                         <p>{t('talent.active')}: {analysis.data.activeCandidateCount ?? 0}</p>
                         <p>{t('talent.approved')}: {analysis.data.approvedCandidateCount ?? 0}</p>
                         <p>{t('talent.byStatus')}: {Object.entries(analysis.data.byStatus || {}).map(([key, value]) => `${enumLabel(t, 'candidateStatus', key)} ${value}`).join(', ') || t('common.dash')}</p>
-                        <p>{t('talent.byPosition')}: {Object.entries(analysis.data.byPosition || {}).map(([key, value]) => `${key} ${value}`).join(', ') || t('common.dash')}</p>
-                        <p>{t('talent.byGrade')}: {Object.entries(analysis.data.byGrade || {}).map(([key, value]) => `${key} ${value}`).join(', ') || t('common.dash')}</p>
+                        <p>{t('talent.byPosition')}: {Object.entries(analysis.data.byPosition || {}).map(([key, value]) => `${catalogLabel(catalogs.positions, key)} ${value}`).join(', ') || t('common.dash')}</p>
+                        <p>{t('talent.byGrade')}: {Object.entries(analysis.data.byGrade || {}).map(([key, value]) => `${catalogLabel(catalogs.grades, key)} ${value}`).join(', ') || t('common.dash')}</p>
                     </div>
                 ) : null}
-                {screeningJob ? <p>{t('talent.screeningResult')}: {screeningJob.status || screeningJob.jobId || screeningJob.id}</p> : null}
+                {screeningJob || screeningResults.data ? (
+                    <p>{t('talent.screeningResult')}: {enumLabel(t, 'screeningStatus', screeningResults.data?.status || screeningJob?.status || 'PENDING')}</p>
+                ) : null}
+                {screeningResults.data?.explanationText ? <p>{screeningResults.data.explanationText}</p> : null}
+                {screeningResults.data?.results?.length ? (
+                    <DataTable
+                        rows={screeningResults.data.results}
+                        columns={[
+                            { key: 'rank', header: t('analyticsUi.rank'), render: (row) => row.rank ?? '—' },
+                            { key: 'employee', header: t('talent.candidate'), render: (row) => employeeName(row.employeeId) },
+                            { key: 'score', header: t('analyticsUi.score'), render: (row) => row.score ?? '—' },
+                            { key: 'eligibility', header: t('talent.status'), render: (row) => enumLabel(t, 'eligibilityStatus', row.eligibilityStatus) },
+                            { key: 'reason', header: t('common.reason'), render: (row) => row.exclusionReason || '—' },
+                        ]}
+                    />
+                ) : null}
                 {canManageHr(role) ? (
                     <div className={page.row}>
-                        <Button onClick={() => activate.mutate()}>{t('talent.activate')}</Button>
-                        <Button variant="ghost" onClick={() => close.mutate()}>{t('talent.close')}</Button>
-                        <Button variant="coral" onClick={() => screening.mutate()}>{t('talent.screening')}</Button>
+                        {data.status === 'DRAFT' ? <Button onClick={() => activate.mutate()}>{t('talent.activate')}</Button> : null}
+                        {data.status === 'ACTIVE' ? <Button variant="ghost" onClick={() => close.mutate()}>{t('talent.close')}</Button> : null}
+                        {data.status === 'ACTIVE' ? <Button onClick={() => screening.mutate()}>{t('talent.screening')}</Button> : null}
                         <Button variant="secondary" onClick={() => analysis.refetch()}>{t('talent.analysis')}</Button>
-                        <Button variant="secondary" onClick={() => setEdit({
-                            name: data.name,
-                            description: data.description || '',
-                            targetPositionId: data.targetPositionId || '',
-                            targetGradeId: data.targetGradeId || '',
-                            effectiveFrom: data.effectiveFrom || '',
-                            effectiveTo: data.effectiveTo || '',
-                        })}>{t('talent.edit')}</Button>
+                        {data.status !== 'CLOSED' && data.status !== 'ARCHIVED' ? (
+                            <Button variant="secondary" onClick={() => setEdit({
+                                name: data.name,
+                                description: data.description || '',
+                                targetPositionId: data.targetPositionId || '',
+                                targetGradeId: data.targetGradeId || '',
+                                effectiveFrom: data.effectiveFrom || '',
+                                effectiveTo: data.effectiveTo || '',
+                            })}>{t('talent.edit')}</Button>
+                        ) : null}
+                        {data.status === 'ACTIVE' ? <Button onClick={() => setNominationOpen(true)}>{t('talent.nominate')}</Button> : null}
                     </div>
                 ) : null}
+                <DataTable
+                    rows={candidates.data?.content || []}
+                    columns={[
+                        {
+                            key: 'employeeId',
+                            header: t('talent.candidate'),
+                            render: (row) => (
+                                <NamedLink to={row.employeeId ? `/app/employees/${row.employeeId}` : null} name={row.employeeFullName || row.employeeName || employeeName(row.employeeId)} />
+                            ),
+                        },
+                        { key: 'status', header: t('talent.status'), render: (row) => enumLabel(t, 'candidateStatus', row.status) },
+                    ]}
+                />
+                <Pagination
+                    page={candidates.data?.number || 0}
+                    totalPages={candidates.data?.totalPages || 0}
+                    size={candidateQuery.size}
+                    onChange={(pageNumber) => setCandidateQuery({ ...candidateQuery, page: pageNumber })}
+                    onSizeChange={(size) => setCandidateQuery({ ...candidateQuery, size, page: 0 })}
+                />
+            </Card>
+            <Modal open={Boolean(edit)} title={t('talent.edit')} onClose={() => setEdit(null)}>
                 {edit ? (
-                    <CollapsePanel label={t('talent.edit')} open onOpenChange={(next) => { if (!next) setEdit(null); }}>
+                    <div className={page.stack}>
                         <div className={page.grid}>
                             <Input label={t('talent.name')} value={edit.name} onChange={(e) => setEdit({ ...edit, name: e.target.value })} />
                             <Select label={t('talent.position')} value={edit.targetPositionId || ''} onChange={(e) => setEdit({ ...edit, targetPositionId: e.target.value })}>
@@ -151,40 +207,19 @@ export function TalentReserveDetailsPage() {
                             <Button onClick={() => save.mutate()}>{t('common.save')}</Button>
                             <Button variant="ghost" onClick={() => setEdit(null)}>{t('common.cancel')}</Button>
                         </div>
-                    </CollapsePanel>
+                    </div>
                 ) : null}
-                <DataTable
-                    rows={candidates.data?.content || []}
-                    columns={[
-                        {
-                            key: 'employeeId',
-                            header: t('talent.candidate'),
-                            render: (row) => (
-                                <Link to={`/app/talent-reserve/candidates/${row.id}`}>{row.employeeFullName || row.employeeName || row.employeeId}</Link>
-                            ),
-                        },
-                        { key: 'status', header: t('talent.status'), render: (row) => enumLabel(t, 'candidateStatus', row.status) },
-                    ]}
-                />
-                {canManageHr(role) ? (
-                    <CollapsePanel label={t('talent.nominate')}>
-                        <div className={page.grid}>
-                        <EmployeePicker label={t('talent.employee')} value={nomination.employeeId} onChange={(e) => setNomination({ ...nomination, employeeId: e.target.value })} />
-                        <div className={page.spanAll}>
-                        <Textarea label={t('talent.comment')} value={nomination.comment} onChange={(e) => setNomination({ ...nomination, comment: e.target.value })} />
-                        </div>
-                        <Button onClick={() => nominate.mutate()}>{t('talent.nominate')}</Button>
-                        </div>
-                    </CollapsePanel>
-                ) : null}
-                <Pagination
-                    page={candidates.data?.number || 0}
-                    totalPages={candidates.data?.totalPages || 0}
-                    size={candidateQuery.size}
-                    onChange={(pageNumber) => setCandidateQuery({ ...candidateQuery, page: pageNumber })}
-                    onSizeChange={(size) => setCandidateQuery({ ...candidateQuery, size, page: 0 })}
-                />
-            </Card>
+            </Modal>
+            <Modal open={nominationOpen} title={t('talent.nominate')} onClose={() => setNominationOpen(false)}>
+                <div className={page.stack}>
+                    <EmployeePicker label={t('talent.employee')} value={nomination.employeeId} onChange={(e) => setNomination({ ...nomination, employeeId: e.target.value })} />
+                    <Textarea label={t('talent.comment')} value={nomination.comment} onChange={(e) => setNomination({ ...nomination, comment: e.target.value })} />
+                    <div className={page.row}>
+                        <Button onClick={() => nominate.mutate()} disabled={!nomination.employeeId}>{t('talent.nominate')}</Button>
+                        <Button variant="ghost" onClick={() => setNominationOpen(false)}>{t('common.cancel')}</Button>
+                    </div>
+                </div>
+            </Modal>
         </section>
     );
 }

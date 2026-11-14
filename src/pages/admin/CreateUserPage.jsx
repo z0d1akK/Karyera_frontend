@@ -64,16 +64,18 @@ export function CreateUserPage() {
         mutationFn: () => authApi.createUser(account),
         onSuccess: (data) => {
             push({ type: 'success', message: t('admin.accountCreated') });
-            navigate(`/app/admin/users/${data.id}`);
+            navigate(canManageAdmin(sessionRole)
+                ? `/app/admin/users/${data.id}`
+                : `/app/employees/${account.employeeId}`);
         },
         onError: (error) => push({ type: 'error', message: getApiError(error).message }),
     });
 
     return (
         <section>
-            <BackLink to="/app/admin/users">{t('common.back')}</BackLink>
+            <BackLink to={canManageAdmin(sessionRole) ? '/app/admin/users' : '/app/employees'}>{t('common.back')}</BackLink>
             <PageHeader title={t('admin.createTitle')} description={t('admin.createHint')} />
-            <AdminNav />
+            {canManageAdmin(sessionRole) ? <AdminNav /> : null}
             <Tabs
                 items={[
                     { id: 'employee', label: t('admin.tabEmployee') },

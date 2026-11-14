@@ -9,10 +9,12 @@
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-bold);
     white-space: nowrap;
+    transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast), opacity var(--transition-fast);
 }
 
 .button:disabled {
-    opacity: 0.6;
+    opacity: 0.45;
+    cursor: not-allowed;
 }
 
 .primary {
@@ -26,7 +28,7 @@
 
 .secondary {
     border: 1px solid var(--color-primary-dark);
-    background: transparent;
+    background: var(--color-surface);
     color: var(--color-primary-dark);
 }
 
@@ -36,20 +38,30 @@
 }
 
 .ghost {
-    background: transparent;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
     color: var(--color-primary-dark);
 }
 
 .ghost:hover:not(:disabled) {
+    border-color: var(--color-primary-dark);
     background-color: rgba(44, 32, 19, 0.06);
 }
 
 .danger {
-    background-color: var(--color-secondary-accent);
+    background-color: var(--color-error);
     color: var(--color-surface);
+}
+
+.danger:hover:not(:disabled) {
+    background-color: #c75c4e;
 }
 
 .coral {
     background-color: var(--color-secondary-accent);
     color: var(--color-surface);
+}
+
+.coral:hover:not(:disabled) {
+    background-color: #d46b5c;
 }

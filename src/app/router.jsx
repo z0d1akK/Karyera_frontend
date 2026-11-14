@@ -40,6 +40,8 @@ import { CareerAnalyticsPage } from '../pages/analytics/CareerAnalyticsPage.jsx'
 import { AssessmentPage } from '../pages/analytics/AssessmentPage.jsx';
 import { RecommendationsPage } from '../pages/analytics/RecommendationsPage.jsx';
 import { MyStatsPage } from '../pages/analytics/MyStatsPage.jsx';
+import { CareerOptionsPage } from '../pages/analytics/CareerOptionsPage.jsx';
+import { ReportsPage } from '../pages/analytics/ReportsPage.jsx';
 
 export const router = createBrowserRouter([
     {
@@ -65,6 +67,12 @@ export const router = createBrowserRouter([
                     { path: '/app', element: <Navigate to="/app/profile" replace /> },
                     { path: '/app/profile', element: <ProfilePage /> },
                     { path: '/app/employees', element: <EmployeesPage /> },
+                    {
+                        element: <RoleRoute roles={[ROLES.HR, ROLES.ADMIN]} />,
+                        children: [
+                            { path: '/app/employees/new', element: <CreateUserPage /> },
+                        ],
+                    },
                     { path: '/app/employees/:id', element: <EmployeeDetailsPage /> },
                     {
                         element: <RoleRoute roles={[ROLES.EMPLOYEE, ROLES.MANAGER, ROLES.HR, ROLES.ADMIN]} />,
@@ -110,6 +118,14 @@ export const router = createBrowserRouter([
                         ],
                     },
                     { path: '/app/analytics/me', element: <MyStatsPage /> },
+                    { path: '/app/analytics/me/career-options', element: <CareerOptionsPage /> },
+                    { path: '/app/analytics/employees/:id/career-options', element: <CareerOptionsPage /> },
+                    {
+                        element: <RoleRoute roles={[ROLES.EMPLOYEE, ROLES.MANAGER, ROLES.HR, ROLES.ADMIN]} />,
+                        children: [
+                            { path: '/app/analytics/reports', element: <ReportsPage /> },
+                        ],
+                    },
                     {
                         element: <RoleRoute roles={[ROLES.MANAGER, ROLES.HR, ROLES.ADMIN]} />,
                         children: [
@@ -120,7 +136,7 @@ export const router = createBrowserRouter([
                         ],
                     },
                     {
-                        element: <RoleRoute roles={[ROLES.HR, ROLES.ADMIN]} />,
+                        element: <RoleRoute roles={[ROLES.ADMIN]} />,
                         children: [
                             { path: '/app/admin/users', element: <UsersPage /> },
                             { path: '/app/admin/users/new', element: <CreateUserPage /> },

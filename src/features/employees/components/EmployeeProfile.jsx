@@ -20,7 +20,8 @@ import { Badge } from '../../../shared/ui/Badge/Badge.jsx';
 import { Button } from '../../../shared/ui/Button/Button.jsx';
 import { Input, Select, Textarea } from '../../../shared/ui/Input/Input.jsx';
 import { PageState, Skeleton } from '../../../shared/ui/PageState/PageState.jsx';
-import { CollapsePanel } from '../../../shared/ui/ListFilters/ListFilters.jsx';
+import { Modal } from '../../../shared/ui/Modal/Modal.jsx';
+import { BackLink } from '../../../shared/ui/BackLink/BackLink.jsx';
 import { EmployeeForm } from './EmployeeForm.jsx';
 import styles from './EmployeeProfile.module.css';
 
@@ -51,6 +52,7 @@ export function EmployeeProfile({ employeeId, isSelf = false }) {
     const [tab, setTab] = useState('profile');
     const [editing, setEditing] = useState(false);
     const [status, setStatus] = useState('');
+    const [addOpen, setAddOpen] = useState(false);
 
     const query = useQuery({
         queryKey: queryKeys.employees.one(employeeId),
@@ -142,6 +144,13 @@ export function EmployeeProfile({ employeeId, isSelf = false }) {
     const employee = query.data;
     const canEditPersonal = isSelf || canManageHr(role);
     const canEditOrg = canManageHr(role);
+    const addLabels = {
+        skills: t('profile.addSkill'),
+        experience: t('profile.addExperience'),
+        education: t('profile.addEducation'),
+        responsibilities: t('profile.addResponsibility'),
+    };
+    const canAddOnTab = (tab === 'responsibilities' ? canEditOrg : canEditPersonal) && Boolean(addLabels[tab]);
 
     const tabs = [
         { id: 'profile', label: t('profile.tabProfile') },
@@ -155,6 +164,7 @@ export function EmployeeProfile({ employeeId, isSelf = false }) {
 
     return (
         <section>
+            {!isSelf ? <BackLink to="/app/employees">{t('common.back')}</BackLink> : null}
             <div className={styles.header}>
                 {employee.profilePhoto?.url ? (
                     <img src={employee.profilePhoto.url} alt="" className={styles.photo} />
@@ -194,10 +204,51 @@ export function EmployeeProfile({ employeeId, isSelf = false }) {
                     ) : null}
                 </div>
             </div>
-            <Tabs items={tabs} value={tab} onChange={setTab} />
+            <Tabs
+                items={tabs}
+                value={tab}
+                onChange={(next) => {
+                    setTab(next);
+                    setAddOpen(false);
+                }}
+                actions={canAddOnTab ? (
+                    <Button onClick={() => setAddOpen(true)}>{addLabels[tab]}</Button>
+                ) : null}
+            />
             {tab === 'profile' && (
-                editing && canEditPersonal ? (
-                    <div className={styles.panel}>
+                <article className={styles.panel}>
+                    <div className={styles.fields}>
+                        <Field label={t('profile.firstName')} value={employee.firstName} />
+                        <Field label={t('profile.lastName')} value={employee.lastName} />
+                        <Field label={t('profile.middleName')} value={employee.middleName} />
+                        <Field label={t('profile.employmentStatus')} value={enumLabel(t, 'employmentStatus', employee.employmentStatus)} />
+                        <Field label={t('profile.position')} value={catalogName(employee.position)} />
+                        <Field label={t('profile.specialization')} value={employee.specialization?.name} />
+                        <Field label={t('profile.hireDate')} value={employee.hireDate ? formatMonthYear(employee.hireDate) : null} />
+                        <Field label={t('profile.birthDate')} value={employee.birthDate ? formatDate(employee.birthDate) : null} />
+                        <Field label={t('profile.department')} value={catalogName(employee.department)} />
+                        <Field label={t('profile.maxSubordinates')} value={employee.maxSubordinates} />
+                    </div>
+                    <div className={styles.actions}>
+                        {canEditPersonal ? <Button onClick={() => setEditing(true)}>{t('common.edit')}</Button> : null}
+                        {canEditOrg ? (
+                            <>
+                                <div className={styles.statusField}>
+                                    <Select value={status || employee.employmentStatus} onChange={(event) => setStatus(event.target.value)}>
+                                        {EMPLOYMENT.map((item) => <option key={item} value={item}>{enumLabel(t, 'employmentStatus', item)}</option>)}
+                                    </Select>
+                                </div>
+                                <Button
+                                    variant="secondary"
+                                    disabled={!status || status === employee.employmentStatus}
+                                    onClick={() => changeStatus.mutate()}
+                                >
+                                    {t('profile.changeStatus')}
+                                </Button>
+                            </>
+                        ) : null}
+                    </div>
+                    <Modal open={editing && canEditPersonal} title={t('common.edit')} onClose={() => setEditing(false)}>
                         <EmployeeForm
                             key={employee.updatedAt || employee.id}
                             catalogs={catalogs}
@@ -221,38 +272,12 @@ export function EmployeeProfile({ employeeId, isSelf = false }) {
                             }}
                             onSubmit={(values) => update.mutate(values)}
                         />
-                    </div>
-                ) : (
-                    <article className={styles.panel}>
-                        <div className={styles.fields}>
-                            <Field label={t('profile.firstName')} value={employee.firstName} />
-                            <Field label={t('profile.lastName')} value={employee.lastName} />
-                            <Field label={t('profile.middleName')} value={employee.middleName} />
-                            <Field label={t('profile.employmentStatus')} value={enumLabel(t, 'employmentStatus', employee.employmentStatus)} />
-                            <Field label={t('profile.position')} value={catalogName(employee.position)} />
-                            <Field label={t('profile.specialization')} value={employee.specialization?.name} />
-                            <Field label={t('profile.hireDate')} value={employee.hireDate ? formatMonthYear(employee.hireDate) : null} />
-                            <Field label={t('profile.birthDate')} value={employee.birthDate ? formatDate(employee.birthDate) : null} />
-                            <Field label={t('profile.department')} value={catalogName(employee.department)} />
-                            <Field label={t('profile.maxSubordinates')} value={employee.maxSubordinates} />
-                        </div>
-                        <div className={styles.actions}>
-                            {canEditPersonal ? <Button onClick={() => setEditing(true)}>{t('common.edit')}</Button> : null}
-                            {canEditOrg ? (
-                                <>
-                                    <Select value={status || employee.employmentStatus} onChange={(event) => setStatus(event.target.value)}>
-                                        {EMPLOYMENT.map((item) => <option key={item} value={item}>{enumLabel(t, 'employmentStatus', item)}</option>)}
-                                    </Select>
-                                    <Button variant="secondary" onClick={() => changeStatus.mutate()}>{t('profile.changeStatus')}</Button>
-                                </>
-                            ) : null}
-                        </div>
-                    </article>
-                )
+                    </Modal>
+                </article>
             )}
-            {tab === 'skills' && <SkillsTab employee={employee} canEdit={canEditPersonal} skills={catalogs.skills} onSaved={onSaved} onError={onError} />}
-            {tab === 'experience' && <ExperienceTab employee={employee} canEdit={canEditPersonal} onSaved={onSaved} onError={onError} />}
-            {tab === 'education' && <EducationTab employee={employee} canEdit={canEditPersonal} onSaved={onSaved} onError={onError} />}
+            {tab === 'skills' && <SkillsTab employee={employee} canEdit={canEditPersonal} skills={catalogs.skills} addOpen={addOpen} onAddOpenChange={setAddOpen} onSaved={onSaved} onError={onError} />}
+            {tab === 'experience' && <ExperienceTab employee={employee} canEdit={canEditPersonal} addOpen={addOpen} onAddOpenChange={setAddOpen} onSaved={onSaved} onError={onError} />}
+            {tab === 'education' && <EducationTab employee={employee} canEdit={canEditPersonal} addOpen={addOpen} onAddOpenChange={setAddOpen} onSaved={onSaved} onError={onError} />}
             {tab === 'military' && <MilitaryTab employee={employee} canEdit={canEditPersonal} onSaved={onSaved} onError={onError} />}
             {tab === 'responsibilities' && (
                 <ResponsibilitiesTab
@@ -260,6 +285,8 @@ export function EmployeeProfile({ employeeId, isSelf = false }) {
                     canEdit={canEditOrg}
                     types={types.data || []}
                     people={people.data?.content || []}
+                    addOpen={addOpen}
+                    onAddOpenChange={setAddOpen}
                     onSaved={onSaved}
                     onError={onError}
                 />
@@ -284,7 +311,7 @@ export function EmployeeProfile({ employeeId, isSelf = false }) {
     );
 }
 
-function SkillsTab({ employee, canEdit, skills, onSaved, onError }) {
+function SkillsTab({ employee, canEdit, skills, addOpen, onAddOpenChange, onSaved, onError }) {
     const { t } = useTranslation();
     const [form, setForm] = useState({ skillId: '', level: 3, yearsOfExperience: '' });
     const [edit, setEdit] = useState(null);
@@ -294,7 +321,11 @@ function SkillsTab({ employee, canEdit, skills, onSaved, onError }) {
             level: Number(form.level),
             yearsOfExperience: form.yearsOfExperience === '' ? undefined : Number(form.yearsOfExperience),
         })),
-        onSuccess: onSaved,
+        onSuccess: () => {
+            onAddOpenChange(false);
+            setForm({ skillId: '', level: 3, yearsOfExperience: '' });
+            onSaved();
+        },
         onError,
     });
     const update = useMutation({
@@ -318,50 +349,52 @@ function SkillsTab({ employee, canEdit, skills, onSaved, onError }) {
         <div className={styles.stack}>
             {(employee.skills || []).map((item) => (
                 <article key={item.id} className={styles.panel}>
-                    {edit?.id === item.id ? (
-                        <div className={styles.formRow}>
-                            <Input type="number" min="1" max="5" value={edit.level} onChange={(event) => setEdit({ ...edit, level: event.target.value })} />
-                            <Input type="number" value={edit.yearsOfExperience} onChange={(event) => setEdit({ ...edit, yearsOfExperience: event.target.value })} />
-                            <Button onClick={() => update.mutate()}>{t('common.save')}</Button>
-                            <Button variant="ghost" onClick={() => setEdit(null)}>{t('common.cancel')}</Button>
+                    <div className={styles.fields}>
+                        <Field label={t('profile.skill')} value={item.skill?.name} />
+                        <Field label={t('profile.skillLevel')} value={item.level} />
+                        <Field label={t('profile.yearsOfExperience')} value={item.yearsOfExperience} />
+                        <Field label={t('profile.skillCategory')} value={item.skill?.category} />
+                    </div>
+                    {canEdit ? (
+                        <div className={styles.actions}>
+                            <Button variant="secondary" onClick={() => setEdit({ id: item.id, level: item.level, yearsOfExperience: item.yearsOfExperience ?? '' })}>{t('common.edit')}</Button>
+                            <Button variant="danger" onClick={() => remove.mutate(item.id)}>{t('common.delete')}</Button>
                         </div>
-                    ) : (
-                        <>
-                            <div className={styles.fields}>
-                                <Field label={t('profile.skill')} value={item.skill?.name} />
-                                <Field label={t('profile.skillLevel')} value={item.level} />
-                                <Field label={t('profile.yearsOfExperience')} value={item.yearsOfExperience} />
-                                <Field label={t('profile.skillCategory')} value={item.skill?.category} />
-                            </div>
-                            {canEdit ? (
-                                <div className={styles.actions}>
-                                    <Button variant="secondary" onClick={() => setEdit({ id: item.id, level: item.level, yearsOfExperience: item.yearsOfExperience ?? '' })}>{t('common.edit')}</Button>
-                                    <Button variant="danger" onClick={() => remove.mutate(item.id)}>{t('common.delete')}</Button>
-                                </div>
-                            ) : null}
-                        </>
-                    )}
+                    ) : null}
                 </article>
             ))}
             {!employee.skills?.length ? <p className={styles.empty}>{t('profile.noSkills')}</p> : null}
-            {canEdit ? (
-                <CollapsePanel label={t('common.add')}>
-                    <div className={styles.formRow}>
-                        <Select value={form.skillId} onChange={(event) => setForm({ ...form, skillId: event.target.value })}>
-                            <option value="">{t('profile.skill')}</option>
-                            {skills.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-                        </Select>
-                        <Input type="number" min="1" max="5" value={form.level} onChange={(event) => setForm({ ...form, level: event.target.value })} />
-                        <Input type="number" placeholder={t('profile.yearsOfExperience')} value={form.yearsOfExperience} onChange={(event) => setForm({ ...form, yearsOfExperience: event.target.value })} />
+            <Modal open={addOpen} title={t('profile.addSkill')} onClose={() => onAddOpenChange(false)}>
+                <div className={styles.stack}>
+                    <Select label={t('profile.skill')} value={form.skillId} onChange={(event) => setForm({ ...form, skillId: event.target.value })}>
+                        <option value="">{t('common.select')}</option>
+                        {skills.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+                    </Select>
+                    <Input type="number" min="1" max="5" label={t('profile.skillLevel')} value={form.level} onChange={(event) => setForm({ ...form, level: event.target.value })} />
+                    <Input type="number" label={t('profile.yearsOfExperience')} value={form.yearsOfExperience} onChange={(event) => setForm({ ...form, yearsOfExperience: event.target.value })} />
+                    <div className={styles.actions}>
                         <Button onClick={() => add.mutate()} disabled={!form.skillId}>{t('common.add')}</Button>
+                        <Button variant="ghost" onClick={() => onAddOpenChange(false)}>{t('common.cancel')}</Button>
                     </div>
-                </CollapsePanel>
-            ) : null}
+                </div>
+            </Modal>
+            <Modal open={Boolean(edit)} title={t('common.edit')} onClose={() => setEdit(null)}>
+                {edit ? (
+                    <div className={styles.stack}>
+                        <Input type="number" min="1" max="5" label={t('profile.skillLevel')} value={edit.level} onChange={(event) => setEdit({ ...edit, level: event.target.value })} />
+                        <Input type="number" label={t('profile.yearsOfExperience')} value={edit.yearsOfExperience} onChange={(event) => setEdit({ ...edit, yearsOfExperience: event.target.value })} />
+                        <div className={styles.actions}>
+                            <Button onClick={() => update.mutate()}>{t('common.save')}</Button>
+                            <Button variant="ghost" onClick={() => setEdit(null)}>{t('common.cancel')}</Button>
+                        </div>
+                    </div>
+                ) : null}
+            </Modal>
         </div>
     );
 }
 
-function ExperienceTab({ employee, canEdit, onSaved, onError }) {
+function ExperienceTab({ employee, canEdit, addOpen, onAddOpenChange, onSaved, onError }) {
     const { t } = useTranslation();
     const empty = { company: '', position: '', description: '', startDate: '', endDate: '' };
     const [form, setForm] = useState(empty);
@@ -369,6 +402,7 @@ function ExperienceTab({ employee, canEdit, onSaved, onError }) {
     const add = useMutation({
         mutationFn: () => employeeApi.addExperience(employee.id, omitEmpty(form)),
         onSuccess: () => {
+            onAddOpenChange(false);
             setForm(empty);
             onSaved();
         },
@@ -392,33 +426,30 @@ function ExperienceTab({ employee, canEdit, onSaved, onError }) {
         <div className={styles.stack}>
             {(employee.experiences || []).map((item) => (
                 <article key={item.id} className={styles.panel}>
-                    {edit?.id === item.id ? (
-                        <RecordForm value={edit} onChange={setEdit} onSave={() => update.mutate()} onCancel={() => setEdit(null)} />
-                    ) : (
-                        <>
-                            <div className={styles.fields}>
-                                <Field label={t('profile.company')} value={item.company} />
-                                <Field label={t('profile.jobTitle')} value={item.position} />
-                                <Field label={t('profile.startDate')} value={item.startDate ? formatDate(item.startDate) : null} />
-                                <Field label={t('profile.endDate')} value={item.endDate ? formatDate(item.endDate) : null} />
-                            </div>
-                            {item.description ? <p className={styles.note}>{item.description}</p> : null}
-                            {canEdit ? (
-                                <div className={styles.actions}>
-                                    <Button variant="secondary" onClick={() => setEdit({ ...item, endDate: item.endDate || '', description: item.description || '' })}>{t('common.edit')}</Button>
-                                    <Button variant="danger" onClick={() => remove.mutate(item.id)}>{t('common.delete')}</Button>
-                                </div>
-                            ) : null}
-                        </>
-                    )}
+                    <div className={styles.fields}>
+                        <Field label={t('profile.company')} value={item.company} />
+                        <Field label={t('profile.jobTitle')} value={item.position} />
+                        <Field label={t('profile.startDate')} value={item.startDate ? formatDate(item.startDate) : null} />
+                        <Field label={t('profile.endDate')} value={item.endDate ? formatDate(item.endDate) : null} />
+                    </div>
+                    {item.description ? <p className={styles.note}>{item.description}</p> : null}
+                    {canEdit ? (
+                        <div className={styles.actions}>
+                            <Button variant="secondary" onClick={() => setEdit({ ...item, endDate: item.endDate || '', description: item.description || '' })}>{t('common.edit')}</Button>
+                            <Button variant="danger" onClick={() => remove.mutate(item.id)}>{t('common.delete')}</Button>
+                        </div>
+                    ) : null}
                 </article>
             ))}
             {!employee.experiences?.length ? <p className={styles.empty}>{t('profile.noExperience')}</p> : null}
-            {canEdit ? (
-                <CollapsePanel label={t('profile.addExperience')}>
-                    <RecordForm value={form} onChange={setForm} onSave={() => add.mutate()} saveLabel={t('profile.addExperience')} />
-                </CollapsePanel>
-            ) : null}
+            <Modal open={addOpen} title={t('profile.addExperience')} onClose={() => onAddOpenChange(false)}>
+                <RecordForm value={form} onChange={setForm} onSave={() => add.mutate()} onCancel={() => onAddOpenChange(false)} saveLabel={t('profile.addExperience')} />
+            </Modal>
+            <Modal open={Boolean(edit)} title={t('common.edit')} onClose={() => setEdit(null)}>
+                {edit ? (
+                    <RecordForm value={edit} onChange={setEdit} onSave={() => update.mutate()} onCancel={() => setEdit(null)} />
+                ) : null}
+            </Modal>
         </div>
     );
 }
@@ -440,7 +471,7 @@ function RecordForm({ value, onChange, onSave, onCancel, saveLabel }) {
     );
 }
 
-function EducationTab({ employee, canEdit, onSaved, onError }) {
+function EducationTab({ employee, canEdit, addOpen, onAddOpenChange, onSaved, onError }) {
     const { t } = useTranslation();
     const empty = { institutionName: '', educationLevel: 'BACHELOR', fieldOfStudy: '', degreeName: '', startDate: '', endDate: '' };
     const [form, setForm] = useState(empty);
@@ -448,6 +479,7 @@ function EducationTab({ employee, canEdit, onSaved, onError }) {
     const add = useMutation({
         mutationFn: () => employeeApi.addEducation(employee.id, omitEmpty(form)),
         onSuccess: () => {
+            onAddOpenChange(false);
             setForm(empty);
             onSaved();
         },
@@ -484,41 +516,41 @@ function EducationTab({ employee, canEdit, onSaved, onError }) {
         <div className={styles.stack}>
             {(employee.educations || []).map((item) => (
                 <article key={item.id} className={styles.panel}>
-                    {edit?.id === item.id ? (
-                        <>
-                            {fields(edit, setEdit)}
-                            <div className={styles.actions}>
-                                <Button onClick={() => update.mutate()}>{t('common.save')}</Button>
-                                <Button variant="ghost" onClick={() => setEdit(null)}>{t('common.cancel')}</Button>
-                            </div>
-                        </>
-                    ) : (
-                        <>
-                            <div className={styles.fields}>
-                                <Field label={t('profile.educationLevel')} value={enumLabel(t, 'educationLevel', item.educationLevel)} />
-                                <Field label={t('profile.institution')} value={item.institutionName} />
-                                <Field label={t('profile.fieldOfStudy')} value={item.fieldOfStudy} />
-                                <Field label={t('profile.degreeName')} value={item.degreeName} />
-                                <Field label={t('profile.startDate')} value={item.startDate ? formatDate(item.startDate) : null} />
-                                <Field label={t('profile.endDate')} value={item.endDate ? formatDate(item.endDate) : null} />
-                            </div>
-                            {canEdit ? (
-                                <div className={styles.actions}>
-                                    <Button variant="secondary" onClick={() => setEdit({ ...item, endDate: item.endDate || '', degreeName: item.degreeName || '', fieldOfStudy: item.fieldOfStudy || '' })}>{t('common.edit')}</Button>
-                                    <Button variant="danger" onClick={() => remove.mutate(item.id)}>{t('common.delete')}</Button>
-                                </div>
-                            ) : null}
-                        </>
-                    )}
+                    <div className={styles.fields}>
+                        <Field label={t('profile.educationLevel')} value={enumLabel(t, 'educationLevel', item.educationLevel)} />
+                        <Field label={t('profile.institution')} value={item.institutionName} />
+                        <Field label={t('profile.fieldOfStudy')} value={item.fieldOfStudy} />
+                        <Field label={t('profile.degreeName')} value={item.degreeName} />
+                        <Field label={t('profile.startDate')} value={item.startDate ? formatDate(item.startDate) : null} />
+                        <Field label={t('profile.endDate')} value={item.endDate ? formatDate(item.endDate) : null} />
+                    </div>
+                    {canEdit ? (
+                        <div className={styles.actions}>
+                            <Button variant="secondary" onClick={() => setEdit({ ...item, endDate: item.endDate || '', degreeName: item.degreeName || '', fieldOfStudy: item.fieldOfStudy || '' })}>{t('common.edit')}</Button>
+                            <Button variant="danger" onClick={() => remove.mutate(item.id)}>{t('common.delete')}</Button>
+                        </div>
+                    ) : null}
                 </article>
             ))}
             {!employee.educations?.length ? <p className={styles.empty}>{t('profile.noEducation')}</p> : null}
-            {canEdit ? (
-                <CollapsePanel label={t('profile.addEducation')}>
-                    {fields(form, setForm)}
-                    <div className={styles.actions}><Button onClick={() => add.mutate()}>{t('profile.addEducation')}</Button></div>
-                </CollapsePanel>
-            ) : null}
+            <Modal open={addOpen} title={t('profile.addEducation')} onClose={() => onAddOpenChange(false)}>
+                {fields(form, setForm)}
+                <div className={styles.actions}>
+                    <Button onClick={() => add.mutate()}>{t('profile.addEducation')}</Button>
+                    <Button variant="ghost" onClick={() => onAddOpenChange(false)}>{t('common.cancel')}</Button>
+                </div>
+            </Modal>
+            <Modal open={Boolean(edit)} title={t('common.edit')} onClose={() => setEdit(null)}>
+                {edit ? (
+                    <>
+                        {fields(edit, setEdit)}
+                        <div className={styles.actions}>
+                            <Button onClick={() => update.mutate()}>{t('common.save')}</Button>
+                            <Button variant="ghost" onClick={() => setEdit(null)}>{t('common.cancel')}</Button>
+                        </div>
+                    </>
+                ) : null}
+            </Modal>
         </div>
     );
 }
@@ -576,14 +608,18 @@ function MilitaryTab({ employee, canEdit, onSaved, onError }) {
     );
 }
 
-function ResponsibilitiesTab({ employee, canEdit, types, people, onSaved, onError }) {
+function ResponsibilitiesTab({ employee, canEdit, types, people, addOpen, onAddOpenChange, onSaved, onError }) {
     const { t } = useTranslation();
     const items = employee.responsibilities || [];
     const [form, setForm] = useState({ responsibleEmployeeId: '', responsibilityTypeId: '', startDate: '', endDate: '' });
     const [edit, setEdit] = useState(null);
     const add = useMutation({
         mutationFn: () => employeeApi.createResponsibility(employee.id, omitEmpty(form)),
-        onSuccess: onSaved,
+        onSuccess: () => {
+            onAddOpenChange(false);
+            setForm({ responsibleEmployeeId: '', responsibilityTypeId: '', startDate: '', endDate: '' });
+            onSaved();
+        },
         onError,
     });
     const update = useMutation({
@@ -620,41 +656,44 @@ function ResponsibilitiesTab({ employee, canEdit, types, people, onSaved, onErro
                         <Field label={t('profile.endDate')} value={item.endDate ? formatDate(item.endDate) : null} />
                     </div>
                     {canEdit ? (
-                        edit?.id === item.id ? (
-                            <div className={styles.actions}>
-                                <Input type="date" value={edit.startDate || ''} onChange={(event) => setEdit({ ...edit, startDate: event.target.value })} />
-                                <Input type="date" value={edit.endDate || ''} onChange={(event) => setEdit({ ...edit, endDate: event.target.value })} />
-                                <Button onClick={() => update.mutate()}>{t('common.save')}</Button>
-                            </div>
-                        ) : (
-                            <div className={styles.actions}>
-                                <Button variant="secondary" onClick={() => setEdit({ id: item.id, responsibleEmployeeId: item.responsibleEmployeeId, responsibilityTypeId: item.responsibilityTypeId, startDate: item.startDate || '', endDate: item.endDate || '' })}>{t('common.edit')}</Button>
-                                {!item.endDate ? <Button variant="ghost" onClick={() => close.mutate(item.id)}>{t('profile.closeResponsibility')}</Button> : null}
-                                <Button variant="danger" onClick={() => remove.mutate(item.id)}>{t('common.delete')}</Button>
-                            </div>
-                        )
+                        <div className={styles.actions}>
+                            <Button variant="secondary" onClick={() => setEdit({ id: item.id, responsibleEmployeeId: item.responsibleEmployeeId, responsibilityTypeId: item.responsibilityTypeId, startDate: item.startDate || '', endDate: item.endDate || '' })}>{t('common.edit')}</Button>
+                            {!item.endDate ? <Button variant="ghost" onClick={() => close.mutate(item.id)}>{t('profile.closeResponsibility')}</Button> : null}
+                            <Button variant="danger" onClick={() => remove.mutate(item.id)}>{t('common.delete')}</Button>
+                        </div>
                     ) : null}
                 </article>
             ))}
             {!items.length ? <p className={styles.empty}>{t('profile.noResponsibilities')}</p> : null}
-            {canEdit ? (
-                <CollapsePanel label={t('common.add')}>
-                    <div className={styles.fields}>
-                        <Select label={t('profile.responsible')} value={form.responsibleEmployeeId} onChange={(event) => setForm({ ...form, responsibleEmployeeId: event.target.value })}>
-                            <option value="">{t('common.select')}</option>
-                            {people.map((person) => <option key={person.id} value={person.id}>{fullName(person)}</option>)}
-                        </Select>
-                        <Select label={t('profile.responsibilityType')} value={form.responsibilityTypeId} onChange={(event) => setForm({ ...form, responsibilityTypeId: event.target.value })}>
-                            <option value="">{t('common.select')}</option>
-                            {types.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}
-                        </Select>
-                        <Input type="date" label={t('profile.startDate')} value={form.startDate} onChange={(event) => setForm({ ...form, startDate: event.target.value })} />
+            <Modal open={addOpen} title={t('profile.addResponsibility')} onClose={() => onAddOpenChange(false)}>
+                <div className={styles.fields}>
+                    <Select label={t('profile.responsible')} value={form.responsibleEmployeeId} onChange={(event) => setForm({ ...form, responsibleEmployeeId: event.target.value })}>
+                        <option value="">{t('common.select')}</option>
+                        {people.map((person) => <option key={person.id} value={person.id}>{fullName(person)}</option>)}
+                    </Select>
+                    <Select label={t('profile.responsibilityType')} value={form.responsibilityTypeId} onChange={(event) => setForm({ ...form, responsibilityTypeId: event.target.value })}>
+                        <option value="">{t('common.select')}</option>
+                        {types.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}
+                    </Select>
+                    <Input type="date" label={t('profile.startDate')} value={form.startDate} onChange={(event) => setForm({ ...form, startDate: event.target.value })} />
+                </div>
+                <div className={styles.actions}>
+                    <Button onClick={() => add.mutate()} disabled={!form.responsibleEmployeeId || !form.responsibilityTypeId || !form.startDate}>{t('common.add')}</Button>
+                    <Button variant="ghost" onClick={() => onAddOpenChange(false)}>{t('common.cancel')}</Button>
+                </div>
+            </Modal>
+            <Modal open={Boolean(edit)} title={t('common.edit')} onClose={() => setEdit(null)}>
+                {edit ? (
+                    <div className={styles.stack}>
+                        <Input type="date" label={t('profile.startDate')} value={edit.startDate || ''} onChange={(event) => setEdit({ ...edit, startDate: event.target.value })} />
+                        <Input type="date" label={t('profile.endDate')} value={edit.endDate || ''} onChange={(event) => setEdit({ ...edit, endDate: event.target.value })} />
+                        <div className={styles.actions}>
+                            <Button onClick={() => update.mutate()}>{t('common.save')}</Button>
+                            <Button variant="ghost" onClick={() => setEdit(null)}>{t('common.cancel')}</Button>
+                        </div>
                     </div>
-                    <div className={styles.actions}>
-                        <Button onClick={() => add.mutate()} disabled={!form.responsibleEmployeeId || !form.responsibilityTypeId || !form.startDate}>{t('common.add')}</Button>
-                    </div>
-                </CollapsePanel>
-            ) : null}
+                ) : null}
+            </Modal>
         </div>
     );
 }

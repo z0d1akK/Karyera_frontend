@@ -1,17 +1,20 @@
 .shell {
     display: grid;
-    grid-template-columns: var(--sidebar-width) 1fr;
-    min-height: 100vh;
-    background: var(--color-background);
+    grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+    height: 100vh;
+    overflow: hidden;
+    background: var(--color-primary-dark);
 }
 
 .collapsed {
-    grid-template-columns: var(--sidebar-width-collapsed) 1fr;
+    grid-template-columns: var(--sidebar-width-collapsed) minmax(0, 1fr);
 }
 
 .sidebar {
     display: flex;
     flex-direction: column;
+    min-height: 0;
+    overflow: auto;
     padding: 20px 12px 16px;
     background: var(--color-primary-dark);
     color: rgba(255, 255, 255, 0.82);
@@ -63,12 +66,20 @@
 
 .main {
     min-width: 0;
+    min-height: 0;
+    height: 100%;
+    padding: 12px 12px 12px 0;
 }
 
 .content {
-    max-width: var(--content-max-width);
-    margin: 0 auto;
-    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    overflow: auto;
+    padding: 24px 28px;
+    background: var(--color-background);
+    border-radius: 16px;
 }
 
 .sidebarFooter {

@@ -34,7 +34,8 @@
     "filters": "Filters and sorting",
     "sort": "Sort",
     "sortAsc": "{{field}}, A–Z",
-    "sortDesc": "{{field}}, Z–A"
+    "sortDesc": "{{field}}, Z–A",
+    "reason": "Reason"
   },
   "navigation": {
     "myProfile": "My profile",
@@ -47,6 +48,7 @@
     "analytics": "Analytics",
     "timesheet": "Timesheet",
     "myStats": "My statistics",
+    "reports": "Reports",
     "admin": "Administration",
     "settings": "Settings",
     "collapse": "Collapse",
@@ -120,6 +122,8 @@
     "comment": "Comment",
     "reviews": "Approval history",
     "planned": "Planned",
+    "today": "Today",
+    "weekdays": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
     "openDay": "Entries for the day"
   },
   "analyticsUi": {
@@ -141,16 +145,47 @@
     "gaps": "Gaps",
     "recommendations": "Recommendations",
     "start": "Calculate fit",
+    "startHint": "Choose the target position, grade and mode. The result opens on a dedicated page.",
     "waiting": "Calculation is running",
     "insufficient": "Not enough data for a recommendation",
     "generationFailed": "The recommendation text could not be generated. The numeric score is kept.",
     "emptyRecommendation": "A recommendation has not been generated yet",
+    "strengths": "Strengths",
+    "limitations": "Limitations",
+    "generateRecommendations": "Generate recommendations",
     "actual": "Actual",
     "required": "Required",
     "weekHours": "Hours this week",
     "openAssessment": "Open assessment",
     "skill": "Skill",
-    "employeesCount": "Employees"
+    "employeesCount": "Employees",
+    "mode": "Assessment mode",
+    "modeSkills": "Skills",
+    "modeSkillsExperience": "Skills and experience",
+    "modeFull": "Full assessment",
+    "projectScore": "Projects",
+    "careerOptions": "Career options",
+    "startOptions": "Compare options",
+    "downloadPdf": "Download PDF",
+    "draftIdp": "Draft IDP",
+    "reports": "Analytics reports",
+    "reportType": "Report type",
+    "preview": "Preview",
+    "assessment": "Assessment",
+    "assessmentId": "Assessment ID",
+    "reserveId": "Reserve ID",
+    "jobId": "Job ID",
+    "periodFrom": "Period from",
+    "periodTo": "Period to",
+    "missingSkills": "skills",
+    "missingExperience": "experience",
+    "missingProjects": "project activity",
+    "rank": "Rank",
+    "fallback": "Template text is shown; numeric scores are kept.",
+    "emptyDashboard": "No aggregates yet",
+    "emptyDashboardHint": "Run an assessment and wait for an approved timesheet to fill the dashboard.",
+    "jobTimeout": "The calculation took too long. Try again.",
+    "jobFailed": "The calculation failed. Check the profile data and try again."
   },
   "dictionaries": {
     "title": "Directories",
@@ -195,10 +230,15 @@
       "APPROVED": "Approved",
       "REJECTED": "Returned"
     },
+    "reviewDecision": {
+      "APPROVE": "Approved",
+      "REJECT": "Returned"
+    },
     "recommendationStatus": {
       "RUNNING": "Generating",
       "COMPLETED": "Ready",
-      "FAILED": "Failed"
+      "FAILED": "Failed",
+      "FALLBACK": "Fallback"
     },
     "employmentStatus": {
       "ACTIVE": "Active",
@@ -253,9 +293,30 @@
     },
     "activityType": {
       "TRAINING": "Training",
-      "PROJECT_PRACTICE": "Practice",
+      "CERTIFICATION": "Certification",
+      "PROJECT_PRACTICE": "Project practice",
+      "PRACTICAL_TASK": "Practical task",
       "MENTORING": "Mentoring",
       "SELF_STUDY": "Self-study"
+    },
+    "evidenceType": {
+      "LINK": "Link",
+      "FILE": "File",
+      "DOCUMENT": "Document",
+      "PROJECT_TASK": "Project task",
+      "TASK": "Task"
+    },
+    "eligibilityStatus": {
+      "ELIGIBLE": "Eligible",
+      "GAPS_PRESENT": "Skill gaps",
+      "INSUFFICIENT_DATA": "Insufficient data",
+      "ASSESSMENT_FAILED": "Assessment failed"
+    },
+    "screeningStatus": {
+      "PENDING": "Pending",
+      "RUNNING": "Running",
+      "COMPLETED": "Completed",
+      "FAILED": "Failed"
     },
     "candidateDecision": {
       "APPROVE": "Approve",
@@ -335,6 +396,8 @@
     "skillCategory": "Skill category",
     "skillDescription": "Skill description",
     "noSkills": "No skills specified.",
+    "addSkill": "Add skill",
+    "addResponsibility": "Add manager",
     "skillAdded": "Skill added",
     "educationLevel": "Education level",
     "institution": "Institution",
@@ -375,7 +438,8 @@
     "status": "Status",
     "department": "Department",
     "firstName": "First name",
-    "lastName": "Last name"
+    "lastName": "Last name",
+    "createCard": "New profile"
   },
   "organization": {
     "title": "Organization structure",
@@ -389,7 +453,9 @@
     "membersCount": "{{count}} people",
     "unassigned": "Unassigned",
     "unassignedHint": "Employees not linked to a department.",
-    "search": "Search department"
+    "search": "Search department or employee",
+    "openTree": "Open structure",
+    "backToDepartments": "Back to departments"
   },
   "projects": {
     "title": "My projects",
@@ -442,6 +508,7 @@
     "priority": "Priority",
     "emptyTasks": "No tasks yet. Create them on the Kanban board.",
     "timeHint": "Time tracking is not connected in this wave. Entries will appear after Time Tracking Service.",
+    "emptyTime": "No time entries for this project yet.",
     "createTask": "Create task",
     "newTask": "New task",
     "column": "Column",

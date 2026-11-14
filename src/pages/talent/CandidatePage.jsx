@@ -21,7 +21,7 @@ import { Select, Textarea } from '../../shared/ui/Input/Input.jsx';
 import { Badge } from '../../shared/ui/Badge/Badge.jsx';
 import { Pagination } from '../../shared/ui/DataTable/DataTable.jsx';
 import { Skeleton } from '../../shared/ui/PageState/PageState.jsx';
-import { CollapsePanel } from '../../shared/ui/ListFilters/ListFilters.jsx';
+import { Modal } from '../../shared/ui/Modal/Modal.jsx';
 import page from '../../shared/styles/page.module.css';
 
 export function CandidatePage() {
@@ -31,6 +31,7 @@ export function CandidatePage() {
     const push = useToastStore((s) => s.push);
     const queryClient = useQueryClient();
     const [decision, setDecision] = useState({ decision: 'APPROVE', comment: '' });
+    const [decideOpen, setDecideOpen] = useState(false);
     const [decisionQuery, setDecisionQuery] = useState({ page: 0, size: 20, sortBy: 'createdAt', sortDirection: 'DESC' });
 
     const query = useQuery({ queryKey: queryKeys.career.candidate(id), queryFn: () => careerApi.getCandidate(id) });
@@ -45,7 +46,10 @@ export function CandidatePage() {
     });
     const decide = useMutation({
         mutationFn: () => careerApi.decide(id, { ...decision, expectedVersion: query.data.version }),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.career.candidate(id) }),
+        onSuccess: () => {
+            setDecideOpen(false);
+            queryClient.invalidateQueries({ queryKey: queryKeys.career.candidate(id) });
+        },
         onError: (error) => push({ type: 'error', message: getApiError(error).message }),
     });
 
@@ -60,8 +64,8 @@ export function CandidatePage() {
             <BackLink to={`/app/talent-reserve/${candidate.reserveId}`}>{t('talent.backToReserve')}</BackLink>
             <PageHeader title={t('talent.candidateTitle')} actions={<Badge>{enumLabel(t, 'candidateStatus', candidate.status)}</Badge>} />
             <Card>
-                <p>{t('talent.employee')}: <Link to={`/app/employees/${candidate.employeeId}`}>{employee.data ? fullName(employee.data) : candidate.employeeId}</Link></p>
-                <p>{t('talent.reserve')}: <Link to={`/app/talent-reserve/${candidate.reserveId}`}>{candidate.reserveId}</Link></p>
+                <p>{t('talent.employee')}: <Link to={`/app/employees/${candidate.employeeId}`}>{employee.data ? fullName(employee.data) : '—'}</Link></p>
+                <p>{t('talent.reserve')}: <Link to={`/app/talent-reserve/${candidate.reserveId}`}>{t('navigation.talentReserve')}</Link></p>
                 <p>{candidate.comment}</p>
                 <h3>{t('talent.decisions')}</h3>
                 {(decisions.data?.content || candidate.decisions || []).map((item) => (
@@ -74,22 +78,26 @@ export function CandidatePage() {
                     onChange={(pageNumber) => setDecisionQuery({ ...decisionQuery, page: pageNumber })}
                     onSizeChange={(size) => setDecisionQuery({ ...decisionQuery, size, page: 0 })}
                 />
-                {canManageHr(role) ? (
-                    <CollapsePanel label={t('talent.decide')}>
-                    <div className={page.grid}>
-                        <Select label={t('talent.decide')} value={decision.decision} onChange={(e) => setDecision({ ...decision, decision: e.target.value })}>
-                            {['APPROVE', 'REJECT', 'REQUEST_REVIEW', 'REMOVE'].map((item) => (
-                                <option key={item} value={item}>{enumLabel(t, 'candidateDecision', item)}</option>
-                            ))}
-                        </Select>
-                        <div className={page.spanAll}>
-                            <Textarea label={t('talent.comment')} value={decision.comment} onChange={(e) => setDecision({ ...decision, comment: e.target.value })} />
-                        </div>
-                        <Button onClick={() => decide.mutate()}>{t('talent.decide')}</Button>
+                {canManageHr(role) && !['APPROVED', 'REJECTED', 'REMOVED'].includes(candidate.status) ? (
+                    <div className={page.row}>
+                        <Button onClick={() => setDecideOpen(true)}>{t('talent.decide')}</Button>
                     </div>
-                    </CollapsePanel>
                 ) : null}
             </Card>
+            <Modal open={decideOpen} title={t('talent.decide')} onClose={() => setDecideOpen(false)}>
+                <div className={page.stack}>
+                    <Select label={t('talent.decide')} value={decision.decision} onChange={(e) => setDecision({ ...decision, decision: e.target.value })}>
+                        {['APPROVE', 'REJECT', 'REQUEST_REVIEW', 'REMOVE'].map((item) => (
+                            <option key={item} value={item}>{enumLabel(t, 'candidateDecision', item)}</option>
+                        ))}
+                    </Select>
+                    <Textarea label={t('talent.comment')} value={decision.comment} onChange={(e) => setDecision({ ...decision, comment: e.target.value })} />
+                    <div className={page.row}>
+                        <Button onClick={() => decide.mutate()}>{t('talent.decide')}</Button>
+                        <Button variant="ghost" onClick={() => setDecideOpen(false)}>{t('common.cancel')}</Button>
+                    </div>
+                </div>
+            </Modal>
         </section>
     );
 }

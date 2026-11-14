@@ -13,6 +13,7 @@ import { Button } from '../../shared/ui/Button/Button.jsx';
 import { Input, Select, Textarea } from '../../shared/ui/Input/Input.jsx';
 import { Badge } from '../../shared/ui/Badge/Badge.jsx';
 import { PageHeader } from '../../shared/ui/PageHeader/PageHeader.jsx';
+import { BackLink } from '../../shared/ui/BackLink/BackLink.jsx';
 import { PageState, Skeleton } from '../../shared/ui/PageState/PageState.jsx';
 import { TimeNav } from './TimeNav.jsx';
 
@@ -92,6 +93,7 @@ export function EntryPage() {
 
     return (
         <section>
+            <BackLink to="/app/time/entries">{t('common.back')}</BackLink>
             <PageHeader title={isNew ? t('time.newEntry') : t('time.entry')} />
             <TimeNav />
             {entry.data ? <Badge tone={statusTone('timeEntryStatus', entry.data.status)}>{enumLabel(t, 'timeEntryStatus', entry.data.status)}</Badge> : null}

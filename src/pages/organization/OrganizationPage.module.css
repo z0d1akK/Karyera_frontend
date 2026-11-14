@@ -1,17 +1,49 @@
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.toolbar > :first-child {
+    max-width: 320px;
+    flex: 1 1 220px;
+}
+
+.backWrap {
+    margin-left: auto;
+}
+
+.backWrap :global(button) {
+    min-height: 32px;
+    padding: 0 12px;
+    font-size: 13px;
+}
+
 .grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 16px;
 }
 
-.card {
+.card,
+.treeCard {
     padding: 20px;
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
+    text-align: left;
+    color: inherit;
 }
 
-.card h2 {
+.card:hover {
+    border-color: var(--color-primary-accent);
+}
+
+.card h2,
+.treeCard h2 {
     margin: 0;
     font-size: 18px;
 }
@@ -30,37 +62,78 @@
     font-size: 14px;
 }
 
-.person {
+.openHint {
+    color: var(--color-accent);
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.chart {
+    overflow: auto;
+    padding: 8px 0 16px;
+    min-height: 220px;
+}
+
+.deptBox {
+    background: rgba(212, 163, 44, 0.12);
+}
+
+.forest {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    min-width: max-content;
+    padding: 24px 8px;
+}
+
+.branch {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    padding: 10px 0;
-    border-top: 1px solid var(--color-border);
-    color: inherit;
+    align-items: center;
+}
+
+.boxLink {
     text-decoration: none;
+    color: inherit;
 }
 
-.person:hover .name {
-    color: var(--color-accent);
+.box {
+    min-width: 168px;
+    max-width: 220px;
+    padding: 10px 14px;
+    border: 2px solid var(--color-primary-accent);
+    border-radius: 8px;
+    background: var(--color-surface);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    text-align: center;
 }
 
-.name {
-    font-weight: 700;
-    color: var(--color-primary-dark);
+.box strong {
+    font-size: 14px;
 }
 
-.role {
-    font-size: 13px;
+.box span {
+    font-size: 12px;
     color: var(--color-secondary-text);
+}
+
+.stem {
+    width: 2px;
+    height: 18px;
+    background: var(--color-border);
+}
+
+.level {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding-top: 8px;
+    border-top: 2px solid var(--color-border);
 }
 
 .empty {
     color: var(--color-secondary-text);
     font-size: 14px;
-}
-
-@media (max-width: 900px) {
-    .grid {
-        grid-template-columns: 1fr;
-    }
 }

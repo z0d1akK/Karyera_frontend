@@ -25,7 +25,7 @@
     display: flex;
     gap: 12px;
     flex-wrap: wrap;
-    margin-top: 4px;
+    align-items: flex-end;
 }
 
 .meta {
@@ -35,4 +35,15 @@
 
 .sectionTitle {
     margin: 8px 0 12px;
+}
+
+.dangerText {
+    color: var(--color-error);
+    font-weight: var(--font-weight-semibold);
+}
+
+.sections {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }

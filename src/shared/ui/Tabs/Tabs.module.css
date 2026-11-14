@@ -1,14 +1,36 @@
+.row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--color-border);
+}
+
 .tabs {
     display: flex;
     gap: 8px;
-    overflow: auto;
-    border-bottom: 1px solid var(--color-border);
-    margin-top: 8px;
-    margin-bottom: 20px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex: 1;
+    min-width: 0;
+    scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.actions {
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+    padding-bottom: 6px;
 }
 
 .tab {
     padding: 10px 12px;
+    margin-bottom: -1px;
     color: var(--color-secondary-text);
     font-weight: var(--font-weight-semibold);
     border-bottom: 2px solid transparent;

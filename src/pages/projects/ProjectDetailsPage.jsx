@@ -4,17 +4,20 @@ import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { projectApi } from '../../features/projects/api/projectApi.js';
+import { hoursLabel, timeApi } from '../../features/time/api/timeApi.js';
 import { queryKeys } from '../../shared/api/queryKeys.js';
 import { unwrapPage } from '../../shared/lib/queryParams.js';
 import { formatDate } from '../../shared/lib/format.js';
 import { enumLabel, statusTone } from '../../shared/lib/enums.js';
+import { useEmployeeNames } from '../../shared/lib/displayNames.js';
 import { getApiError } from '../../shared/api/errors.js';
 import { useToastStore } from '../../store/toastStore.js';
 import { Tabs } from '../../shared/ui/Tabs/Tabs.jsx';
 import { Button } from '../../shared/ui/Button/Button.jsx';
 import { Input, Select, Textarea } from '../../shared/ui/Input/Input.jsx';
-import { Pagination } from '../../shared/ui/DataTable/DataTable.jsx';
-import { CollapsePanel, ListFilters, PageSizeField } from '../../shared/ui/ListFilters/ListFilters.jsx';
+import { DataTable, Pagination } from '../../shared/ui/DataTable/DataTable.jsx';
+import { ListFilters, PageSizeField } from '../../shared/ui/ListFilters/ListFilters.jsx';
+import { Modal } from '../../shared/ui/Modal/Modal.jsx';
 import { EmployeePicker } from '../../features/employees/components/EmployeePicker.jsx';
 import { Badge } from '../../shared/ui/Badge/Badge.jsx';
 import { BackLink } from '../../shared/ui/BackLink/BackLink.jsx';
@@ -32,6 +35,7 @@ export function ProjectDetailsPage() {
     const push = useToastStore((s) => s.push);
     const role = useAuthStore((s) => s.session?.role);
     const employeeId = useAuthStore((s) => s.employee?.id);
+    const employeeName = useEmployeeNames();
 
     const project = useQuery({ queryKey: queryKeys.projects.one(id), queryFn: () => projectApi.getById(id) });
     const [teamQuery, setTeamQuery] = useState({ page: 0, size: 20, sortBy: 'startDate', sortDirection: 'DESC' });
@@ -54,7 +58,21 @@ export function ProjectDetailsPage() {
         queryKey: queryKeys.projects.links(id),
         queryFn: () => projectApi.listLinks(id),
     });
+    const timeEntries = useQuery({
+        queryKey: ['projects', id, 'time'],
+        enabled: tab === 'time',
+        queryFn: async () => unwrapPage(await timeApi.listEntries({
+            projectId: id,
+            page: 0,
+            size: 50,
+            sortBy: 'workDate',
+            sortDirection: 'DESC',
+        })),
+    });
     const [assignment, setAssignment] = useState({ employeeId: '', projectRoleId: '', startDate: '', allocationPercent: '' });
+    const [assignOpen, setAssignOpen] = useState(false);
+    const [milestoneOpen, setMilestoneOpen] = useState(false);
+    const [linkOpen, setLinkOpen] = useState(false);
     const [editingAssignment, setEditingAssignment] = useState(null);
     const [editingMilestone, setEditingMilestone] = useState(null);
     const [editingLink, setEditingLink] = useState(null);
@@ -71,6 +89,7 @@ export function ProjectDetailsPage() {
             return projectApi.assign(id, payload);
         },
         onSuccess: () => {
+            setAssignOpen(false);
             queryClient.invalidateQueries({ queryKey: queryKeys.projects.assignments(id) });
             push({ type: 'success', message: t('projects.assignSuccess') });
         },
@@ -98,6 +117,7 @@ export function ProjectDetailsPage() {
     const addMilestone = useMutation({
         mutationFn: () => projectApi.createMilestone(id, { ...milestone, projectId: id, status: 'PLANNED' }),
         onSuccess: () => {
+            setMilestoneOpen(false);
             setMilestone({ title: '', dueDate: '', description: '' });
             queryClient.invalidateQueries({ queryKey: queryKeys.projects.milestones(id) });
         },
@@ -124,6 +144,7 @@ export function ProjectDetailsPage() {
     const addLink = useMutation({
         mutationFn: () => projectApi.createLink(id, { ...link, projectId: id }),
         onSuccess: () => {
+            setLinkOpen(false);
             setLink({ label: '', url: '' });
             queryClient.invalidateQueries({ queryKey: queryKeys.projects.links(id) });
         },
@@ -184,7 +205,7 @@ export function ProjectDetailsPage() {
                     <h1>{data.name}</h1>
                     <p>{data.code} · {data.description || t('projects.noDescription')}</p>
                     <div className={styles.actions}>
-                        <Button variant="secondary" onClick={() => navigate(`/app/projects/${id}/board`)}>{t('projects.openKanban')}</Button>
+                        <Button variant="ghost" onClick={() => navigate(`/app/projects/${id}/board`)}>{t('projects.openKanban')}</Button>
                     </div>
                 </div>
                 <div className={styles.stats}>
@@ -213,6 +234,19 @@ export function ProjectDetailsPage() {
                 ]}
                 value={tab}
                 onChange={setTab}
+                actions={tab === 'team' || tab === 'tasks' || tab === 'milestones' ? (
+                    <ListFilters overlay>
+                        {tab === 'team' ? (
+                            <PageSizeField value={teamQuery.size} onChange={(size) => setTeamQuery({ ...teamQuery, size, page: 0 })} />
+                        ) : null}
+                        {tab === 'tasks' ? (
+                            <PageSizeField value={taskQuery.size} onChange={(size) => setTaskQuery({ ...taskQuery, size, page: 0 })} />
+                        ) : null}
+                        {tab === 'milestones' ? (
+                            <PageSizeField value={milestoneQuery.size} onChange={(size) => setMilestoneQuery({ ...milestoneQuery, size, page: 0 })} />
+                        ) : null}
+                    </ListFilters>
+                ) : null}
             />
             {tab === 'overview' && (
                 <div className={styles.gridTwo}>
@@ -220,8 +254,8 @@ export function ProjectDetailsPage() {
                         <h2>{t('projects.datesAndRoles')}</h2>
                         <div className={styles.row}><span>{t('projects.startDate')}</span><strong>{formatDate(data.startDate)}</strong></div>
                         <div className={styles.row}><span>{t('projects.endDate')}</span><strong>{formatDate(data.endDate)}</strong></div>
-                        <div className={styles.row}><span>{t('projects.projectManager')}</span><strong>{data.projectManager?.fullName || data.projectManagerId || '—'}</strong></div>
-                        <div className={styles.row}><span>{t('projects.deliveryManager')}</span><strong>{data.deliveryManager?.fullName || data.deliveryManagerId || '—'}</strong></div>
+                        <div className={styles.row}><span>{t('projects.projectManager')}</span><strong>{data.projectManager?.fullName || employeeName(data.projectManagerId) || '—'}</strong></div>
+                        <div className={styles.row}><span>{t('projects.deliveryManager')}</span><strong>{data.deliveryManager?.fullName || employeeName(data.deliveryManagerId) || '—'}</strong></div>
                     </article>
                     <article className={styles.panel}>
                         <h2>{t('projects.description')}</h2>
@@ -260,11 +294,16 @@ export function ProjectDetailsPage() {
             )}
             {tab === 'team' && (
                 <div className={styles.stack}>
+                    {canMembers ? (
+                        <div className={styles.toolbarActions}>
+                            <Button onClick={() => setAssignOpen(true)}>{t('projects.assign')}</Button>
+                        </div>
+                    ) : null}
                     <div className={styles.grid}>
                         {team.map((row) => (
                             <article key={row.id || row.employeeId} className={styles.card}>
                                 <div className={styles.cardHead}>
-                                    <h2>{row.employeeFullName || t('projects.employee')}</h2>
+                                    <h2>{row.employeeFullName || employeeName(row.employeeId) || t('projects.employee')}</h2>
                                 </div>
                                 <p className={styles.description}>{row.projectRoleName || t('projects.roleMissing')}</p>
                                 <div className={styles.row}><span>{t('projects.from')}</span><strong>{formatDate(row.startDate)}</strong></div>
@@ -299,30 +338,11 @@ export function ProjectDetailsPage() {
                         ))}
                     </div>
                     {!team.length ? <p className={styles.footer}>{t('projects.emptyTeam')}</p> : null}
-                    <ListFilters overlay>
-                        <PageSizeField value={teamQuery.size} onChange={(size) => setTeamQuery({ ...teamQuery, size, page: 0 })} />
-                    </ListFilters>
                     <Pagination
                         page={assignments.data?.number || 0}
                         totalPages={assignments.data?.totalPages || 0}
                         onChange={(pageNumber) => setTeamQuery({ ...teamQuery, page: pageNumber })}
                     />
-                    {canMembers ? (
-                    <CollapsePanel label={t('projects.assign')}>
-                        <div className={styles.gridTwo}>
-                            <EmployeePicker label={t('projects.employee')} value={assignment.employeeId} onChange={(e) => setAssignment({ ...assignment, employeeId: e.target.value })} />
-                            <Select label={t('projects.role')} value={assignment.projectRoleId} onChange={(e) => setAssignment({ ...assignment, projectRoleId: e.target.value })}>
-                                <option value="">{t('common.select')}</option>
-                                {(roles.data || []).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-                            </Select>
-                            <Input type="date" label={t('projects.startDate')} value={assignment.startDate} onChange={(e) => setAssignment({ ...assignment, startDate: e.target.value })} />
-                            <Input type="number" label={t('projects.allocation')} value={assignment.allocationPercent} onChange={(e) => setAssignment({ ...assignment, allocationPercent: e.target.value })} />
-                        </div>
-                        <div className={styles.actions}>
-                            <Button onClick={() => assign.mutate()} disabled={!assignment.employeeId || !assignment.projectRoleId}>{t('projects.assignAction')}</Button>
-                        </div>
-                    </CollapsePanel>
-                    ) : null}
                 </div>
             )}
             {tab === 'tasks' && (
@@ -336,14 +356,11 @@ export function ProjectDetailsPage() {
                                 </div>
                                 <p className={styles.description}>{row.key || row.taskNumber || t('projects.noCode')}</p>
                                 <div className={styles.row}><span>{t('projects.priority')}</span><strong>{enumLabel(t, 'priority', row.priority)}</strong></div>
-                                <button type="button" className={styles.more} onClick={() => navigate(`/app/tasks/${row.id}`)}>{t('projects.open')}</button>
+                                <button type="button" className={styles.more} onClick={() => navigate(`/app/tasks/${row.id}`)}>{t('common.open')}</button>
                             </article>
                         ))}
                     </div>
                     {!taskList.length ? <p className={styles.footer}>{t('projects.emptyTasks')}</p> : null}
-                    <ListFilters overlay>
-                        <PageSizeField value={taskQuery.size} onChange={(size) => setTaskQuery({ ...taskQuery, size, page: 0 })} />
-                    </ListFilters>
                     <Pagination
                         page={tasks.data?.number || 0}
                         totalPages={tasks.data?.totalPages || 0}
@@ -353,6 +370,11 @@ export function ProjectDetailsPage() {
             )}
             {tab === 'milestones' && (
                 <div className={styles.stack}>
+                    {canEdit ? (
+                        <div className={styles.toolbarActions}>
+                            <Button onClick={() => setMilestoneOpen(true)}>{t('projects.addMilestone')}</Button>
+                        </div>
+                    ) : null}
                     {milestoneList.map((item) => (
                         <article key={item.id} className={styles.panel}>
                             <h2>{item.title}</h2>
@@ -375,25 +397,20 @@ export function ProjectDetailsPage() {
                             ) : null}
                         </article>
                     ))}
-                    <ListFilters overlay>
-                        <PageSizeField value={milestoneQuery.size} onChange={(size) => setMilestoneQuery({ ...milestoneQuery, size, page: 0 })} />
-                    </ListFilters>
                     <Pagination
                         page={milestones.data?.number || 0}
                         totalPages={milestones.data?.totalPages || 0}
                         onChange={(pageNumber) => setMilestoneQuery({ ...milestoneQuery, page: pageNumber })}
                     />
-                    {canEdit ? (
-                        <CollapsePanel label={t('projects.addMilestone')}>
-                            <Input label={t('projects.name')} value={milestone.title} onChange={(e) => setMilestone({ ...milestone, title: e.target.value })} />
-                            <Input type="date" label={t('projects.dueDate')} value={milestone.dueDate} onChange={(e) => setMilestone({ ...milestone, dueDate: e.target.value })} />
-                            <Button onClick={() => addMilestone.mutate()} disabled={!milestone.title}>{t('projects.addMilestone')}</Button>
-                        </CollapsePanel>
-                    ) : null}
                 </div>
             )}
             {tab === 'links' && (
                 <div className={styles.stack}>
+                    {canEdit ? (
+                        <div className={styles.toolbarActions}>
+                            <Button onClick={() => setLinkOpen(true)}>{t('projects.addLink')}</Button>
+                        </div>
+                    ) : null}
                     {linkList.map((item) => (
                         <article key={item.id} className={styles.panel}>
                             {editingLink?.id === item.id ? (
@@ -412,21 +429,65 @@ export function ProjectDetailsPage() {
                             ) : null}
                         </article>
                     ))}
-                    {canEdit ? (
-                        <CollapsePanel label={t('projects.addLink')}>
-                            <Input label={t('projects.label')} value={link.label} onChange={(e) => setLink({ ...link, label: e.target.value })} />
-                            <Input label={t('projects.url')} value={link.url} onChange={(e) => setLink({ ...link, url: e.target.value })} />
-                            <Button onClick={() => addLink.mutate()} disabled={!link.url}>{t('projects.addLink')}</Button>
-                        </CollapsePanel>
-                    ) : null}
                 </div>
             )}
             {tab === 'time' && (
                 <article className={styles.panel}>
                     <h2>{t('projects.tabTime')}</h2>
-                    <p className={styles.empty}>{t('projects.timeHint')}</p>
+                    {timeEntries.isLoading ? <p className={styles.empty}>{t('common.loading')}</p> : null}
+                    {timeEntries.isError ? <p className={styles.empty}>{t('errors.loadFailed')}</p> : null}
+                    {!timeEntries.isLoading && !(timeEntries.data?.content || []).length ? (
+                        <p className={styles.empty}>{t('projects.emptyTime')}</p>
+                    ) : (
+                        <DataTable
+                            rows={timeEntries.data?.content || []}
+                            columns={[
+                                { key: 'date', header: t('time.date'), render: (row) => formatDate(row.workDate) },
+                                { key: 'employee', header: t('projects.employee'), render: (row) => row.employeeFullName || employeeName(row.employeeId) || '—' },
+                                { key: 'task', header: t('time.task'), render: (row) => row.taskTitle || '—' },
+                                { key: 'hours', header: t('time.hours'), render: (row) => hoursLabel(row.durationMinutes) },
+                            ]}
+                        />
+                    )}
                 </article>
             )}
+            <Modal open={assignOpen} title={t('projects.assign')} onClose={() => setAssignOpen(false)}>
+                <div className={styles.stack}>
+                    <div className={styles.gridTwo}>
+                        <EmployeePicker label={t('projects.employee')} value={assignment.employeeId} onChange={(e) => setAssignment({ ...assignment, employeeId: e.target.value })} />
+                        <Select label={t('projects.role')} value={assignment.projectRoleId} onChange={(e) => setAssignment({ ...assignment, projectRoleId: e.target.value })}>
+                            <option value="">{t('common.select')}</option>
+                            {(roles.data || []).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+                        </Select>
+                        <Input type="date" label={t('projects.startDate')} value={assignment.startDate} onChange={(e) => setAssignment({ ...assignment, startDate: e.target.value })} />
+                        <Input type="number" label={t('projects.allocation')} value={assignment.allocationPercent} onChange={(e) => setAssignment({ ...assignment, allocationPercent: e.target.value })} />
+                    </div>
+                    <div className={styles.actions}>
+                        <Button onClick={() => assign.mutate()} disabled={!assignment.employeeId || !assignment.projectRoleId}>{t('projects.assignAction')}</Button>
+                        <Button variant="ghost" onClick={() => setAssignOpen(false)}>{t('common.cancel')}</Button>
+                    </div>
+                </div>
+            </Modal>
+            <Modal open={milestoneOpen} title={t('projects.addMilestone')} onClose={() => setMilestoneOpen(false)}>
+                <div className={styles.stack}>
+                    <Input label={t('projects.name')} value={milestone.title} onChange={(e) => setMilestone({ ...milestone, title: e.target.value })} />
+                    <Input type="date" label={t('projects.dueDate')} value={milestone.dueDate} onChange={(e) => setMilestone({ ...milestone, dueDate: e.target.value })} />
+                    <div className={styles.actions}>
+                        <Button onClick={() => addMilestone.mutate()} disabled={!milestone.title}>{t('projects.addMilestone')}</Button>
+                        <Button variant="ghost" onClick={() => setMilestoneOpen(false)}>{t('common.cancel')}</Button>
+                    </div>
+                </div>
+            </Modal>
+            <Modal open={linkOpen} title={t('projects.addLink')} onClose={() => setLinkOpen(false)}>
+                <div className={styles.stack}>
+                    <Input label={t('projects.label')} value={link.label} onChange={(e) => setLink({ ...link, label: e.target.value })} />
+                    <Input label={t('projects.url')} value={link.url} onChange={(e) => setLink({ ...link, url: e.target.value })} />
+                    <div className={styles.actions}>
+                        <Button onClick={() => addLink.mutate()} disabled={!link.url}>{t('projects.addLink')}</Button>
+                        <Button variant="ghost" onClick={() => setLinkOpen(false)}>{t('common.cancel')}</Button>
+                    </div>
+                </div>
+            </Modal>
         </section>
     );
 }

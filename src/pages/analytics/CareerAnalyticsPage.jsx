@@ -2,11 +2,14 @@ import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 
 import { analyticsApi } from '../../features/analytics/api/analyticsApi.js';
+import { hoursLabel } from '../../features/time/api/timeApi.js';
 import { formatDate } from '../../shared/lib/format.js';
+import { Card } from '../../shared/ui/Card/Card.jsx';
 import { DataTable } from '../../shared/ui/DataTable/DataTable.jsx';
 import { PageHeader } from '../../shared/ui/PageHeader/PageHeader.jsx';
 import { PageState, Skeleton } from '../../shared/ui/PageState/PageState.jsx';
 import { AnalyticsNav } from './AnalyticsNav.jsx';
+import page from '../../shared/styles/page.module.css';
 
 export function CareerAnalyticsPage() {
     const { t } = useTranslation();
@@ -22,10 +25,11 @@ export function CareerAnalyticsPage() {
     }
 
     return (
-        <section>
+        <section className={page.sections}>
             <PageHeader title={t('analyticsUi.career')} />
             <AnalyticsNav />
-            <h2>{t('analyticsUi.readiness')}</h2>
+            <Card>
+            <h2 className={page.sectionTitle}>{t('analyticsUi.readiness')}</h2>
             <DataTable
                 rows={(readiness.data?.buckets || []).map((item, index) => ({ ...item, id: `${item.label}-${index}` }))}
                 columns={[
@@ -33,7 +37,9 @@ export function CareerAnalyticsPage() {
                     { key: 'employees', header: t('analyticsUi.employeesCount'), render: (row) => row.employees },
                 ]}
             />
-            <h2>{t('analyticsUi.development')}</h2>
+            </Card>
+            <Card>
+            <h2 className={page.sectionTitle}>{t('analyticsUi.development')}</h2>
             <DataTable
                 rows={(development.data?.points || []).map((item) => ({ ...item, id: item.period }))}
                 columns={[
@@ -42,15 +48,18 @@ export function CareerAnalyticsPage() {
                     { key: 'average', header: t('analyticsUi.average'), render: (row) => row.averageScore ?? '—' },
                 ]}
             />
-            <h2>{t('analyticsUi.activity')}</h2>
+            </Card>
+            <Card>
+            <h2 className={page.sectionTitle}>{t('analyticsUi.activity')}</h2>
             <DataTable
                 rows={(activity.data?.points || []).map((item) => ({ ...item, id: item.periodStart }))}
                 columns={[
                     { key: 'period', header: t('time.period'), render: (row) => formatDate(row.periodStart) },
-                    { key: 'minutes', header: t('time.logged'), render: (row) => row.approvedMinutes },
+                    { key: 'minutes', header: t('time.logged'), render: (row) => hoursLabel(row.approvedMinutes) },
                     { key: 'tasks', header: t('time.task'), render: (row) => row.completedTasks },
                 ]}
             />
+            </Card>
         </section>
     );
 }

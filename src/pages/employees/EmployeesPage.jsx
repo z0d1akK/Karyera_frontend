@@ -15,7 +15,7 @@ import { Input, Select } from '../../shared/ui/Input/Input.jsx';
 import { Button } from '../../shared/ui/Button/Button.jsx';
 import { DataTable, Pagination } from '../../shared/ui/DataTable/DataTable.jsx';
 import { Badge } from '../../shared/ui/Badge/Badge.jsx';
-import { canCreateAccounts } from '../../shared/lib/roles.js';
+import { canManageHr } from '../../shared/lib/roles.js';
 import { useAuthStore } from '../../store/authStore.js';
 import { Skeleton } from '../../shared/ui/PageState/PageState.jsx';
 import { StatRow, StatTile } from '../../shared/ui/StatTile/StatTile.jsx';
@@ -44,7 +44,7 @@ export function EmployeesPage() {
         <section>
             <PageHeader
                 title={t('employees.title')}
-                actions={canCreateAccounts(role) ? <Button onClick={() => navigate('/app/admin/users/new')}>{t('common.create')}</Button> : null}
+                actions={canManageHr(role) ? <Button onClick={() => navigate('/app/employees/new')}>{t('employees.createCard')}</Button> : null}
             />
             <StatRow>
                 <StatTile label={t('employees.title')} value={pageData?.totalElements ?? 0} />

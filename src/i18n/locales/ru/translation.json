@@ -34,7 +34,8 @@
     "filters": "Фильтры и сортировка",
     "sort": "Сортировка",
     "sortAsc": "{{field}}, А–Я",
-    "sortDesc": "{{field}}, Я–А"
+    "sortDesc": "{{field}}, Я–А",
+    "reason": "Причина"
   },
   "navigation": {
     "myProfile": "Мой профиль",
@@ -47,6 +48,7 @@
     "analytics": "Аналитика",
     "timesheet": "Табель",
     "myStats": "Моя статистика",
+    "reports": "Отчёты",
     "admin": "Администрирование",
     "settings": "Настройки",
     "collapse": "Свернуть",
@@ -120,6 +122,8 @@
     "comment": "Комментарий",
     "reviews": "История согласования",
     "planned": "План",
+    "today": "Сегодня",
+    "weekdays": ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"],
     "openDay": "Записи дня"
   },
   "analyticsUi": {
@@ -141,16 +145,47 @@
     "gaps": "Дефициты",
     "recommendations": "Рекомендации",
     "start": "Рассчитать соответствие",
+    "startHint": "Выберите целевую должность, грейд и режим — результат откроется на отдельной странице.",
     "waiting": "Расчёт выполняется",
     "insufficient": "Недостаточно данных для рекомендации",
     "generationFailed": "Не удалось сформировать текст рекомендации. Числовая оценка сохранена.",
     "emptyRecommendation": "Рекомендация ещё не сформирована",
+    "strengths": "Сильные стороны",
+    "limitations": "Ограничения",
+    "generateRecommendations": "Сформировать рекомендации",
     "actual": "Факт",
     "required": "Требование",
     "weekHours": "Часы за неделю",
     "openAssessment": "Открыть оценку",
     "skill": "Навык",
-    "employeesCount": "Сотрудников"
+    "employeesCount": "Сотрудников",
+    "mode": "Режим оценки",
+    "modeSkills": "Навыки",
+    "modeSkillsExperience": "Навыки и опыт",
+    "modeFull": "Полная оценка",
+    "projectScore": "Проекты",
+    "careerOptions": "Карьерные направления",
+    "startOptions": "Сравнить направления",
+    "downloadPdf": "Скачать PDF",
+    "draftIdp": "Черновик ИПР",
+    "reports": "Аналитические отчёты",
+    "reportType": "Тип отчёта",
+    "preview": "Просмотр",
+    "assessment": "Оценка",
+    "assessmentId": "ID оценки",
+    "reserveId": "ID резерва",
+    "jobId": "ID задания",
+    "periodFrom": "Период с",
+    "periodTo": "Период по",
+    "missingSkills": "навыки",
+    "missingExperience": "опыт",
+    "missingProjects": "проектная активность",
+    "rank": "Место",
+    "fallback": "Текст сформирован шаблоном, числовая оценка сохранена.",
+    "emptyDashboard": "Пока нет агрегатов",
+    "emptyDashboardHint": "Запустите оценку и дождитесь утверждённого табеля, чтобы заполнить дашборд.",
+    "jobTimeout": "Расчёт занял слишком много времени. Повторите попытку.",
+    "jobFailed": "Не удалось выполнить расчёт. Проверьте данные профиля и повторите попытку."
   },
   "dictionaries": {
     "title": "Справочники",
@@ -195,10 +230,15 @@
       "APPROVED": "Утверждён",
       "REJECTED": "Возвращён"
     },
+    "reviewDecision": {
+      "APPROVE": "Утверждено",
+      "REJECT": "Возвращено"
+    },
     "recommendationStatus": {
       "RUNNING": "Формируется",
       "COMPLETED": "Готово",
-      "FAILED": "Ошибка"
+      "FAILED": "Ошибка",
+      "FALLBACK": "Шаблон"
     },
     "employmentStatus": {
       "ACTIVE": "Активен",
@@ -253,9 +293,30 @@
     },
     "activityType": {
       "TRAINING": "Обучение",
-      "PROJECT_PRACTICE": "Практика",
+      "CERTIFICATION": "Сертификация",
+      "PROJECT_PRACTICE": "Проектная практика",
+      "PRACTICAL_TASK": "Практическое задание",
       "MENTORING": "Наставничество",
       "SELF_STUDY": "Самообучение"
+    },
+    "evidenceType": {
+      "LINK": "Ссылка",
+      "FILE": "Файл",
+      "DOCUMENT": "Документ",
+      "PROJECT_TASK": "Задача проекта",
+      "TASK": "Задача"
+    },
+    "eligibilityStatus": {
+      "ELIGIBLE": "Подходит",
+      "GAPS_PRESENT": "Есть дефициты",
+      "INSUFFICIENT_DATA": "Недостаточно данных",
+      "ASSESSMENT_FAILED": "Оценка не выполнена"
+    },
+    "screeningStatus": {
+      "PENDING": "Ожидает",
+      "RUNNING": "Выполняется",
+      "COMPLETED": "Завершён",
+      "FAILED": "Ошибка"
     },
     "candidateDecision": {
       "APPROVE": "Утвердить",
@@ -335,6 +396,8 @@
     "skillCategory": "Категория навыка",
     "skillDescription": "Описание навыка",
     "noSkills": "Навыки не указаны.",
+    "addSkill": "Добавить навык",
+    "addResponsibility": "Добавить руководителя",
     "skillAdded": "Навык добавлен",
     "educationLevel": "Уровень образования",
     "institution": "Название УО",
@@ -375,7 +438,8 @@
     "status": "Статус",
     "department": "Подразделение",
     "firstName": "Имя",
-    "lastName": "Фамилия"
+    "lastName": "Фамилия",
+    "createCard": "Новая карточка"
   },
   "organization": {
     "title": "Организационная структура",
@@ -389,7 +453,9 @@
     "membersCount": "{{count}} чел.",
     "unassigned": "Без подразделения",
     "unassignedHint": "Сотрудники, не привязанные к отделу.",
-    "search": "Поиск подразделения"
+    "search": "Поиск подразделения или сотрудника",
+    "openTree": "Открыть структуру",
+    "backToDepartments": "К подразделениям"
   },
   "projects": {
     "title": "Мои проекты",
@@ -442,6 +508,7 @@
     "priority": "Приоритет",
     "emptyTasks": "Задач пока нет. Их можно создать на доске Kanban.",
     "timeHint": "Учёт времени в этой волне не подключён. Здесь появятся списания после Time Tracking Service.",
+    "emptyTime": "По этому проекту ещё нет списаний времени.",
     "createTask": "Создать задачу",
     "newTask": "Новая задача",
     "column": "Колонка",

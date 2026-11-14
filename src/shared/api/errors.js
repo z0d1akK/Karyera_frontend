@@ -13,10 +13,23 @@ export function getApiError(error) {
         };
     }
 
+    const code = data?.code || error?.code;
+    const mapped = {
+        TIMEOUT: 'analyticsUi.jobTimeout',
+        FAILED: 'analyticsUi.jobFailed',
+        INSUFFICIENT_DATA: 'analyticsUi.insufficient',
+    }[code];
+    const status = error?.response?.status;
+    const message = mapped
+        ? i18n.t(mapped)
+        : status === 403
+            ? i18n.t('errors.forbidden')
+            : data?.message || (error?.message && error.message !== code ? error.message : null) || i18n.t('errors.requestFailed');
+
     return {
-        status: error?.response?.status,
-        code: data?.code,
-        message: data?.message || error?.message || i18n.t('errors.requestFailed'),
+        status,
+        code,
+        message,
         fieldErrors: data?.errors || data?.fieldErrors,
     };
 }

@@ -16,21 +16,17 @@ export function SessionBootstrap({ children }) {
         queryKey: queryKeys.employees.byUser(session?.userId),
         queryFn: () => employeeApi.getByUserId(session.userId),
         enabled: Boolean(isAuthenticated && session?.userId),
-        retry: false,
+        retry: 2,
     });
 
     useEffect(() => {
         if (query.data) {
             setEmployee(query.data);
+        }
+        if (!isAuthenticated || !session?.userId || query.isFetched) {
             setReady(true);
         }
-    }, [query.data, setEmployee, setReady]);
-
-    useEffect(() => {
-        if (!isAuthenticated || !session?.userId) {
-            setReady(true);
-        }
-    }, [isAuthenticated, session?.userId, setReady]);
+    }, [query.data, query.isFetched, isAuthenticated, session?.userId, setEmployee, setReady]);
 
     useEffect(() => {
         if (query.error?.response?.status === 401) {

@@ -167,6 +167,9 @@ export const careerApi = {
     startScreening(id, payload) {
         return axiosClient.post(`/v1/career/talent-reserves/${id}/screenings`, payload).then((r) => r.data);
     },
+    fromAssessment(assessmentId) {
+        return axiosClient.post(`/v1/career/development-plans/from-assessment/${assessmentId}`).then((r) => r.data);
+    },
     getCandidate(id) {
         return axiosClient.get(`/v1/career/reserve-candidates/${id}`).then((r) => r.data);
     },

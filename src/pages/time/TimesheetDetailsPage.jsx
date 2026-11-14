@@ -6,18 +6,23 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { hoursLabel, timeApi } from '../../features/time/api/timeApi.js';
 import { formatDate } from '../../shared/lib/format.js';
 import { enumLabel, statusTone } from '../../shared/lib/enums.js';
+import { useEmployeeNames, useWorkLabels } from '../../shared/lib/displayNames.js';
 import { canApproveTimesheets } from '../../shared/lib/roles.js';
 import { getApiError } from '../../shared/api/errors.js';
 import { useAuthStore } from '../../store/authStore.js';
 import { useToastStore } from '../../store/toastStore.js';
 import { Badge } from '../../shared/ui/Badge/Badge.jsx';
 import { Button } from '../../shared/ui/Button/Button.jsx';
+import { Card } from '../../shared/ui/Card/Card.jsx';
 import { DataTable } from '../../shared/ui/DataTable/DataTable.jsx';
+import { NamedLink } from '../../shared/ui/NamedLink/NamedLink.jsx';
 import { Textarea } from '../../shared/ui/Input/Input.jsx';
 import { PageHeader } from '../../shared/ui/PageHeader/PageHeader.jsx';
-import { StatTile } from '../../shared/ui/StatTile/StatTile.jsx';
+import { BackLink } from '../../shared/ui/BackLink/BackLink.jsx';
+import { StatRow, StatTile } from '../../shared/ui/StatTile/StatTile.jsx';
 import { PageState, Skeleton } from '../../shared/ui/PageState/PageState.jsx';
 import { TimeNav } from './TimeNav.jsx';
+import page from '../../shared/styles/page.module.css';
 
 export function TimesheetDetailsPage() {
     const { id } = useParams();
@@ -53,6 +58,8 @@ export function TimesheetDetailsPage() {
         onSuccess: refresh,
         onError,
     });
+    const labels = useWorkLabels(sheet.data?.entries || []);
+    const employeeName = useEmployeeNames();
 
     if (sheet.isLoading) {
         return <Skeleton rows={6} />;
@@ -66,44 +73,50 @@ export function TimesheetDetailsPage() {
     const canDecide = data.status === 'SUBMITTED' && canApproveTimesheets(role);
 
     return (
-        <section>
+        <section className={page.sections}>
+            <BackLink to="/app/time/timesheets">{t('common.back')}</BackLink>
             <PageHeader
                 title={`${formatDate(data.periodStart)} — ${formatDate(data.periodEnd)}`}
+                description={employeeName(data.employeeId) || undefined}
                 actions={<Badge tone={statusTone('timesheetStatus', data.status)}>{enumLabel(t, 'timesheetStatus', data.status)}</Badge>}
             />
             <TimeNav />
-            <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+            <StatRow>
                 <StatTile label={t('time.norm')} value={hoursLabel(data.plannedMinutes)} />
                 <StatTile label={t('time.logged')} value={hoursLabel(data.totalMinutes)} />
-            </div>
+            </StatRow>
+            <Card>
             <DataTable
                 rows={data.entries || []}
                 columns={[
                     { key: 'date', header: t('time.date'), render: (row) => formatDate(row.workDate) },
-                    { key: 'project', header: t('time.project'), render: (row) => row.projectName || row.projectId },
-                    { key: 'task', header: t('time.task'), render: (row) => row.taskTitle || row.taskId },
+                    { key: 'project', header: t('time.project'), render: (row) => <NamedLink to={row.projectId ? `/app/projects/${row.projectId}` : null} name={row.projectName || labels.projectName(row.projectId)} /> },
+                    { key: 'task', header: t('time.task'), render: (row) => <NamedLink to={row.taskId ? `/app/tasks/${row.taskId}` : null} name={row.taskTitle || labels.taskTitle(row.taskId)} /> },
                     { key: 'hours', header: t('time.hours'), render: (row) => hoursLabel(row.durationMinutes) },
                 ]}
             />
             {canSend ? <Button onClick={() => submit.mutate()} disabled={submit.isPending}>{t('time.submit')}</Button> : null}
             {canDecide ? (
-                <div style={{ maxWidth: 560, marginTop: 16, display: 'grid', gap: 12 }}>
+                <div className={page.stack}>
                     <Textarea label={t('time.comment')} value={comment} onChange={(event) => setComment(event.target.value)} />
-                    <div style={{ display: 'flex', gap: 8 }}>
+                    <div className={page.row}>
                         <Button onClick={() => approve.mutate()} disabled={approve.isPending}>{t('time.approve')}</Button>
                         <Button variant="coral" onClick={() => reject.mutate()} disabled={!comment || reject.isPending}>{t('time.reject')}</Button>
                     </div>
                 </div>
             ) : null}
-            <h2 style={{ marginTop: 24 }}>{t('time.reviews')}</h2>
+            </Card>
+            <Card>
+            <h2 className={page.sectionTitle}>{t('time.reviews')}</h2>
             <DataTable
                 rows={reviews.data || []}
                 columns={[
-                    { key: 'decision', header: t('time.status'), render: (row) => row.decision },
+                    { key: 'decision', header: t('time.status'), render: (row) => <Badge tone={row.decision === 'APPROVE' ? 'success' : 'danger'}>{enumLabel(t, 'reviewDecision', row.decision)}</Badge> },
                     { key: 'comment', header: t('time.comment'), render: (row) => row.comment || '—' },
                     { key: 'at', header: t('time.date'), render: (row) => formatDate(row.reviewedAt) },
                 ]}
             />
+            </Card>
         </section>
     );
 }

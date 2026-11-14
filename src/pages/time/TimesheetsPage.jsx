@@ -11,10 +11,12 @@ import { useAuthStore } from '../../store/authStore.js';
 import { useToastStore } from '../../store/toastStore.js';
 import { Badge } from '../../shared/ui/Badge/Badge.jsx';
 import { Button } from '../../shared/ui/Button/Button.jsx';
+import { Card } from '../../shared/ui/Card/Card.jsx';
 import { DataTable } from '../../shared/ui/DataTable/DataTable.jsx';
 import { PageHeader } from '../../shared/ui/PageHeader/PageHeader.jsx';
 import { PageState, Skeleton } from '../../shared/ui/PageState/PageState.jsx';
 import { TimeNav } from './TimeNav.jsx';
+import page from '../../shared/styles/page.module.css';
 
 function currentWeek() {
     const now = new Date();
@@ -23,7 +25,11 @@ function currentWeek() {
     monday.setDate(now.getDate() - day + 1);
     const sunday = new Date(monday);
     sunday.setDate(monday.getDate() + 6);
-    const iso = (date) => date.toISOString().slice(0, 10);
+    const iso = (date) => {
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const dayOfMonth = String(date.getDate()).padStart(2, '0');
+        return `${date.getFullYear()}-${month}-${dayOfMonth}`;
+    };
     return { periodStart: iso(monday), periodEnd: iso(sunday) };
 }
 
@@ -54,12 +60,13 @@ export function TimesheetsPage() {
     });
 
     return (
-        <section>
+        <section className={page.sections}>
             <PageHeader
                 title={t('time.timesheets')}
                 actions={<Button onClick={() => create.mutate()} disabled={create.isPending}>{t('time.createWeek')}</Button>}
             />
             <TimeNav />
+            <Card>
             {sheets.isLoading ? <Skeleton rows={4} /> : null}
             {sheets.isError ? <PageState title={t('errors.loadFailed')} onAction={sheets.refetch} actionLabel={t('common.retry')} /> : null}
             {sheets.data ? (
@@ -74,6 +81,7 @@ export function TimesheetsPage() {
                     ]}
                 />
             ) : null}
+            </Card>
         </section>
     );
 }

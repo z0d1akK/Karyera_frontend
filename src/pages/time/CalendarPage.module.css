@@ -1,17 +1,65 @@
+.monthTitle {
+    margin: 0 0 12px;
+    font-size: 24px;
+    font-weight: 800;
+    text-transform: capitalize;
+}
+
+.nav {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.weekdays,
 .month {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 8px;
 }
 
+.weekdays {
+    margin-bottom: 8px;
+}
+
+.weekday {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--color-secondary-text);
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.empty {
+    min-height: 96px;
+}
+
 .day {
-    min-height: 84px;
-    padding: 8px;
-    background: var(--color-surface);
+    min-height: 96px;
+    padding: 10px;
+    background: var(--color-background);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     text-decoration: none;
     color: inherit;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.day:hover {
+    border-color: var(--color-primary-accent);
+}
+
+.today {
+    border-color: var(--color-primary-accent);
+    background: rgba(212, 163, 44, 0.12);
+}
+
+.weekend {
+    opacity: 0.78;
 }
 
 .date {
@@ -20,11 +68,16 @@
 
 .meta {
     color: var(--color-secondary-text);
-    font-size: var(--font-size-sm);
+    font-size: 12px;
 }
 
 @media (max-width: 800px) {
+    .weekdays,
     .month {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .weekdays {
+        display: none;
     }
 }

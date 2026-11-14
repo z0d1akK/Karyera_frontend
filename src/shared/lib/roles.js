@@ -38,7 +38,7 @@ export function canSeeAnalyticsNav(role) {
 }
 
 export function canSeeAdminNav(role) {
-    return hasRole(role, [ROLES.HR, ROLES.ADMIN]);
+    return hasRole(role, [ROLES.ADMIN]);
 }
 
 export function canSeeDirectory(role) {

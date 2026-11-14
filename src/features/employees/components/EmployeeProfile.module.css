@@ -87,6 +87,12 @@
     color: var(--color-primary-dark);
 }
 
+.tabBar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
 .stack {
     display: flex;
     flex-direction: column;
@@ -97,9 +103,14 @@
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    align-items: center;
+    align-items: flex-end;
     align-self: start;
     margin-top: 16px;
+}
+
+.statusField {
+    width: 240px;
+    max-width: 100%;
 }
 
 .fields > .actions,

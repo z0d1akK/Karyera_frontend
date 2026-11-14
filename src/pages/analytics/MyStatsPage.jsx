@@ -7,17 +7,21 @@ import { StartAssessment } from '../../features/analytics/StartAssessment.jsx';
 import { hoursLabel, timeApi } from '../../features/time/api/timeApi.js';
 import { formatDate } from '../../shared/lib/format.js';
 import { useAuthStore } from '../../store/authStore.js';
+import { Card } from '../../shared/ui/Card/Card.jsx';
 import { PageHeader } from '../../shared/ui/PageHeader/PageHeader.jsx';
 import { PageState, Skeleton } from '../../shared/ui/PageState/PageState.jsx';
 import { StatRow, StatTile } from '../../shared/ui/StatTile/StatTile.jsx';
 import { AnalyticsNav } from './AnalyticsNav.jsx';
+import page from '../../shared/styles/page.module.css';
 
 function monday() {
     const now = new Date();
     const day = now.getDay() || 7;
     const date = new Date(now);
     date.setDate(now.getDate() - day + 1);
-    return date.toISOString().slice(0, 10);
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const dayOfMonth = String(date.getDate()).padStart(2, '0');
+    return `${date.getFullYear()}-${month}-${dayOfMonth}`;
 }
 
 export function MyStatsPage() {
@@ -47,7 +51,7 @@ export function MyStatsPage() {
     const logged = Number(week.data?.approvedMinutes || 0) + Number(week.data?.pendingMinutes || 0) + Number(week.data?.draftMinutes || 0);
 
     return (
-        <section>
+        <section className={page.sections}>
             <PageHeader title={t('analyticsUi.me')} />
             <AnalyticsNav />
             {week.isError || assessments.isError ? <PageState title={t('errors.loadFailed')} /> : null}
@@ -56,7 +60,8 @@ export function MyStatsPage() {
                 <StatTile label={t('analyticsUi.score')} value={latest?.totalScore ?? '—'} tone="accent" />
                 <StatTile label={t('time.norm')} value={hoursLabel(week.data?.plannedMinutes)} />
             </StatRow>
-            <h2>{t('analyticsUi.development')}</h2>
+            <Card>
+            <h2 className={page.sectionTitle}>{t('analyticsUi.development')}</h2>
             {(dynamics.data?.points || []).length ? (
                 <ul>
                     {dynamics.data.points.map((point) => (
@@ -66,7 +71,7 @@ export function MyStatsPage() {
                     ))}
                 </ul>
             ) : <p>{t('common.noData')}</p>}
-            <h2>{t('analyticsUi.start')}</h2>
+            </Card>
             <StartAssessment
                 employeeId={employee.id}
                 positionId={employee.position?.id || employee.positionId || ''}

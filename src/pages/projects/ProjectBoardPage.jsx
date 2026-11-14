@@ -18,7 +18,6 @@ import { Button } from '../../shared/ui/Button/Button.jsx';
 import { Input, Select } from '../../shared/ui/Input/Input.jsx';
 import { Modal } from '../../shared/ui/Modal/Modal.jsx';
 import { Skeleton } from '../../shared/ui/PageState/PageState.jsx';
-import { CollapsePanel } from '../../shared/ui/ListFilters/ListFilters.jsx';
 import page from '../../shared/styles/page.module.css';
 import styles from './Board.module.css';
 
@@ -65,6 +64,7 @@ export function ProjectBoardPage() {
     const queryClient = useQueryClient();
     const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
     const [open, setOpen] = useState(false);
+    const [columnOpen, setColumnOpen] = useState(false);
     const [form, setForm] = useState({ title: '', taskTypeId: '', columnId: '', priority: 'MEDIUM' });
 
     const [columnForm, setColumnForm] = useState({ code: '', name: '', isInitial: false, isTerminal: false });
@@ -98,6 +98,7 @@ export function ProjectBoardPage() {
             isTerminal: columnForm.isTerminal,
         }),
         onSuccess: () => {
+            setColumnOpen(false);
             setColumnForm({ code: '', name: '', isInitial: false, isTerminal: false });
             queryClient.invalidateQueries({ queryKey: queryKeys.projects.board(id) });
         },
@@ -167,14 +168,20 @@ export function ProjectBoardPage() {
     }
 
     return (
-        <section>
+        <section className={styles.page}>
             <BackLink to={`/app/projects/${id}`}>{t('projects.backToProject')}</BackLink>
             <PageHeader
                 title={board.data?.name || 'Kanban'}
-                actions={<Button onClick={() => setOpen(true)}>{t('projects.createTask')}</Button>}
+                actions={(
+                    <>
+                        {canEdit ? <Button variant="secondary" onClick={() => setColumnOpen(true)}>{t('projects.addColumn')}</Button> : null}
+                        <Button onClick={() => setOpen(true)}>{t('projects.createTask')}</Button>
+                    </>
+                )}
             />
             <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={onDragEnd}>
-                <div className={styles.board}>
+                <div className={styles.frame}>
+                    <div className={styles.board}>
                     {columns.map((column) => (
                         <BoardColumn key={column.id} column={column}>
                             <header>
@@ -214,6 +221,7 @@ export function ProjectBoardPage() {
                                     <Button variant="danger" onClick={() => removeColumn.mutate(column.id)}>{t('common.delete')}</Button>
                                 </div>
                             ) : null}
+                            <div className={styles.cards}>
                             {(column.tasks || []).map((task) => (
                                 <BoardCard
                                     key={task.id}
@@ -222,12 +230,13 @@ export function ProjectBoardPage() {
                                     onOpen={(taskId) => navigate(`/app/tasks/${taskId}`)}
                                 />
                             ))}
+                            </div>
                         </BoardColumn>
                     ))}
+                    </div>
                 </div>
             </DndContext>
-            {canEdit ? (
-                <CollapsePanel label={t('projects.addColumn')}>
+            <Modal open={columnOpen} title={t('projects.addColumn')} onClose={() => setColumnOpen(false)}>
                 <form className={page.stack} onSubmit={(event) => { event.preventDefault(); addColumn.mutate(); }}>
                     <div className={page.grid}>
                         <Input label={t('projects.columnCode')} value={columnForm.code} onChange={(e) => setColumnForm({ ...columnForm, code: e.target.value })} />
@@ -241,10 +250,12 @@ export function ProjectBoardPage() {
                             {' '}{t('projects.terminalColumn')}
                         </label>
                     </div>
-                    <Button type="submit" disabled={!columnForm.code || !columnForm.name}>{t('projects.addColumn')}</Button>
+                    <div className={page.row}>
+                        <Button type="submit" disabled={!columnForm.code || !columnForm.name}>{t('projects.addColumn')}</Button>
+                        <Button type="button" variant="ghost" onClick={() => setColumnOpen(false)}>{t('common.cancel')}</Button>
+                    </div>
                 </form>
-                </CollapsePanel>
-            ) : null}
+            </Modal>
             <Modal open={open} title={t('projects.newTask')} onClose={() => setOpen(false)}>
                 <div className={page.stack}>
                 <div className={page.grid}>
