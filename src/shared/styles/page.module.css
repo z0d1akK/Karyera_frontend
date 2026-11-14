@@ -5,6 +5,14 @@
     align-items: start;
 }
 
+.equal {
+    align-items: stretch;
+}
+
+.equal > * {
+    min-height: 0;
+}
+
 .spanAll {
     grid-column: 1 / -1;
 }
@@ -33,8 +41,24 @@
     margin-bottom: 16px;
 }
 
+.sectionHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0;
+}
+
 .sectionTitle {
-    margin: 8px 0 12px;
+    margin: 0;
+}
+
+.sectionMore {
+    flex-shrink: 0;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-secondary-text);
+    white-space: nowrap;
 }
 
 .dangerText {

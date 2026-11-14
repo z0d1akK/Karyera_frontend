@@ -128,6 +128,8 @@
   },
   "analyticsUi": {
     "overview": "Overview",
+    "dashboard": "Dashboard",
+    "dashboardHint": "Summary of assessments, readiness and departments.",
     "employees": "Employees",
     "career": "Career",
     "me": "My statistics",
@@ -186,6 +188,34 @@
     "fallback": "Template text is shown; numeric scores are kept.",
     "emptyDashboard": "No aggregates yet",
     "emptyDashboardHint": "Run an assessment and wait for an approved timesheet to fill the dashboard.",
+    "emptyChart": "Not enough data for a chart",
+    "tableAndFilters": "Table and filters",
+    "hideTable": "Hide table",
+    "topReady": "Ready (75%+)",
+    "topDeficit": "Top skill gap",
+    "mandatoryGaps": "Mandatory gaps",
+    "averageSkill": "Average skills",
+    "departments": "By department",
+    "noDepartment": "No department",
+    "readinessBucket": {
+      "low": "0–25%",
+      "mid": "25–50%",
+      "high": "50–75%",
+      "top": "75–100%"
+    },
+    "grain": {
+      "label": "Step",
+      "day": "Day",
+      "month": "Month",
+      "year": "Year"
+    },
+    "limit": "Show",
+    "topLimit": "Top",
+    "pointsLimit": "Points",
+    "topN": "Top {{n}}",
+    "lastN": "Last {{n}}",
+    "allPoints": "All",
+    "shownOf": "Showing {{shown}} of {{total}}",
     "jobTimeout": "The calculation took too long. Try again.",
     "jobFailed": "The calculation failed. Check the profile data and try again."
   },

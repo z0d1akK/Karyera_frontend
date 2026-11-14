@@ -40,7 +40,7 @@ export function RecommendationText({ content }) {
                     {view.strengths.map((line) => <p key={line}>{line}</p>)}
                 </div>
             ) : null}
-            {view.developmentAreas.length && !view.recommendations.length ? (
+            {view.developmentAreas.length ? (
                 <div>
                     <h3 className={page.sectionTitle}>{t('analyticsUi.gaps')}</h3>
                     {view.developmentAreas.map((line) => <p key={line}>{line}</p>)}
@@ -48,6 +48,7 @@ export function RecommendationText({ content }) {
             ) : null}
             {view.recommendations.length ? (
                 <div className={page.stack}>
+                    <h3 className={page.sectionTitle}>{t('analyticsUi.recommendations')}</h3>
                     {dedupeRecommendations(view.recommendations).map((item, index) => (
                         <div key={`${item.title}-${index}`}>
                             {item.title ? <p><strong>{item.title}</strong></p> : null}

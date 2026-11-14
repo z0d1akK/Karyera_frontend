@@ -31,6 +31,26 @@ export function formatDate(value, language = currentLang()) {
     }
 }
 
+export function formatGrainDate(value, grain = 'DAY', language = currentLang()) {
+    if (!value) {
+        return '—';
+    }
+    try {
+        const raw = typeof value === 'string' ? value : value.toISOString?.() || String(value);
+        const date = parseISO(String(raw).slice(0, 10));
+        const locale = locales[language] || ru;
+        if (grain === 'YEAR') {
+            return format(date, 'yyyy', { locale });
+        }
+        if (grain === 'MONTH') {
+            return format(date, 'LLL yyyy', { locale });
+        }
+        return format(date, 'dd.MM.yyyy', { locale });
+    } catch {
+        return formatDate(value, language);
+    }
+}
+
 export function timezoneOffsetMinutes() {
     return -new Date().getTimezoneOffset();
 }
@@ -59,6 +79,22 @@ export function formatDateTime(value, language = currentLang()) {
 
 export function catalogName(item) {
     return item?.name || '—';
+}
+
+export function scoreToPercent(value) {
+    if (value === null || value === undefined || value === '') {
+        return null;
+    }
+    const number = Number(value);
+    if (Number.isNaN(number)) {
+        return null;
+    }
+    return number <= 1 ? number * 100 : number;
+}
+
+export function formatScorePercent(value) {
+    const percent = scoreToPercent(value);
+    return percent == null ? '—' : `${Math.round(percent)}%`;
 }
 
 export function valueOrDash(value) {

@@ -12,6 +12,7 @@ export function AnalyticsNav({ includeCompany = true }) {
     if (company) {
         items.push(
             { to: '/app/analytics', label: t('analyticsUi.overview'), end: true },
+            { to: '/app/analytics/dashboard', label: t('analyticsUi.dashboard') },
             { to: '/app/analytics/employees', label: t('analyticsUi.employees') },
             { to: '/app/analytics/career', label: t('analyticsUi.career') },
         );

@@ -1,10 +1,13 @@
 import styles from './StatTile.module.css';
 
-export function StatTile({ label, value, tone = 'default' }) {
+export function StatTile({ label, value, hint, tone = 'default' }) {
     return (
         <div className={styles.tile}>
             <span>{label}</span>
-            <strong className={styles[tone]}>{value}</strong>
+            <div className={styles.valueRow}>
+                <strong className={styles[tone]}>{value}</strong>
+                {hint != null && hint !== '' ? <em className={styles.hint}>{hint}</em> : null}
+            </div>
         </div>
     );
 }

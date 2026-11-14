@@ -1,11 +1,16 @@
+import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 
 import { analyticsApi } from '../../features/analytics/api/analyticsApi.js';
+import { ChartCard } from '../../features/analytics/charts/ChartCard.jsx';
+import { ChartToolbar } from '../../features/analytics/charts/ChartToolbar.jsx';
+import { ScoreLineChart } from '../../features/analytics/charts/ScoreLineChart.jsx';
+import { SCORE_GRAINS, mapScorePoints, takeLast } from '../../features/analytics/charts/chartMappers.js';
 import { StartAssessment } from '../../features/analytics/StartAssessment.jsx';
 import { employeeApi } from '../../features/employees/api/employeeApi.js';
-import { formatDate, fullName } from '../../shared/lib/format.js';
+import { formatDate, formatScorePercent, fullName } from '../../shared/lib/format.js';
 import { Button } from '../../shared/ui/Button/Button.jsx';
 import { Card } from '../../shared/ui/Card/Card.jsx';
 import { DataTable } from '../../shared/ui/DataTable/DataTable.jsx';
@@ -20,8 +25,15 @@ export function EmployeeAnalyticsPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const employee = useQuery({ queryKey: ['employees', id], queryFn: () => employeeApi.getById(id) });
+    const [grain, setGrain] = useState('DAY');
+    const [last, setLast] = useState(12);
     const assessments = useQuery({ queryKey: ['analytics', 'assessments', id], queryFn: () => analyticsApi.assessments(id) });
     const dynamics = useQuery({ queryKey: ['analytics', 'dynamics', id], queryFn: () => analyticsApi.dynamics(id) });
+    const allPoints = useMemo(
+        () => mapScorePoints(dynamics.data?.points || [], 'calculatedAt', grain),
+        [dynamics.data, grain],
+    );
+    const points = takeLast(allPoints, last);
 
     if (employee.isLoading) {
         return <Skeleton rows={4} />;
@@ -50,22 +62,20 @@ export function EmployeeAnalyticsPage() {
                 rows={assessments.data || []}
                     columns={[
                     { key: 'date', header: t('time.date'), render: (row) => formatDate(row.calculatedAt) },
-                    { key: 'score', header: t('analyticsUi.score'), render: (row) => row.totalScore ?? '—' },
-                    { key: 'skills', header: t('analyticsUi.skillScore'), render: (row) => row.skillScore ?? '—' },
+                    { key: 'score', header: t('analyticsUi.score'), render: (row) => formatScorePercent(row.totalScore) },
+                    { key: 'skills', header: t('analyticsUi.skillScore'), render: (row) => formatScorePercent(row.skillScore) },
                     { key: 'open', header: '', render: (row) => <Link to={`/app/career/assessments/${row.id}`}>{t('analyticsUi.openAssessment')}</Link> },
                 ]}
             />
             </Card>
-            <Card>
-            <h2 className={page.sectionTitle}>{t('analyticsUi.development')}</h2>
-            {(dynamics.data?.points || []).length ? (
-                <ul>
-                    {dynamics.data.points.map((point) => (
-                        <li key={point.assessmentId}>{formatDate(point.calculatedAt)} — {point.totalScore}</li>
-                    ))}
-                </ul>
-            ) : <p>{t('common.noData')}</p>}
-            </Card>
+            <ChartCard
+                title={t('analyticsUi.development')}
+                empty={!points.length}
+                toolbar={<ChartToolbar grains={SCORE_GRAINS} grain={grain} onGrain={setGrain} last={last} onLast={setLast} />}
+                caption={allPoints.length > points.length ? t('analyticsUi.shownOf', { shown: points.length, total: allPoints.length }) : null}
+            >
+                <ScoreLineChart data={points} />
+            </ChartCard>
         </section>
     );
 }

@@ -1,5 +1,6 @@
 .row {
     display: grid;
+    flex-shrink: 0;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     margin-top: 16px;
     margin-bottom: 24px;
@@ -34,6 +35,25 @@
     font-size: 28px;
     line-height: 1.2;
     color: var(--color-primary-dark);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    white-space: nowrap;
+}
+
+.valueRow {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.hint {
+    font-size: 14px;
+    font-style: normal;
+    color: var(--color-secondary-text);
+    white-space: nowrap;
 }
 
 .accent {

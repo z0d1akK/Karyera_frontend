@@ -74,10 +74,6 @@
     min-height: 220px;
 }
 
-.deptBox {
-    background: rgba(212, 163, 44, 0.12);
-}
-
 .forest {
     display: flex;
     justify-content: center;

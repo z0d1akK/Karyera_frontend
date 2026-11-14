@@ -40,7 +40,7 @@ export function MainLayout() {
         <div className={`${styles.shell} ${collapsed ? styles.collapsed : ''}`}>
             <aside className={styles.sidebar}>
                 <div className={styles.brand}>
-                    {!collapsed ? <AuthLogo inverted /> : <span className={styles.brandMark}>K</span>}
+                    <AuthLogo inverted compact={collapsed} />
                 </div>
                 <nav className={styles.nav}>
                     {items.map((item) => (

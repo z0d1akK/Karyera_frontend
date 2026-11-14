@@ -27,3 +27,7 @@
 .inverted .name {
     color: var(--color-surface);
 }
+
+.compact {
+    gap: 0;
+}

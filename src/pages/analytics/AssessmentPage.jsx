@@ -3,10 +3,14 @@ import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { analyticsApi } from '../../features/analytics/api/analyticsApi.js';
+import { ChartCard } from '../../features/analytics/charts/ChartCard.jsx';
+import { FitGauge } from '../../features/analytics/charts/FitGauge.jsx';
+import { SkillRadarChart } from '../../features/analytics/charts/SkillRadarChart.jsx';
+import { mapRadar } from '../../features/analytics/charts/chartMappers.js';
 import { RecommendationText, recommendationList } from '../../features/analytics/RecommendationText.jsx';
 import { careerApi } from '../../features/career/api/careerApi.js';
 import { useCatalogs } from '../../features/employees/hooks/useCatalogs.js';
-import { catalogName } from '../../shared/lib/format.js';
+import { catalogName, formatScorePercent } from '../../shared/lib/format.js';
 import { canManageDevelopmentPlans } from '../../shared/lib/roles.js';
 import { enumLabel, statusTone } from '../../shared/lib/enums.js';
 import { getApiError } from '../../shared/api/errors.js';
@@ -78,11 +82,19 @@ export function AssessmentPage() {
                 )}
             />
             <StatRow>
-                <StatTile label={t('analyticsUi.score')} value={data.totalScore ?? '—'} tone="accent" />
-                <StatTile label={t('analyticsUi.skillScore')} value={data.skillScore ?? '—'} />
-                <StatTile label={t('analyticsUi.experienceScore')} value={data.experienceScore ?? '—'} />
-                <StatTile label={t('analyticsUi.projectScore')} value={project?.rawScore ?? '—'} />
+                <StatTile label={t('analyticsUi.score')} value={formatScorePercent(data.totalScore)} tone="accent" />
+                <StatTile label={t('analyticsUi.skillScore')} value={formatScorePercent(data.skillScore)} />
+                <StatTile label={t('analyticsUi.experienceScore')} value={formatScorePercent(data.experienceScore)} />
+                <StatTile label={t('analyticsUi.projectScore')} value={formatScorePercent(project?.rawScore)} />
             </StatRow>
+            <div className={page.grid}>
+                <ChartCard title={t('analyticsUi.score')} compact>
+                    <FitGauge value={data.totalScore} label={t('analyticsUi.score')} />
+                </ChartCard>
+                <ChartCard title={t('analyticsUi.gaps')} empty={!mapRadar(gaps.data || data.skillGaps || [], catalogs).length} compact>
+                    <SkillRadarChart data={mapRadar(gaps.data || data.skillGaps || [], catalogs)} />
+                </ChartCard>
+            </div>
             <Card>
                 <h2 className={page.sectionTitle}>{t('analyticsUi.gaps')}</h2>
                 <DataTable

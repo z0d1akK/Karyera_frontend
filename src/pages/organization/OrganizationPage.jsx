@@ -80,7 +80,7 @@ function OrgNode({ person, childrenMap, canOpenProfile }) {
     );
 }
 
-function DepartmentTree({ departmentId, departmentName }) {
+function DepartmentTree({ departmentId }) {
     const { t } = useTranslation();
     const role = useAuthStore((state) => state.session?.role);
     const canOpenProfile = canSeeDirectory(role);
@@ -126,17 +126,9 @@ function DepartmentTree({ departmentId, departmentName }) {
         <div className={styles.chart}>
             <Badge tone="accent">{t('organization.membersCount', { count: people.length })}</Badge>
             <div className={styles.forest}>
-                <div className={styles.branch}>
-                    <div className={`${styles.box} ${styles.deptBox}`}>
-                        <strong>{departmentName}</strong>
-                    </div>
-                    <div className={styles.stem} />
-                    <div className={styles.level}>
-                        {roots.map((person) => (
-                            <OrgNode key={personId(person)} person={person} childrenMap={children} canOpenProfile={canOpenProfile} />
-                        ))}
-                    </div>
-                </div>
+                {roots.map((person) => (
+                    <OrgNode key={personId(person)} person={person} childrenMap={children} canOpenProfile={canOpenProfile} />
+                ))}
             </div>
         </div>
     );
@@ -210,27 +202,25 @@ export function OrganizationPage() {
                 title={t('organization.title')}
                 description={t('organization.description')}
             />
+            {selected ? (
+                <article className={styles.treeCard}>
+                    <div className={styles.cardHead}>
+                        <h2>{selected.name}</h2>
+                        <Button variant="ghost" onClick={() => setSelectedId(null)}>{t('organization.backToDepartments')}</Button>
+                    </div>
+                    <p className={styles.description}>{selected.description || t('organization.noDescription')}</p>
+                    <DepartmentTree departmentId={selected.id} />
+                </article>
+            ) : (
+                <>
             <div className={styles.toolbar}>
                 <Input
                     label={t('organization.search')}
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
                 />
-                {selected ? (
-                    <div className={styles.backWrap}>
-                        <Button variant="ghost" onClick={() => setSelectedId(null)}>{t('organization.backToDepartments')}</Button>
-                    </div>
-                ) : null}
             </div>
-            {selected ? (
-                <article className={styles.treeCard}>
-                    <div className={styles.cardHead}>
-                        <h2>{selected.name}</h2>
-                    </div>
-                    <p className={styles.description}>{selected.description || t('organization.noDescription')}</p>
-                    <DepartmentTree departmentId={selected.id} departmentName={selected.name} />
-                </article>
-            ) : !departmentList.length ? (
+            {!departmentList.length ? (
                 <PageState title={t('organization.emptyDepartments')} description={t('organization.emptyHint')} />
             ) : (
                 <div className={styles.grid}>
@@ -249,6 +239,8 @@ export function OrganizationPage() {
                         </button>
                     ))}
                 </div>
+            )}
+                </>
             )}
         </section>
     );

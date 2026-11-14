@@ -29,14 +29,20 @@ export const analyticsApi = {
     skills() {
         return get('/v1/analytics/dashboard/skills');
     },
+    skillDeficits() {
+        return get('/v1/analytics/dashboard/skill-deficits');
+    },
+    departments() {
+        return get('/v1/analytics/dashboard/departments');
+    },
     readiness() {
         return get('/v1/analytics/dashboard/career-readiness');
     },
-    development() {
-        return get('/v1/analytics/dashboard/development');
+    development(grain = 'MONTH') {
+        return get('/v1/analytics/dashboard/development', { params: { grain } });
     },
-    activity() {
-        return get('/v1/analytics/dashboard/project-activity');
+    activity(grain = 'MONTH') {
+        return get('/v1/analytics/dashboard/project-activity', { params: { grain } });
     },
     dynamics(employeeId) {
         return get(`/v1/analytics/employees/${employeeId}/development-dynamics`);

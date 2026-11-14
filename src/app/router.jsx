@@ -34,6 +34,7 @@ import { TimesheetsPage } from '../pages/time/TimesheetsPage.jsx';
 import { TimesheetDetailsPage } from '../pages/time/TimesheetDetailsPage.jsx';
 import { ApprovalsPage } from '../pages/time/ApprovalsPage.jsx';
 import { AnalyticsOverviewPage } from '../pages/analytics/OverviewPage.jsx';
+import { AnalyticsDashboardPage } from '../pages/analytics/DashboardPage.jsx';
 import { EmployeesAnalyticsPage } from '../pages/analytics/EmployeesAnalyticsPage.jsx';
 import { EmployeeAnalyticsPage } from '../pages/analytics/EmployeeAnalyticsPage.jsx';
 import { CareerAnalyticsPage } from '../pages/analytics/CareerAnalyticsPage.jsx';
@@ -131,6 +132,7 @@ export const router = createBrowserRouter([
                         element: <RoleRoute roles={[ROLES.MANAGER, ROLES.HR, ROLES.ADMIN]} />,
                         children: [
                             { path: '/app/analytics', element: <AnalyticsOverviewPage /> },
+                            { path: '/app/analytics/dashboard', element: <AnalyticsDashboardPage /> },
                             { path: '/app/analytics/employees', element: <EmployeesAnalyticsPage /> },
                             { path: '/app/analytics/employees/:id', element: <EmployeeAnalyticsPage /> },
                             { path: '/app/analytics/career', element: <CareerAnalyticsPage /> },
