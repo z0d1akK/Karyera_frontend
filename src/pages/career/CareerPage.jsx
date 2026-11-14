@@ -117,7 +117,7 @@ export function CareerPage() {
 
             <div className={styles.toolbar}>
                 <div className={styles.chips}>
-                    <Button variant="ghost" onClick={() => navigate('/app/analytics/me')}>{t('analyticsUi.recommendations')}</Button>
+                    <Button variant="ghost" onClick={() => navigate('/app/analytics/me/recommendations')}>{t('analyticsUi.recommendations')}</Button>
                     <Button variant="ghost" onClick={() => navigate('/app/analytics/me/career-options', { state: { from: '/app/career' } })}>{t('analyticsUi.careerOptions')}</Button>
                 </div>
                 <div className={styles.toolbarActions}>

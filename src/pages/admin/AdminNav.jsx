@@ -12,16 +12,18 @@ export function AdminNav() {
     ];
 
     return (
-        <div className={tabStyles.tabs}>
-            {items.map((item) => (
-                <NavLink
-                    key={item.to}
-                    to={item.to}
-                    className={() => `${tabStyles.tab} ${pathname.startsWith(item.prefix) ? tabStyles.active : ''}`}
-                >
-                    {item.label}
-                </NavLink>
-            ))}
+        <div className={tabStyles.row}>
+            <div className={tabStyles.tabs}>
+                {items.map((item) => (
+                    <NavLink
+                        key={item.to}
+                        to={item.to}
+                        className={() => `${tabStyles.tab} ${pathname.startsWith(item.prefix) ? tabStyles.active : ''}`}
+                    >
+                        {item.label}
+                    </NavLink>
+                ))}
+            </div>
         </div>
     );
 }

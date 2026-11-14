@@ -1,13 +1,14 @@
 import { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { projectApi } from '../../features/projects/api/projectApi.js';
 import { employeeApi } from '../../features/employees/api/employeeApi.js';
+import { hoursLabel, timeApi } from '../../features/time/api/timeApi.js';
 import { queryKeys } from '../../shared/api/queryKeys.js';
 import { unwrapPage } from '../../shared/lib/queryParams.js';
-import { formatDateTime } from '../../shared/lib/format.js';
+import { formatDate, formatDateTime } from '../../shared/lib/format.js';
 import { enumLabel } from '../../shared/lib/enums.js';
 import { useEmployeeNames } from '../../shared/lib/displayNames.js';
 import { getApiError } from '../../shared/api/errors.js';
@@ -16,16 +17,33 @@ import { useAuthStore } from '../../store/authStore.js';
 import { useToastStore } from '../../store/toastStore.js';
 import { PageHeader } from '../../shared/ui/PageHeader/PageHeader.jsx';
 import { BackLink } from '../../shared/ui/BackLink/BackLink.jsx';
-import { Card } from '../../shared/ui/Card/Card.jsx';
 import { Tabs } from '../../shared/ui/Tabs/Tabs.jsx';
 import { Input, Select, Textarea } from '../../shared/ui/Input/Input.jsx';
 import { Button } from '../../shared/ui/Button/Button.jsx';
 import { Badge } from '../../shared/ui/Badge/Badge.jsx';
 import { Skeleton } from '../../shared/ui/PageState/PageState.jsx';
 import { Modal } from '../../shared/ui/Modal/Modal.jsx';
+import { NamedLink } from '../../shared/ui/NamedLink/NamedLink.jsx';
 import page from '../../shared/styles/page.module.css';
+import styles from '../../shared/styles/catalog.module.css';
 
 const listOf = (data) => (Array.isArray(data) ? data : data?.content || []);
+
+function Field({ label, value }) {
+    return (
+        <div className={styles.field}>
+            <span className={styles.label}>{label}</span>
+            <div className={styles.value}>{value || '—'}</div>
+        </div>
+    );
+}
+
+function relatedTaskId(item, currentId) {
+    if (item.targetTaskId && String(item.targetTaskId) !== String(currentId)) {
+        return item.targetTaskId;
+    }
+    return item.sourceTaskId || item.targetTaskId;
+}
 
 export function TaskDetailsPage() {
     const { t } = useTranslation();
@@ -71,7 +89,22 @@ export function TaskDetailsPage() {
     const siblings = useQuery({
         queryKey: queryKeys.projects.tasks(task.data?.projectId, { picker: true }),
         enabled: Boolean(task.data?.projectId),
-        queryFn: async () => unwrapPage(await projectApi.listTasks(task.data.projectId, { page: 0, size: 50, sortBy: 'taskNumber' })),
+        queryFn: async () => unwrapPage(await projectApi.listTasks(task.data.projectId, { page: 0, size: 100, sortBy: 'taskNumber' })),
+    });
+    const parentTask = useQuery({
+        queryKey: queryKeys.tasks.one(task.data?.parentTaskId),
+        enabled: Boolean(task.data?.parentTaskId),
+        queryFn: () => projectApi.getTask(task.data.parentTaskId),
+    });
+    const taskTime = useQuery({
+        queryKey: ['tasks', id, 'time'],
+        queryFn: async () => unwrapPage(await timeApi.listEntries({
+            taskId: id,
+            page: 0,
+            size: 50,
+            sortBy: 'workDate',
+            sortDirection: 'DESC',
+        })),
     });
 
     const onError = (error) => push({ type: 'error', message: getApiError(error).message });
@@ -93,7 +126,17 @@ export function TaskDetailsPage() {
         onError,
     });
     const save = useMutation({
-        mutationFn: () => projectApi.updateTask(id, edit),
+        mutationFn: async () => {
+            const { parentTaskId, ...payload } = edit;
+            const saved = await projectApi.updateTask(id, payload);
+            const currentParent = task.data.parentTaskId || '';
+            if ((parentTaskId || '') !== currentParent) {
+                await projectApi.updateParent(id, {
+                    parentTaskId: parentTaskId || null,
+                    expectedVersion: saved?.version ?? task.data.version,
+                });
+            }
+        },
         onSuccess: () => {
             setEdit(null);
             refresh();
@@ -103,11 +146,6 @@ export function TaskDetailsPage() {
     const archive = useMutation({
         mutationFn: () => projectApi.archiveTask(id),
         onSuccess: () => navigate(`/app/projects/${task.data.projectId}`),
-        onError,
-    });
-    const setParent = useMutation({
-        mutationFn: (parentTaskId) => projectApi.updateParent(id, { parentTaskId: parentTaskId || null, expectedVersion: task.data.version }),
-        onSuccess: refresh,
         onError,
     });
     const saveAssignees = useMutation({
@@ -160,14 +198,58 @@ export function TaskDetailsPage() {
     const relationList = listOf(relations.data);
     const skillList = listOf(skills.data);
     const assignmentList = assignments.data?.content || [];
+    const siblingTasks = siblings.data?.content || [];
+    const timeRows = taskTime.data?.content || [];
+    const loggedMinutes = timeRows.reduce((sum, row) => sum + (Number(row.durationMinutes) || 0), 0);
     const myAssignment = assignmentList.find((item) => item.employeeId === employee?.id);
     const canEdit = isProjectEditor(role, project.data, employee?.id)
         || assigneeList.some((item) => item.assignmentId === myAssignment?.id);
 
+    const taskName = (taskId) => {
+        if (!taskId) {
+            return null;
+        }
+        if (String(taskId) === String(id)) {
+            return data.title;
+        }
+        if (String(taskId) === String(data.parentTaskId) && parentTask.data?.title) {
+            return parentTask.data.title;
+        }
+        const found = siblingTasks.find((item) => String(item.id) === String(taskId))
+            || childList.find((item) => String(item.id) === String(taskId));
+        return found?.title || found?.key || null;
+    };
+
+    const openEdit = () => setEdit({
+        title: data.title,
+        description: data.description || '',
+        priority: data.priority,
+        complexity: data.complexity || '',
+        storyPoints: data.storyPoints || '',
+        dueDate: data.dueDate || '',
+        taskTypeId: data.taskTypeId,
+        columnId: data.columnId,
+        parentTaskId: data.parentTaskId || '',
+    });
+
+    const tabActions = () => {
+        if (tab === 'people' && canEdit) {
+            return <Button onClick={() => setAssigneeOpen(true)}>{t('common.add')}</Button>;
+        }
+        if (tab === 'comments') {
+            return <Button onClick={() => setCommentOpen(true)}>{t('projects.addComment')}</Button>;
+        }
+        return null;
+    };
+
     return (
         <section>
             <BackLink to={`/app/projects/${data.projectId}`}>{t('projects.backToProject')}</BackLink>
-            <PageHeader title={data.title} description={data.key} actions={<Badge>{data.status || enumLabel(t, 'priority', data.priority)}</Badge>} />
+            <PageHeader
+                title={data.title}
+                description={data.key}
+                actions={<Badge>{data.status || enumLabel(t, 'priority', data.priority)}</Badge>}
+            />
             <Tabs
                 items={[
                     { id: 'details', label: t('projects.tabDetails') },
@@ -177,95 +259,112 @@ export function TaskDetailsPage() {
                 ]}
                 value={tab}
                 onChange={setTab}
+                actions={tabActions()}
             />
-            <Card>
-                {tab === 'details' && (
-                    <div className={page.stack}>
-                        <p>{data.description}</p>
-                        <p>{t('projects.priority')}: {enumLabel(t, 'priority', data.priority)}</p>
-                        <p>{t('navigation.projects')}: <Link to={`/app/projects/${data.projectId}`}>{project.data?.name || '—'}</Link></p>
-                        <p>{t('projects.parent')}: {data.parentTaskId || '—'}</p>
-                        <div>
-                            <h3>{t('projects.subtasks')}</h3>
-                            {childList.map((item) => <p key={item.id}><Link to={`/app/tasks/${item.id}`}>{item.title}</Link></p>)}
-                        </div>
-                        <div>
-                            <h3>{t('projects.relations')}</h3>
-                            {relationList.map((item) => (
-                                <p key={item.id}>
-                                    {enumLabel(t, 'relationType', item.relationType)} · {item.targetTaskId}
-                                    {canEdit ? <Button variant="ghost" onClick={() => removeRelation.mutate(item.id)}>{t('common.delete')}</Button> : null}
-                                </p>
-                            ))}
-                            {canEdit ? <Button onClick={() => setRelationOpen(true)}>{t('common.add')}</Button> : null}
-                        </div>
-                        <div>
-                            <h3>{t('projects.taskSkills')}</h3>
-                            {skillList.map((item) => (
-                                <p key={item.id}>
-                                    {(catalogSkills.data || []).find((skill) => skill.id === item.skillId)?.name || '—'}
-                                    {canEdit ? <Button variant="ghost" onClick={() => removeSkill.mutate(item.id)}>{t('common.delete')}</Button> : null}
-                                </p>
-                            ))}
-                            {canEdit ? <Button onClick={() => setSkillOpen(true)}>{t('common.add')}</Button> : null}
+            {tab === 'details' && (
+                <div className={styles.stack}>
+                    <article className={styles.panel}>
+                        {data.description ? <p className={styles.description}>{data.description}</p> : null}
+                        <div className={styles.detailFields}>
+                            <Field label={t('projects.priority')} value={enumLabel(t, 'priority', data.priority)} />
+                            <Field
+                                label={t('time.project')}
+                                value={<NamedLink to={`/app/projects/${data.projectId}`} name={project.data?.name} />}
+                            />
+                            <Field
+                                label={t('projects.parent')}
+                                value={<NamedLink to={data.parentTaskId ? `/app/tasks/${data.parentTaskId}` : null} name={taskName(data.parentTaskId)} />}
+                            />
+                            <Field label={t('projects.dueDate')} value={data.dueDate ? formatDate(data.dueDate) : null} />
+                            <Field label={t('projects.complexity')} value={data.complexity ? enumLabel(t, 'complexity', data.complexity) || data.complexity : null} />
+                            <Field label={t('projects.storyPoints')} value={data.storyPoints} />
+                            <Field label={t('time.hours')} value={loggedMinutes ? hoursLabel(loggedMinutes) : '0'} />
                         </div>
                         {canEdit ? (
-                            <div className={page.row}>
-                                <Button onClick={() => setEdit({
-                                    title: data.title,
-                                    description: data.description || '',
-                                    priority: data.priority,
-                                    complexity: data.complexity || '',
-                                    storyPoints: data.storyPoints || '',
-                                    dueDate: data.dueDate || '',
-                                    taskTypeId: data.taskTypeId,
-                                    columnId: data.columnId,
-                                })}>{t('common.edit')}</Button>
-                                <Select value={data.parentTaskId || ''} onChange={(e) => setParent.mutate(e.target.value)}>
-                                    <option value="">{t('projects.parent')}</option>
-                                    {(siblings.data?.content || []).filter((item) => item.id !== id).map((item) => (
-                                        <option key={item.id} value={item.id}>{item.title}</option>
-                                    ))}
-                                </Select>
+                            <div className={styles.actions}>
+                                <Button onClick={openEdit}>{t('common.edit')}</Button>
                                 {data.status !== 'ARCHIVED' ? <Button variant="danger" onClick={() => archive.mutate()}>{t('projects.archiveTask')}</Button> : null}
                             </div>
                         ) : null}
-                    </div>
-                )}
-                {tab === 'people' && (
-                    <div className={page.stack}>
-                        {assigneeList.map((item) => {
-                            const assignment = assignmentList.find((row) => row.id === item.assignmentId);
-                            return <p key={item.id}>{assignment?.employeeFullName || employeeName(assignment?.employeeId) || '—'}</p>;
-                        })}
-                        {canEdit ? <Button onClick={() => setAssigneeOpen(true)}>{t('common.add')}</Button> : null}
-                    </div>
-                )}
-                {tab === 'comments' && (
-                    <div className={page.stack}>
-                        {commentList.map((item) => (
-                            <p key={item.id}>{item.content} · {formatDateTime(item.createdAt)}</p>
-                        ))}
-                        <Button onClick={() => setCommentOpen(true)}>{t('projects.addComment')}</Button>
-                    </div>
-                )}
-                {tab === 'history' && (
-                    <div className={page.stack}>
-                        {activityList.map((item) => (
-                            <p key={item.id}>{item.action || item.type || item.fieldName} · {formatDateTime(item.createdAt)}</p>
-                        ))}
-                    </div>
-                )}
-            </Card>
+                    </article>
+                    <article className={styles.panel}>
+                        <div className={styles.cardHead}>
+                            <h2>{t('projects.subtasks')}</h2>
+                        </div>
+                        {childList.length ? childList.map((item) => (
+                            <div key={item.id} className={styles.itemRow}>
+                                <NamedLink to={`/app/tasks/${item.id}`} name={item.title} />
+                                {item.status ? <Badge>{item.status}</Badge> : null}
+                            </div>
+                        )) : <p className={styles.empty}>{t('projects.emptySubtasks')}</p>}
+                    </article>
+                    <article className={styles.panel}>
+                        <div className={styles.cardHead}>
+                            <h2>{t('projects.relations')}</h2>
+                            {canEdit ? <Button onClick={() => setRelationOpen(true)}>{t('common.add')}</Button> : null}
+                        </div>
+                        {relationList.length ? relationList.map((item) => {
+                            const peerId = relatedTaskId(item, id);
+                            return (
+                                <div key={item.id} className={styles.itemRow}>
+                                    <span className={styles.itemMeta}>{enumLabel(t, 'relationType', item.relationType)}</span>
+                                    <NamedLink to={peerId ? `/app/tasks/${peerId}` : null} name={taskName(peerId)} />
+                                    {canEdit ? <Button variant="ghost" onClick={() => removeRelation.mutate(item.id)}>{t('common.delete')}</Button> : null}
+                                </div>
+                            );
+                        }) : <p className={styles.empty}>{t('projects.emptyRelations')}</p>}
+                    </article>
+                    <article className={styles.panel}>
+                        <div className={styles.cardHead}>
+                            <h2>{t('projects.taskSkills')}</h2>
+                            {canEdit ? <Button onClick={() => setSkillOpen(true)}>{t('common.add')}</Button> : null}
+                        </div>
+                        {skillList.length ? skillList.map((item) => (
+                            <div key={item.id} className={styles.itemRow}>
+                                <span>{(catalogSkills.data || []).find((skill) => skill.id === item.skillId)?.name || '—'}</span>
+                                {canEdit ? <Button variant="ghost" onClick={() => removeSkill.mutate(item.id)}>{t('common.delete')}</Button> : null}
+                            </div>
+                        )) : <p className={styles.empty}>{t('projects.emptyTaskSkills')}</p>}
+                    </article>
+                </div>
+            )}
+            {tab === 'people' && (
+                <article className={styles.panel}>
+                    {assigneeList.length ? assigneeList.map((item) => {
+                        const assignment = assignmentList.find((row) => row.id === item.assignmentId);
+                        return <p key={item.id} className={styles.itemRow}>{assignment?.employeeFullName || employeeName(assignment?.employeeId) || '—'}</p>;
+                    }) : <p className={styles.empty}>{t('projects.emptyAssignees')}</p>}
+                </article>
+            )}
+            {tab === 'comments' && (
+                <article className={styles.panel}>
+                    {commentList.length ? commentList.map((item) => (
+                        <div key={item.id} className={styles.itemRow}>
+                            <span>{item.content}</span>
+                            <span className={styles.itemMeta}>{formatDateTime(item.createdAt)}</span>
+                        </div>
+                    )) : <p className={styles.empty}>{t('projects.emptyComments')}</p>}
+                </article>
+            )}
+            {tab === 'history' && (
+                <article className={styles.panel}>
+                    {activityList.length ? activityList.map((item) => (
+                        <div key={item.id} className={styles.itemRow}>
+                            <span>{item.action || item.type || item.fieldName}</span>
+                            <span className={styles.itemMeta}>{formatDateTime(item.createdAt)}</span>
+                        </div>
+                    )) : <p className={styles.empty}>{t('projects.emptyHistory')}</p>}
+                </article>
+            )}
             <Modal open={relationOpen} title={t('projects.relations')} onClose={() => setRelationOpen(false)}>
                 <div className={page.stack}>
-                    <Select value={relation.targetTaskId} onChange={(e) => setRelation({ ...relation, targetTaskId: e.target.value })}>
+                    <Select label={t('projects.tasks')} value={relation.targetTaskId} onChange={(e) => setRelation({ ...relation, targetTaskId: e.target.value })}>
                         <option value="">{t('common.select')}</option>
-                        {(siblings.data?.content || []).filter((item) => item.id !== id).map((item) => (
+                        {siblingTasks.filter((item) => item.id !== id).map((item) => (
                             <option key={item.id} value={item.id}>{item.title}</option>
                         ))}
                     </Select>
-                    <Select value={relation.relationType} onChange={(e) => setRelation({ ...relation, relationType: e.target.value })}>
+                    <Select label={t('projects.type')} value={relation.relationType} onChange={(e) => setRelation({ ...relation, relationType: e.target.value })}>
                         {['BLOCKS', 'RELATES_TO', 'DUPLICATES'].map((item) => <option key={item} value={item}>{enumLabel(t, 'relationType', item)}</option>)}
                     </Select>
                     <div className={page.row}>
@@ -276,7 +375,7 @@ export function TaskDetailsPage() {
             </Modal>
             <Modal open={skillOpen} title={t('projects.taskSkills')} onClose={() => setSkillOpen(false)}>
                 <div className={page.stack}>
-                    <Select value={skillId} onChange={(e) => setSkillId(e.target.value)}>
+                    <Select label={t('projects.taskSkills')} value={skillId} onChange={(e) => setSkillId(e.target.value)}>
                         <option value="">{t('common.select')}</option>
                         {(catalogSkills.data || []).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
                     </Select>
@@ -300,6 +399,12 @@ export function TaskDetailsPage() {
                         </Select>
                         <Input label={t('projects.storyPoints')} value={edit.storyPoints || ''} onChange={(e) => setEdit({ ...edit, storyPoints: e.target.value })} />
                         <Input type="date" label={t('projects.dueDate')} value={edit.dueDate || ''} onChange={(e) => setEdit({ ...edit, dueDate: e.target.value })} />
+                        <Select label={t('projects.parent')} value={edit.parentTaskId || ''} onChange={(e) => setEdit({ ...edit, parentTaskId: e.target.value })}>
+                            <option value="">{t('common.notSelected')}</option>
+                            {siblingTasks.filter((item) => item.id !== id).map((item) => (
+                                <option key={item.id} value={item.id}>{item.title}</option>
+                            ))}
+                        </Select>
                         <div className={page.row}>
                             <Button onClick={() => save.mutate()}>{t('projects.saveTask')}</Button>
                             <Button variant="ghost" onClick={() => setEdit(null)}>{t('common.cancel')}</Button>
@@ -309,7 +414,7 @@ export function TaskDetailsPage() {
             </Modal>
             <Modal open={assigneeOpen} title={t('projects.assignees')} onClose={() => setAssigneeOpen(false)}>
                 <div className={page.stack}>
-                    <Select value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)}>
+                    <Select label={t('projects.employee')} value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)}>
                         <option value="">{t('common.select')}</option>
                         {assignmentList.map((item) => (
                             <option key={item.id} value={item.id}>{item.employeeFullName || employeeName(item.employeeId) || '—'}</option>
@@ -328,7 +433,7 @@ export function TaskDetailsPage() {
             </Modal>
             <Modal open={commentOpen} title={t('projects.addComment')} onClose={() => setCommentOpen(false)}>
                 <div className={page.stack}>
-                    <Textarea value={comment} onChange={(e) => setComment(e.target.value)} />
+                    <Textarea label={t('projects.tabComments')} value={comment} onChange={(e) => setComment(e.target.value)} />
                     <div className={page.row}>
                         <Button onClick={() => addComment.mutate()} disabled={!employee?.id || !comment}>{t('projects.addComment')}</Button>
                         <Button variant="ghost" onClick={() => setCommentOpen(false)}>{t('common.cancel')}</Button>

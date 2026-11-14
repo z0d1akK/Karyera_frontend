@@ -13,6 +13,18 @@ export function recommendationList(data) {
     return [];
 }
 
+function dedupeRecommendations(items) {
+    const seen = new Set();
+    return (items || []).filter((item) => {
+        const key = `${item.title || ''}|${item.description || ''}`;
+        if (!key.trim() || seen.has(key)) {
+            return false;
+        }
+        seen.add(key);
+        return true;
+    });
+}
+
 export function RecommendationText({ content }) {
     const { t } = useTranslation();
     const view = recommendationView(content);
@@ -28,7 +40,7 @@ export function RecommendationText({ content }) {
                     {view.strengths.map((line) => <p key={line}>{line}</p>)}
                 </div>
             ) : null}
-            {view.developmentAreas.length ? (
+            {view.developmentAreas.length && !view.recommendations.length ? (
                 <div>
                     <h3 className={page.sectionTitle}>{t('analyticsUi.gaps')}</h3>
                     {view.developmentAreas.map((line) => <p key={line}>{line}</p>)}
@@ -36,11 +48,10 @@ export function RecommendationText({ content }) {
             ) : null}
             {view.recommendations.length ? (
                 <div className={page.stack}>
-                    <h3 className={page.sectionTitle}>{t('analyticsUi.recommendations')}</h3>
-                    {view.recommendations.map((item, index) => (
+                    {dedupeRecommendations(view.recommendations).map((item, index) => (
                         <div key={`${item.title}-${index}`}>
                             {item.title ? <p><strong>{item.title}</strong></p> : null}
-                            {item.description ? <p>{item.description}</p> : null}
+                            {item.description && item.description !== item.title ? <p>{item.description}</p> : null}
                             {item.activities.map((line) => <p key={line}>{line}</p>)}
                             {item.outcome ? <p>{item.outcome}</p> : null}
                         </div>

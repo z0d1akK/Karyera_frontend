@@ -353,7 +353,7 @@ function SkillsTab({ employee, canEdit, skills, addOpen, onAddOpenChange, onSave
                         <Field label={t('profile.skill')} value={item.skill?.name} />
                         <Field label={t('profile.skillLevel')} value={item.level} />
                         <Field label={t('profile.yearsOfExperience')} value={item.yearsOfExperience} />
-                        <Field label={t('profile.skillCategory')} value={item.skill?.category} />
+                        <Field label={t('profile.skillCategory')} value={item.skill?.category ? enumLabel(t, 'skillCategory', item.skill.category) : null} />
                     </div>
                     {canEdit ? (
                         <div className={styles.actions}>

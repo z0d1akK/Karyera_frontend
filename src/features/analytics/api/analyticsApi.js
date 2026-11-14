@@ -1,4 +1,5 @@
 import { axiosClient } from '../../../shared/api/axiosClient.js';
+import { timezoneOffsetMinutes } from '../../../shared/lib/format.js';
 
 const get = (path, config) => axiosClient.get(path, config).then((response) => response.data);
 
@@ -65,11 +66,13 @@ export const analyticsApi = {
         return get('/v1/analytics/reports');
     },
     reportPreview(type, params) {
-        return axiosClient.get(`/v1/analytics/reports/${type}/preview`, { params }).then((response) => response.data);
+        return axiosClient.get(`/v1/analytics/reports/${type}/preview`, {
+            params: { ...params, zoneOffsetMinutes: timezoneOffsetMinutes() },
+        }).then((response) => response.data);
     },
     async downloadReport(type, params) {
         const response = await axiosClient.get(`/v1/analytics/reports/${type}`, {
-            params,
+            params: { ...params, zoneOffsetMinutes: timezoneOffsetMinutes() },
             responseType: 'blob',
         });
         const url = window.URL.createObjectURL(response.data);
@@ -106,6 +109,15 @@ export function readRecommendation(content) {
     }
 }
 
+function firstNonEmpty(...lists) {
+    for (const list of lists) {
+        if (Array.isArray(list) && list.length) {
+            return list;
+        }
+    }
+    return [];
+}
+
 function asLines(value) {
     if (!value) {
         return [];
@@ -128,7 +140,7 @@ export function recommendationView(content) {
     }
     const explanation = parsed.explanation && typeof parsed.explanation === 'object' ? parsed.explanation : parsed;
     const development = parsed.development && typeof parsed.development === 'object' ? parsed.development : {};
-    const recItems = development.recommendations || explanation.recommendations || parsed.recommendations || [];
+    const recItems = firstNonEmpty(development.recommendations, explanation.recommendations, parsed.recommendations);
     const summary = explanation.summary || parsed.summary || (typeof parsed === 'string' ? parsed : '');
     const recommendations = (Array.isArray(recItems) ? recItems : [recItems]).map((item) => {
         if (typeof item === 'string') {

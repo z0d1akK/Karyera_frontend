@@ -6,6 +6,7 @@ import { analyticsApi } from '../../features/analytics/api/analyticsApi.js';
 import { careerApi } from '../../features/career/api/careerApi.js';
 import { EmployeePicker } from '../../features/employees/components/EmployeePicker.jsx';
 import { getApiError } from '../../shared/api/errors.js';
+import { timezoneOffsetLabel } from '../../shared/lib/format.js';
 import { unwrapPage } from '../../shared/lib/queryParams.js';
 import { canManageEmployees } from '../../shared/lib/roles.js';
 import { useAuthStore } from '../../store/authStore.js';
@@ -144,10 +145,12 @@ function formatAssessment(item) {
 }
 
 function ReportPreview({ document }) {
+    const { t } = useTranslation();
     return (
         <Card>
             <h2 className={page.sectionTitle}>{document.title}</h2>
             {document.generatedAt ? <p className={page.meta}>{document.generatedAt}</p> : null}
+            <p className={page.meta}>{t('analyticsUi.reportTimezone', { zone: timezoneOffsetLabel() })}</p>
             <div className={page.sections}>
                 {(document.sections || []).map((section, index) => (
                     <section key={`${section.heading || 'section'}-${index}`}>

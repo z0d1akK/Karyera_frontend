@@ -33,6 +33,9 @@ export function useWorkLabels(rows) {
 
     return {
         projectName: (id) => (projects.data || []).find((item) => item.id === id)?.name || null,
-        taskTitle: (id) => tasks.find((item) => item.id === id)?.title || null,
+        taskTitle: (id) => {
+            const found = tasks.find((item) => String(item.id) === String(id));
+            return found?.title || found?.key || null;
+        },
     };
 }

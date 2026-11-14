@@ -31,6 +31,19 @@ export function formatDate(value, language = currentLang()) {
     }
 }
 
+export function timezoneOffsetMinutes() {
+    return -new Date().getTimezoneOffset();
+}
+
+export function timezoneOffsetLabel() {
+    const minutes = timezoneOffsetMinutes();
+    const sign = minutes >= 0 ? '+' : '-';
+    const absolute = Math.abs(minutes);
+    const hours = Math.floor(absolute / 60);
+    const rest = absolute % 60;
+    return rest ? `UTC${sign}${hours}:${String(rest).padStart(2, '0')}` : `UTC${sign}${hours}`;
+}
+
 export function formatDateTime(value, language = currentLang()) {
     if (!value) {
         return '—';

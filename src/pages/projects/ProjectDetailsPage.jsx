@@ -9,7 +9,7 @@ import { queryKeys } from '../../shared/api/queryKeys.js';
 import { unwrapPage } from '../../shared/lib/queryParams.js';
 import { formatDate } from '../../shared/lib/format.js';
 import { enumLabel, statusTone } from '../../shared/lib/enums.js';
-import { useEmployeeNames } from '../../shared/lib/displayNames.js';
+import { useEmployeeNames, useWorkLabels } from '../../shared/lib/displayNames.js';
 import { getApiError } from '../../shared/api/errors.js';
 import { useToastStore } from '../../store/toastStore.js';
 import { Tabs } from '../../shared/ui/Tabs/Tabs.jsx';
@@ -20,6 +20,7 @@ import { ListFilters, PageSizeField } from '../../shared/ui/ListFilters/ListFilt
 import { Modal } from '../../shared/ui/Modal/Modal.jsx';
 import { EmployeePicker } from '../../features/employees/components/EmployeePicker.jsx';
 import { Badge } from '../../shared/ui/Badge/Badge.jsx';
+import { NamedLink } from '../../shared/ui/NamedLink/NamedLink.jsx';
 import { BackLink } from '../../shared/ui/BackLink/BackLink.jsx';
 import { PageState, Skeleton } from '../../shared/ui/PageState/PageState.jsx';
 import { canManageProjectMembers, isProjectEditor } from '../../shared/lib/roles.js';
@@ -64,11 +65,13 @@ export function ProjectDetailsPage() {
         queryFn: async () => unwrapPage(await timeApi.listEntries({
             projectId: id,
             page: 0,
-            size: 50,
+            size: 100,
             sortBy: 'workDate',
             sortDirection: 'DESC',
         })),
     });
+    const timeRows = timeEntries.data?.content || [];
+    const workLabels = useWorkLabels(timeRows);
     const [assignment, setAssignment] = useState({ employeeId: '', projectRoleId: '', startDate: '', allocationPercent: '' });
     const [assignOpen, setAssignOpen] = useState(false);
     const [milestoneOpen, setMilestoneOpen] = useState(false);
@@ -436,19 +439,37 @@ export function ProjectDetailsPage() {
                     <h2>{t('projects.tabTime')}</h2>
                     {timeEntries.isLoading ? <p className={styles.empty}>{t('common.loading')}</p> : null}
                     {timeEntries.isError ? <p className={styles.empty}>{t('errors.loadFailed')}</p> : null}
-                    {!timeEntries.isLoading && !(timeEntries.data?.content || []).length ? (
+                    {!timeEntries.isLoading && !timeEntries.isError && !timeRows.length ? (
                         <p className={styles.empty}>{t('projects.emptyTime')}</p>
-                    ) : (
+                    ) : null}
+                    {!timeEntries.isLoading && timeRows.length ? (
                         <DataTable
-                            rows={timeEntries.data?.content || []}
+                            rows={timeRows}
+                            onRowClick={(row) => row.taskId && navigate(`/app/tasks/${row.taskId}`)}
                             columns={[
                                 { key: 'date', header: t('time.date'), render: (row) => formatDate(row.workDate) },
                                 { key: 'employee', header: t('projects.employee'), render: (row) => row.employeeFullName || employeeName(row.employeeId) || '—' },
-                                { key: 'task', header: t('time.task'), render: (row) => row.taskTitle || '—' },
+                                {
+                                    key: 'task',
+                                    header: t('time.task'),
+                                    render: (row) => (
+                                        <NamedLink
+                                            to={row.taskId ? `/app/tasks/${row.taskId}` : null}
+                                            name={row.taskTitle || workLabels.taskTitle(row.taskId)}
+                                        />
+                                    ),
+                                },
                                 { key: 'hours', header: t('time.hours'), render: (row) => hoursLabel(row.durationMinutes) },
+                                {
+                                    key: 'status',
+                                    header: t('time.status'),
+                                    render: (row) => row.status
+                                        ? <Badge tone={statusTone('timeEntryStatus', row.status)}>{enumLabel(t, 'timeEntryStatus', row.status)}</Badge>
+                                        : '—',
+                                },
                             ]}
                         />
-                    )}
+                    ) : null}
                 </article>
             )}
             <Modal open={assignOpen} title={t('projects.assign')} onClose={() => setAssignOpen(false)}>

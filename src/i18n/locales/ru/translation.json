@@ -150,6 +150,7 @@
     "insufficient": "Недостаточно данных для рекомендации",
     "generationFailed": "Не удалось сформировать текст рекомендации. Числовая оценка сохранена.",
     "emptyRecommendation": "Рекомендация ещё не сформирована",
+    "needAssessment": "Сначала рассчитайте соответствие должности — после этого здесь появится текст рекомендации.",
     "strengths": "Сильные стороны",
     "limitations": "Ограничения",
     "generateRecommendations": "Сформировать рекомендации",
@@ -167,6 +168,7 @@
     "careerOptions": "Карьерные направления",
     "startOptions": "Сравнить направления",
     "downloadPdf": "Скачать PDF",
+    "reportTimezone": "Время в отчёте указано по часовому поясу пользователя ({{zone}}).",
     "draftIdp": "Черновик ИПР",
     "reports": "Аналитические отчёты",
     "reportType": "Тип отчёта",
@@ -204,6 +206,7 @@
     "description": "Описание",
     "category": "Категория",
     "level": "Уровень",
+    "multipleAllowed": "Несколько назначений",
     "save": "Сохранить",
     "deactivate": "Деактивировать",
     "activate": "Активировать",
@@ -328,6 +331,12 @@
       "PROMOTION": "Повышение",
       "ROTATION": "Ротация",
       "TRANSFER": "Перевод"
+    },
+    "skillCategory": {
+      "TECHNICAL": "Технический",
+      "SOFT": "Гибкий навык",
+      "HR": "HR",
+      "GENERAL": "Общий"
     },
     "priority": {
       "LOW": "Низкий",
@@ -548,7 +557,13 @@
     "estimatedMinutes": "Оценка, мин",
     "initialColumn": "Начальная колонка",
     "terminalColumn": "Финальная колонка",
-    "renameColumn": "Название колонки"
+    "renameColumn": "Название колонки",
+    "emptySubtasks": "Подзадач пока нет.",
+    "emptyRelations": "Связей пока нет.",
+    "emptyTaskSkills": "Навыки задачи не указаны.",
+    "emptyAssignees": "Исполнители не назначены.",
+    "emptyComments": "Комментариев пока нет.",
+    "emptyHistory": "История изменений пуста."
   },
   "career": {
     "title": "Моя карьера",

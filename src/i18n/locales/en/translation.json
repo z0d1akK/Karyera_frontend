@@ -150,6 +150,7 @@
     "insufficient": "Not enough data for a recommendation",
     "generationFailed": "The recommendation text could not be generated. The numeric score is kept.",
     "emptyRecommendation": "A recommendation has not been generated yet",
+    "needAssessment": "Calculate position fit first. The recommendation will appear here afterwards.",
     "strengths": "Strengths",
     "limitations": "Limitations",
     "generateRecommendations": "Generate recommendations",
@@ -167,6 +168,7 @@
     "careerOptions": "Career options",
     "startOptions": "Compare options",
     "downloadPdf": "Download PDF",
+    "reportTimezone": "Report times use the viewer's time zone ({{zone}}).",
     "draftIdp": "Draft IDP",
     "reports": "Analytics reports",
     "reportType": "Report type",
@@ -204,6 +206,7 @@
     "description": "Description",
     "category": "Category",
     "level": "Level",
+    "multipleAllowed": "Multiple assignments",
     "save": "Save",
     "deactivate": "Deactivate",
     "activate": "Activate",
@@ -328,6 +331,12 @@
       "PROMOTION": "Promotion",
       "ROTATION": "Rotation",
       "TRANSFER": "Transfer"
+    },
+    "skillCategory": {
+      "TECHNICAL": "Technical",
+      "SOFT": "Soft skill",
+      "HR": "HR",
+      "GENERAL": "General"
     },
     "priority": {
       "LOW": "Low",
@@ -548,7 +557,13 @@
     "estimatedMinutes": "Estimate, min",
     "initialColumn": "Initial column",
     "terminalColumn": "Final column",
-    "renameColumn": "Column name"
+    "renameColumn": "Column name",
+    "emptySubtasks": "No subtasks yet.",
+    "emptyRelations": "No relations yet.",
+    "emptyTaskSkills": "No skills linked to this task.",
+    "emptyAssignees": "No assignees yet.",
+    "emptyComments": "No comments yet.",
+    "emptyHistory": "No history yet."
   },
   "career": {
     "title": "My career",

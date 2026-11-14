@@ -58,6 +58,7 @@ const TONES = {
     recommendationStatus: {
         RUNNING: 'warning',
         COMPLETED: 'success',
+        FALLBACK: 'warning',
         FAILED: 'danger',
     },
     reserveStatus: {

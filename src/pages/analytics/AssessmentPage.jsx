@@ -68,20 +68,6 @@ export function AssessmentPage() {
                 description={quality === 'INSUFFICIENT' ? t('analyticsUi.insufficient') : null}
                 actions={(
                     <div className={page.row}>
-                        <Button variant="ghost" onClick={() => navigate(`/app/career/assessments/${id}/recommendations`)}>
-                            {t('analyticsUi.recommendations')}
-                        </Button>
-                        {data.employeeId ? (
-                            <Button
-                                variant="ghost"
-                                onClick={() => navigate(
-                                    data.employeeId === selfId ? '/app/analytics/me/career-options' : `/app/analytics/employees/${data.employeeId}/career-options`,
-                                    { state: { from: `/app/career/assessments/${id}` } },
-                                )}
-                            >
-                                {t('analyticsUi.careerOptions')}
-                            </Button>
-                        ) : null}
                         <Button variant="ghost" onClick={() => analyticsApi.downloadReport('POSITION_FIT', { assessmentId: id })}>
                             {t('analyticsUi.downloadPdf')}
                         </Button>

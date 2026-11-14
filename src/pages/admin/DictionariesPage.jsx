@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { employeeApi } from '../../features/employees/api/employeeApi.js';
 import { projectApi } from '../../features/projects/api/projectApi.js';
 import { unwrapPage } from '../../shared/lib/queryParams.js';
+import { enumLabel } from '../../shared/lib/enums.js';
 import { getApiError } from '../../shared/api/errors.js';
 import { canWriteCatalogs } from '../../shared/lib/roles.js';
 import { useAuthStore } from '../../store/authStore.js';
@@ -53,7 +54,7 @@ const catalogs = {
     },
     skills: {
         list: employeeApi.listSkills,
-        create: (payload) => employeeApi.createSkill({ category: 'GENERAL', ...payload }),
+        create: (payload) => employeeApi.createSkill({ ...payload, category: payload.category || 'TECHNICAL' }),
         update: employeeApi.updateSkill,
         activate: employeeApi.activateSkill,
         deactivate: employeeApi.deactivateSkill,
@@ -65,7 +66,7 @@ const catalogs = {
         update: employeeApi.updateResponsibilityType,
         activate: employeeApi.activateResponsibilityType,
         deactivate: employeeApi.deactivateResponsibilityType,
-        extra: ['code'],
+        extra: ['code', 'multipleAllowed'],
     },
     projectRoles: {
         list: (params) => projectApi.listRoles(params),
@@ -85,7 +86,8 @@ const catalogs = {
     },
 };
 
-const emptyForm = { name: '', description: '', code: '', category: 'GENERAL', level: 1 };
+const emptyForm = { name: '', description: '', code: '', category: 'TECHNICAL', level: 1, multipleAllowed: false };
+const SKILL_CATEGORIES = ['TECHNICAL', 'SOFT', 'HR', 'GENERAL'];
 
 function toPayload(catalog, source) {
     const extra = catalog.extra || [];
@@ -94,15 +96,33 @@ function toPayload(catalog, source) {
         description: source.description || '',
     };
     if (extra.includes('code')) payload.code = source.code || '';
-    if (extra.includes('category')) payload.category = source.category || 'GENERAL';
+    if (extra.includes('category')) payload.category = source.category || 'TECHNICAL';
     if (extra.includes('level')) payload.level = Number(source.level) || 1;
+    if (extra.includes('multipleAllowed')) payload.multipleAllowed = source.multipleAllowed === true || source.multipleAllowed === 'true';
     if (source.active !== undefined) payload.active = source.active;
     return payload;
 }
 
+function extraValue(row, key, t) {
+    if (key === 'multipleAllowed') {
+        return row.multipleAllowed ? t('common.yes') : t('common.no');
+    }
+    if (key === 'category') {
+        return enumLabel(t, 'skillCategory', row.category);
+    }
+    if (row[key] == null || row[key] === '') {
+        return '—';
+    }
+    return String(row[key]);
+}
+
 function CatalogFields({ catalog, value, onChange, t }) {
     const extra = catalog.extra || [];
-    const set = (key) => (event) => onChange({ ...value, [key]: event.target.value });
+    const set = (key) => (event) => {
+        const next = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
+        onChange({ ...value, [key]: next });
+    };
+    const categories = [...new Set([...SKILL_CATEGORIES, value.category].filter(Boolean))];
     return (
         <>
             {extra.includes('code') ? (
@@ -110,10 +130,25 @@ function CatalogFields({ catalog, value, onChange, t }) {
             ) : null}
             <Input label={t('dictionaries.name')} value={value.name || ''} onChange={set('name')} />
             {extra.includes('category') ? (
-                <Input label={t('dictionaries.category')} value={value.category || ''} onChange={set('category')} />
+                <Select label={t('dictionaries.category')} value={value.category || ''} onChange={set('category')}>
+                    <option value="">{t('common.select')}</option>
+                    {categories.map((item) => (
+                        <option key={item} value={item}>{enumLabel(t, 'skillCategory', item)}</option>
+                    ))}
+                </Select>
             ) : null}
             {extra.includes('level') ? (
                 <Input type="number" label={t('dictionaries.level')} value={value.level ?? ''} onChange={set('level')} />
+            ) : null}
+            {extra.includes('multipleAllowed') ? (
+                <Select
+                    label={t('dictionaries.multipleAllowed')}
+                    value={value.multipleAllowed === true || value.multipleAllowed === 'true' ? 'true' : 'false'}
+                    onChange={(event) => onChange({ ...value, multipleAllowed: event.target.value === 'true' })}
+                >
+                    <option value="false">{t('common.no')}</option>
+                    <option value="true">{t('common.yes')}</option>
+                </Select>
             ) : null}
             <div className={page.spanAll}>
                 <Textarea label={t('dictionaries.description')} value={value.description || ''} onChange={set('description')} />
@@ -167,6 +202,11 @@ export function DictionariesPage() {
     const deactivate = useMutation({ mutationFn: (id) => catalog.deactivate(id), onSuccess: invalidate, onError });
 
     const rows = query.data?.content || [];
+    const extra = catalog.extra || [];
+    const sortOptions = [
+        { value: 'name', label: t('dictionaries.name') },
+        ...extra.map((key) => ({ value: key, label: t(`dictionaries.${key}`) })),
+    ];
 
     return (
         <section>
@@ -199,7 +239,7 @@ export function DictionariesPage() {
                 <SortField
                     value={filters.sortBy}
                     direction={filters.sortDirection}
-                    options={[{ value: 'name', label: t('dictionaries.name') }]}
+                    options={sortOptions}
                     onChange={(sortBy, sortDirection) => setFilters({ ...filters, sortBy, sortDirection, page: 0 })}
                 />
                 <PageSizeField value={filters.size} onChange={(size) => setFilters({ ...filters, size, page: 0 })} />
@@ -233,7 +273,11 @@ export function DictionariesPage() {
                     rows={rows}
                     columns={[
                         { key: 'name', sortKey: 'name', header: t('dictionaries.name') },
-                        { key: 'code', header: t('dictionaries.code'), render: (row) => row.code || '—' },
+                        ...extra.map((key) => ({
+                            key,
+                            header: t(`dictionaries.${key}`),
+                            render: (row) => extraValue(row, key, t),
+                        })),
                         { key: 'active', header: t('dictionaries.active'), render: (row) => (row.active !== false ? t('common.yes') : t('common.no')) },
                         {
                             key: 'actions',

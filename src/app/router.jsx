@@ -118,6 +118,7 @@ export const router = createBrowserRouter([
                         ],
                     },
                     { path: '/app/analytics/me', element: <MyStatsPage /> },
+                    { path: '/app/analytics/me/recommendations', element: <RecommendationsPage /> },
                     { path: '/app/analytics/me/career-options', element: <CareerOptionsPage /> },
                     { path: '/app/analytics/employees/:id/career-options', element: <CareerOptionsPage /> },
                     {

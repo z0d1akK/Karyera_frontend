@@ -18,6 +18,7 @@ export function AnalyticsNav({ includeCompany = true }) {
     }
     items.push(
         { to: '/app/analytics/me', label: t('analyticsUi.me'), end: true },
+        { to: '/app/analytics/me/recommendations', label: t('analyticsUi.recommendations') },
         { to: '/app/analytics/me/career-options', label: t('analyticsUi.careerOptions') },
         { to: '/app/analytics/reports', label: t('analyticsUi.reports') },
     );
