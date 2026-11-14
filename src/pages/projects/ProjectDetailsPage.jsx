@@ -264,33 +264,15 @@ export function ProjectDetailsPage() {
                         <h2>{t('projects.description')}</h2>
                         <p className={styles.description}>{data.description || t('projects.noDescription')}</p>
                         {canEdit ? (
-                            edit ? (
-                                <div className={styles.stack}>
-                                    <div className={styles.gridTwo}>
-                                        <Input label={t('projects.code')} value={edit.code || ''} onChange={(e) => setEdit({ ...edit, code: e.target.value })} />
-                                        <Input label={t('projects.name')} value={edit.name} onChange={(e) => setEdit({ ...edit, name: e.target.value })} />
-                                        <Input type="date" label={t('projects.startDate')} value={edit.startDate || ''} onChange={(e) => setEdit({ ...edit, startDate: e.target.value })} />
-                                        <Input type="date" label={t('projects.endDate')} value={edit.endDate || ''} onChange={(e) => setEdit({ ...edit, endDate: e.target.value })} />
-                                        <EmployeePicker label={t('projects.projectManager')} value={edit.projectManagerId || ''} onChange={(e) => setEdit({ ...edit, projectManagerId: e.target.value })} />
-                                        <EmployeePicker label={t('projects.deliveryManager')} value={edit.deliveryManagerId || ''} onChange={(e) => setEdit({ ...edit, deliveryManagerId: e.target.value })} />
-                                    </div>
-                                    <Textarea label={t('projects.description')} value={edit.description || ''} onChange={(e) => setEdit({ ...edit, description: e.target.value })} />
-                                    <div className={styles.actions}>
-                                        <Button onClick={() => saveProject.mutate()}>{t('projects.saveProject')}</Button>
-                                        <Button variant="ghost" onClick={() => setEdit(null)}>{t('common.cancel')}</Button>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className={styles.actions}>
-                                    <Button onClick={() => setEdit({ name: data.name, description: data.description || '', code: data.code, startDate: data.startDate, endDate: data.endDate || '', projectManagerId: data.projectManagerId, deliveryManagerId: data.deliveryManagerId })}>{t('common.edit')}</Button>
-                                    <Select value={nextStatus || data.status} onChange={(e) => setNextStatus(e.target.value)}>
-                                        {['PLANNED', 'ACTIVE', 'ON_HOLD', 'COMPLETED', 'CANCELLED'].map((item) => (
-                                            <option key={item} value={item}>{enumLabel(t, 'projectStatus', item)}</option>
-                                        ))}
-                                    </Select>
-                                    <Button variant="secondary" onClick={() => changeStatus.mutate()}>{t('projects.changeStatus')}</Button>
-                                </div>
-                            )
+                            <div className={styles.actions}>
+                                <Button onClick={() => setEdit({ name: data.name, description: data.description || '', code: data.code, startDate: data.startDate, endDate: data.endDate || '', projectManagerId: data.projectManagerId, deliveryManagerId: data.deliveryManagerId })}>{t('common.edit')}</Button>
+                                <Select value={nextStatus || data.status} onChange={(e) => setNextStatus(e.target.value)}>
+                                    {['PLANNED', 'ACTIVE', 'ON_HOLD', 'COMPLETED', 'CANCELLED'].map((item) => (
+                                        <option key={item} value={item}>{enumLabel(t, 'projectStatus', item)}</option>
+                                    ))}
+                                </Select>
+                                <Button variant="secondary" onClick={() => changeStatus.mutate()}>{t('projects.changeStatus')}</Button>
+                            </div>
                         ) : null}
                     </article>
                 </div>
@@ -416,14 +398,7 @@ export function ProjectDetailsPage() {
                     ) : null}
                     {linkList.map((item) => (
                         <article key={item.id} className={styles.panel}>
-                            {editingLink?.id === item.id ? (
-                                <div className={styles.stack}>
-                                    <Input label={t('projects.label')} value={editingLink.label || ''} onChange={(e) => setEditingLink({ ...editingLink, label: e.target.value })} />
-                                    <Input label={t('projects.url')} value={editingLink.url || ''} onChange={(e) => setEditingLink({ ...editingLink, url: e.target.value })} />
-                                    <Button onClick={() => saveLink.mutate()}>{t('common.save')}</Button>
-                                    <Button variant="ghost" onClick={() => setEditingLink(null)}>{t('common.cancel')}</Button>
-                                </div>
-                            ) : <a href={item.url} target="_blank" rel="noreferrer">{item.label || item.url}</a>}
+                            <a href={item.url} target="_blank" rel="noreferrer">{item.label || item.url}</a>
                             {canEdit ? (
                                 <div className={styles.actions}>
                                     <Button variant="ghost" onClick={() => setEditingLink({ id: item.id, label: item.label || '', url: item.url || '' })}>{t('common.edit')}</Button>
@@ -508,6 +483,37 @@ export function ProjectDetailsPage() {
                         <Button variant="ghost" onClick={() => setLinkOpen(false)}>{t('common.cancel')}</Button>
                     </div>
                 </div>
+            </Modal>
+            <Modal open={Boolean(edit)} title={t('common.edit')} onClose={() => setEdit(null)}>
+                {edit ? (
+                    <div className={styles.stack}>
+                        <div className={styles.gridTwo}>
+                            <Input label={t('projects.code')} value={edit.code || ''} onChange={(e) => setEdit({ ...edit, code: e.target.value })} />
+                            <Input label={t('projects.name')} value={edit.name} onChange={(e) => setEdit({ ...edit, name: e.target.value })} />
+                            <Input type="date" label={t('projects.startDate')} value={edit.startDate || ''} onChange={(e) => setEdit({ ...edit, startDate: e.target.value })} />
+                            <Input type="date" label={t('projects.endDate')} value={edit.endDate || ''} onChange={(e) => setEdit({ ...edit, endDate: e.target.value })} />
+                            <EmployeePicker label={t('projects.projectManager')} value={edit.projectManagerId || ''} onChange={(e) => setEdit({ ...edit, projectManagerId: e.target.value })} />
+                            <EmployeePicker label={t('projects.deliveryManager')} value={edit.deliveryManagerId || ''} onChange={(e) => setEdit({ ...edit, deliveryManagerId: e.target.value })} />
+                        </div>
+                        <Textarea label={t('projects.description')} value={edit.description || ''} onChange={(e) => setEdit({ ...edit, description: e.target.value })} />
+                        <div className={styles.actions}>
+                            <Button onClick={() => saveProject.mutate()}>{t('projects.saveProject')}</Button>
+                            <Button variant="ghost" onClick={() => setEdit(null)}>{t('common.cancel')}</Button>
+                        </div>
+                    </div>
+                ) : null}
+            </Modal>
+            <Modal open={Boolean(editingLink)} title={t('common.edit')} onClose={() => setEditingLink(null)}>
+                {editingLink ? (
+                    <div className={styles.stack}>
+                        <Input label={t('projects.label')} value={editingLink.label || ''} onChange={(e) => setEditingLink({ ...editingLink, label: e.target.value })} />
+                        <Input label={t('projects.url')} value={editingLink.url || ''} onChange={(e) => setEditingLink({ ...editingLink, url: e.target.value })} />
+                        <div className={styles.actions}>
+                            <Button onClick={() => saveLink.mutate()}>{t('common.save')}</Button>
+                            <Button variant="ghost" onClick={() => setEditingLink(null)}>{t('common.cancel')}</Button>
+                        </div>
+                    </div>
+                ) : null}
             </Modal>
         </section>
     );

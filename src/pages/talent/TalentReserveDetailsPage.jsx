@@ -23,6 +23,7 @@ import { Select, Textarea } from '../../shared/ui/Input/Input.jsx';
 import { DataTable, Pagination } from '../../shared/ui/DataTable/DataTable.jsx';
 import { Badge } from '../../shared/ui/Badge/Badge.jsx';
 import { Skeleton } from '../../shared/ui/PageState/PageState.jsx';
+import { StatRow, StatTile } from '../../shared/ui/StatTile/StatTile.jsx';
 import { Alert } from '../../shared/ui/Alert/Alert.jsx';
 import { Input } from '../../shared/ui/Input/Input.jsx';
 import { Modal } from '../../shared/ui/Modal/Modal.jsx';
@@ -41,7 +42,6 @@ export function TalentReserveDetailsPage() {
     const [screeningError, setScreeningError] = useState('');
     const [screeningJob, setScreeningJob] = useState(null);
     const employeeName = useEmployeeNames();
-    const catalogLabel = (items, itemId) => items.find((item) => item.id === itemId)?.name || '—';
 
     const reserve = useQuery({ queryKey: queryKeys.career.reserve(id), queryFn: () => careerApi.getReserve(id) });
     const [candidateQuery, setCandidateQuery] = useState({ page: 0, size: 20, sortBy: 'nominatedAt', sortDirection: 'DESC' });
@@ -83,7 +83,6 @@ export function TalentReserveDetailsPage() {
         queryKey: ['talent-analysis', id],
         queryFn: () => careerApi.getAnalysis(id),
         retry: false,
-        enabled: false,
     });
     const activate = useMutation({
         mutationFn: () => careerApi.activateReserve(id, { expectedVersion: reserve.data?.version }),
@@ -116,21 +115,45 @@ export function TalentReserveDetailsPage() {
             <PageHeader title={data.name} actions={<Badge>{enumLabel(t, 'reserveStatus', data.status)}</Badge>} />
             <Card>
                 <p>{data.description}</p>
-                {screeningError ? <Alert tone="error">{screeningError}</Alert> : null}
-                {analysis.isError ? <Alert tone="error">{t('talent.analysisFailed')}</Alert> : null}
-                {analysis.data ? (
-                    <div className={page.grid}>
-                        <p>{t('talent.candidates')}: {analysis.data.candidateCount ?? 0}</p>
-                        <p>{t('talent.active')}: {analysis.data.activeCandidateCount ?? 0}</p>
-                        <p>{t('talent.approved')}: {analysis.data.approvedCandidateCount ?? 0}</p>
-                        <p>{t('talent.byStatus')}: {Object.entries(analysis.data.byStatus || {}).map(([key, value]) => `${enumLabel(t, 'candidateStatus', key)} ${value}`).join(', ') || t('common.dash')}</p>
-                        <p>{t('talent.byPosition')}: {Object.entries(analysis.data.byPosition || {}).map(([key, value]) => `${catalogLabel(catalogs.positions, key)} ${value}`).join(', ') || t('common.dash')}</p>
-                        <p>{t('talent.byGrade')}: {Object.entries(analysis.data.byGrade || {}).map(([key, value]) => `${catalogLabel(catalogs.grades, key)} ${value}`).join(', ') || t('common.dash')}</p>
+                {canManageHr(role) ? (
+                    <div className={page.actionsBar}>
+                        <div className={page.row}>
+                            {data.status === 'ACTIVE' ? <Button onClick={() => setNominationOpen(true)}>{t('talent.nominate')}</Button> : null}
+                            {data.status === 'DRAFT' ? <Button onClick={() => activate.mutate()}>{t('talent.activate')}</Button> : null}
+                            {data.status === 'ACTIVE' ? <Button onClick={() => screening.mutate()}>{t('talent.screening')}</Button> : null}
+                            {data.status !== 'CLOSED' && data.status !== 'ARCHIVED' ? (
+                                <Button variant="secondary" onClick={() => setEdit({
+                                    name: data.name,
+                                    description: data.description || '',
+                                    targetPositionId: data.targetPositionId || '',
+                                    targetGradeId: data.targetGradeId || '',
+                                    effectiveFrom: data.effectiveFrom || '',
+                                    effectiveTo: data.effectiveTo || '',
+                                })}>{t('talent.edit')}</Button>
+                            ) : null}
+                        </div>
+                        {data.status === 'ACTIVE' ? (
+                            <Button variant="danger" onClick={() => close.mutate()}>{t('talent.close')}</Button>
+                        ) : null}
                     </div>
                 ) : null}
-                {screeningJob || screeningResults.data ? (
-                    <p>{t('talent.screeningResult')}: {enumLabel(t, 'screeningStatus', screeningResults.data?.status || screeningJob?.status || 'PENDING')}</p>
+                {screeningError ? <Alert tone="error">{screeningError}</Alert> : null}
+                {analysis.data ? (
+                    <>
+                        <h2 className={page.sectionTitle}>{t('talent.analysisTitle')}</h2>
+                        <StatRow>
+                            <StatTile label={t('talent.candidates')} value={analysis.data.candidateCount ?? 0} />
+                            <StatTile label={t('talent.active')} value={analysis.data.activeCandidateCount ?? 0} />
+                            <StatTile label={t('talent.approved')} value={analysis.data.approvedCandidateCount ?? 0} />
+                        </StatRow>
+                    </>
                 ) : null}
+                <h2 className={page.sectionTitle}>{t('talent.screeningResult')}</h2>
+                {screeningJob || screeningResults.data ? (
+                    <p>{enumLabel(t, 'screeningStatus', screeningResults.data?.status || screeningJob?.status || 'PENDING')}</p>
+                ) : (
+                    <p className={page.meta}>{t('talent.screeningEmpty')}</p>
+                )}
                 {screeningResults.data?.explanationText ? <p>{screeningResults.data.explanationText}</p> : null}
                 {screeningResults.data?.results?.length ? (
                     <DataTable
@@ -144,26 +167,9 @@ export function TalentReserveDetailsPage() {
                         ]}
                     />
                 ) : null}
-                {canManageHr(role) ? (
-                    <div className={page.row}>
-                        {data.status === 'DRAFT' ? <Button onClick={() => activate.mutate()}>{t('talent.activate')}</Button> : null}
-                        {data.status === 'ACTIVE' ? <Button variant="ghost" onClick={() => close.mutate()}>{t('talent.close')}</Button> : null}
-                        {data.status === 'ACTIVE' ? <Button onClick={() => screening.mutate()}>{t('talent.screening')}</Button> : null}
-                        <Button variant="secondary" onClick={() => analysis.refetch()}>{t('talent.analysis')}</Button>
-                        {data.status !== 'CLOSED' && data.status !== 'ARCHIVED' ? (
-                            <Button variant="secondary" onClick={() => setEdit({
-                                name: data.name,
-                                description: data.description || '',
-                                targetPositionId: data.targetPositionId || '',
-                                targetGradeId: data.targetGradeId || '',
-                                effectiveFrom: data.effectiveFrom || '',
-                                effectiveTo: data.effectiveTo || '',
-                            })}>{t('talent.edit')}</Button>
-                        ) : null}
-                        {data.status === 'ACTIVE' ? <Button onClick={() => setNominationOpen(true)}>{t('talent.nominate')}</Button> : null}
-                    </div>
-                ) : null}
+                <h2 className={page.sectionTitle}>{t('talent.candidates')}</h2>
                 <DataTable
+                    empty={t('talent.emptyCandidates')}
                     rows={candidates.data?.content || []}
                     columns={[
                         {

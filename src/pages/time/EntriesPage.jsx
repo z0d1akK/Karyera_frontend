@@ -18,7 +18,9 @@ import { DataTable } from '../../shared/ui/DataTable/DataTable.jsx';
 import { NamedLink } from '../../shared/ui/NamedLink/NamedLink.jsx';
 import { PageHeader } from '../../shared/ui/PageHeader/PageHeader.jsx';
 import { PageState, Skeleton } from '../../shared/ui/PageState/PageState.jsx';
+import { Modal } from '../../shared/ui/Modal/Modal.jsx';
 import { TimeNav } from './TimeNav.jsx';
+import { TimeEntryForm } from './TimeEntryForm.jsx';
 import page from '../../shared/styles/page.module.css';
 
 export function EntriesPage() {
@@ -28,6 +30,7 @@ export function EntriesPage() {
     const [searchParams] = useSearchParams();
     const day = searchParams.get('date') || '';
     const [filters, setFilters] = useState({ workDateFrom: day, workDateTo: day, projectId: '', status: '' });
+    const [createOpen, setCreateOpen] = useState(false);
     const projects = useQuery({
         queryKey: ['projects', 'time-filter'],
         queryFn: async () => unwrapPage(await projectApi.list({ page: 0, size: 100, sortBy: 'name' })).content || [],
@@ -52,7 +55,7 @@ export function EntriesPage() {
         <section className={page.sections}>
             <PageHeader
                 title={t('time.journal')}
-                actions={<Button onClick={() => navigate('/app/time/entries/new')}>{t('time.newEntry')}</Button>}
+                actions={<Button onClick={() => setCreateOpen(true)}>{t('time.newEntry')}</Button>}
             />
             <TimeNav />
             <Card>
@@ -86,6 +89,13 @@ export function EntriesPage() {
                 />
             ) : null}
             </Card>
+            <Modal open={createOpen} title={t('time.newEntry')} onClose={() => setCreateOpen(false)}>
+                <TimeEntryForm
+                    initialDate={filters.workDateFrom || filters.workDateTo || ''}
+                    onCancel={() => setCreateOpen(false)}
+                    onSaved={() => setCreateOpen(false)}
+                />
+            </Modal>
         </section>
     );
 }

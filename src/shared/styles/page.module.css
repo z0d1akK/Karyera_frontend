@@ -36,6 +36,14 @@
     align-items: flex-end;
 }
 
+.actionsBar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+}
+
 .meta {
     color: var(--color-secondary-text);
     margin-bottom: 16px;
