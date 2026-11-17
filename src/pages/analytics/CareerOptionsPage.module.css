@@ -1,0 +1,72 @@
+.formRow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px 16px;
+}
+
+.trackField {
+    flex: 1 1 280px;
+    min-width: 0;
+}
+
+.formRow button {
+    flex: 0 0 auto;
+    min-height: 44px;
+}
+
+.trackMeta {
+    margin: 0;
+    color: var(--color-secondary-text);
+}
+
+.optionHead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.optionTitle {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.optionTitle h2 {
+    margin: 0;
+}
+
+.optionMeta {
+    margin: 0;
+    color: var(--color-secondary-text);
+}
+
+.scores {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 16px 24px;
+    align-items: center;
+}
+
+.bars {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+}
+
+.facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+@media (max-width: 800px) {
+    .scores {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

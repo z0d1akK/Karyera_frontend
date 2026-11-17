@@ -19,7 +19,8 @@ import { canManageHr } from '../../shared/lib/roles.js';
 import { useAuthStore } from '../../store/authStore.js';
 import { Skeleton } from '../../shared/ui/PageState/PageState.jsx';
 import { StatRow, StatTile } from '../../shared/ui/StatTile/StatTile.jsx';
-import { ListFilters, PageSizeField, SortField } from '../../shared/ui/ListFilters/ListFilters.jsx';
+import { PageSizeField, SortField } from '../../shared/ui/ListFilters/ListFilters.jsx';
+import page from '../../shared/styles/page.module.css';
 
 export function EmployeesPage() {
     const { t } = useTranslation();
@@ -50,7 +51,7 @@ export function EmployeesPage() {
                 <StatTile label={t('employees.title')} value={pageData?.totalElements ?? 0} />
             </StatRow>
             <Card>
-                <ListFilters>
+                <div className={page.filterBar}>
                     <Input
                         label={t('employees.firstName')}
                         value={filters.firstName || ''}
@@ -114,7 +115,7 @@ export function EmployeesPage() {
                         onChange={(sortBy, sortDirection) => setFilters({ ...filters, sortBy, sortDirection, page: 0 })}
                     />
                     <PageSizeField value={filters.size} onChange={(size) => setFilters({ ...filters, size, page: 0 })} />
-                </ListFilters>
+                </div>
                 {query.isLoading ? <Skeleton /> : (
                     <>
                         <DataTable
