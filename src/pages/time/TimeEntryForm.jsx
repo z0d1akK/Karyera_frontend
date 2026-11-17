@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { timeApi } from '../../features/time/api/timeApi.js';
+import styles from './TimePages.module.css';
+import { Missing } from './timeDisplay.jsx';
 import { projectApi } from '../../features/projects/api/projectApi.js';
 import { unwrapPage } from '../../shared/lib/queryParams.js';
 import { getApiError } from '../../shared/api/errors.js';
@@ -79,6 +81,8 @@ export function TimeEntryForm({ initialDate = '', onCancel, onSaved }) {
                 ))}
             </Select>
             <Input type="date" label={t('time.date')} value={form.workDate} onChange={(event) => setForm({ ...form, workDate: event.target.value })} />
+            {!form.projectId ? <p className={styles.hint}><Missing>{t('time.projectMissing')}</Missing></p> : null}
+            {form.projectId && !form.taskId ? <p className={styles.hint}><Missing>{t('time.taskMissing')}</Missing></p> : null}
             <Input type="number" min="0.25" step="0.25" label={t('time.hours')} value={form.hours} onChange={(event) => setForm({ ...form, hours: event.target.value })} />
             <Textarea label={t('time.description')} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} />
             <div className={page.row}>

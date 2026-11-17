@@ -1,5 +1,8 @@
 .monthTitle {
-    margin: 0 0 12px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    min-height: 44px;
     font-size: 24px;
     font-weight: 800;
     text-transform: capitalize;

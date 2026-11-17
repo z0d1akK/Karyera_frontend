@@ -12,6 +12,7 @@ export function StatTile({ label, value, hint, tone = 'default' }) {
     );
 }
 
-export function StatRow({ children }) {
-    return <div className={styles.row}>{children}</div>;
+export function StatRow({ children, columns }) {
+    const className = columns === 3 ? `${styles.row} ${styles.cols3}` : styles.row;
+    return <div className={className}>{children}</div>;
 }

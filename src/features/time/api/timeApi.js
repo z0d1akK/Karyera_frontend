@@ -59,3 +59,11 @@ export function hoursLabel(minutes) {
     const value = Number(minutes || 0) / 60;
     return Number.isInteger(value) ? String(value) : value.toFixed(2);
 }
+
+export function formatHours(t, minutes) {
+    return t('time.hoursValue', { value: hoursLabel(minutes) });
+}
+
+export function minutesDelta(actual, planned) {
+    return Number(actual || 0) - Number(planned || 0);
+}

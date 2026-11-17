@@ -1,4 +1,4 @@
-import { canSeeAdminNav, canSeeAnalyticsNav, canSeeDevelopment, canSeeDirectory, canSeeOrganization, canSeeTalent } from '../../shared/lib/roles.js';
+import { canApproveTimesheets, canSeeAdminNav, canSeeAnalyticsNav, canSeeDevelopment, canSeeDirectory, canSeeOrganization, canSeeTalent } from '../../shared/lib/roles.js';
 
 export function getNavItems(role) {
     const items = [
@@ -26,7 +26,12 @@ export function getNavItems(role) {
         items.push({ to: '/app/talent-reserve', icon: 'talent', labelKey: 'navigation.talentReserve' });
     }
 
-    items.push({ to: '/app/time/entries', icon: 'timesheet', labelKey: 'navigation.timesheet' });
+    items.push({
+        to: canApproveTimesheets(role) ? '/app/time/timesheets' : '/app/time/entries',
+        icon: 'timesheet',
+        labelKey: 'navigation.timesheet',
+        matchPrefix: '/app/time',
+    });
 
     if (canSeeAnalyticsNav(role)) {
         items.push({ to: '/app/analytics', icon: 'analytics', labelKey: 'navigation.analytics', matchPrefix: '/app/analytics' });

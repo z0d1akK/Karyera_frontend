@@ -12,8 +12,36 @@ export function useEmployeeNames() {
     });
 
     return (id) => {
-        const person = (people.data || []).find((item) => item.id === id);
+        const person = (people.data || []).find((item) => String(item.id) === String(id));
         return person ? fullName(person) : null;
+    };
+}
+
+export function useEmployeeLabels(ids = []) {
+    const directoryName = useEmployeeNames();
+    const unique = [...new Set((ids || []).filter(Boolean).map((id) => String(id)))];
+    const missing = unique.filter((id) => !directoryName(id));
+    const fetched = useQueries({
+        queries: missing.map((id) => ({
+            queryKey: ['employees', id],
+            queryFn: () => employeeApi.getById(id),
+            staleTime: 60_000,
+            retry: false,
+        })),
+    });
+    const extra = {};
+    missing.forEach((id, index) => {
+        const person = fetched[index]?.data;
+        if (person) {
+            extra[id] = fullName(person);
+        }
+    });
+
+    return (id) => {
+        if (!id) {
+            return null;
+        }
+        return extra[String(id)] || directoryName(id);
     };
 }
 
