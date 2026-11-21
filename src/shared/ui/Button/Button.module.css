@@ -17,6 +17,12 @@
     cursor: not-allowed;
 }
 
+.sm {
+    min-height: 32px;
+    padding: 0 12px;
+    font-size: 13px;
+}
+
 .primary {
     background-color: var(--color-primary-accent);
     color: var(--color-surface);

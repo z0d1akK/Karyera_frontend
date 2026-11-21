@@ -79,8 +79,10 @@ export function CareerOptionsPage() {
     return (
         <section className={page.sections}>
             {backTo ? <BackLink to={backTo}>{t('common.back')}</BackLink> : null}
-            <PageHeader title={t('analyticsUi.careerOptions')} description={t('analyticsUi.careerOptionsHint')} />
-            {isSelf ? <AnalyticsNav /> : null}
+            <div className={page.pageHead}>
+                <PageHeader title={t('analyticsUi.careerOptions')} description={t('analyticsUi.careerOptionsHint')} />
+                {isSelf ? <AnalyticsNav /> : null}
+            </div>
             <Card>
                 <div className={styles.formRow}>
                     <div className={styles.trackField}>

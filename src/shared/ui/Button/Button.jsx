@@ -3,6 +3,7 @@ import styles from './Button.module.css';
 export function Button({
     children,
     variant = 'primary',
+    size = 'md',
     type = 'button',
     className = '',
     ...props
@@ -10,7 +11,7 @@ export function Button({
     return (
         <button
             type={type}
-            className={`${styles.button} ${styles[variant]} ${className}`}
+            className={`${styles.button} ${styles[variant]} ${size === 'sm' ? styles.sm : ''} ${className}`}
             {...props}
         >
             {children}

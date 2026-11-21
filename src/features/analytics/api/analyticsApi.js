@@ -10,7 +10,7 @@ async function waitForJob(jobId, { requireResult = true } = {}) {
             return job;
         }
         if (job.status === 'FAILED') {
-            const error = new Error(job.errorCode || 'FAILED');
+            const error = new Error(job.errorMessage || job.errorCode || 'FAILED');
             error.code = job.errorCode;
             error.job = job;
             throw error;
@@ -38,14 +38,14 @@ export const analyticsApi = {
     readiness() {
         return get('/v1/analytics/dashboard/career-readiness');
     },
-    development(grain = 'MONTH') {
-        return get('/v1/analytics/dashboard/development', { params: { grain } });
+    development(grain = 'MONTH', periodFrom, periodTo) {
+        return get('/v1/analytics/dashboard/development', { params: { grain, periodFrom, periodTo } });
     },
-    activity(grain = 'MONTH') {
-        return get('/v1/analytics/dashboard/project-activity', { params: { grain } });
+    activity(grain = 'MONTH', periodFrom, periodTo) {
+        return get('/v1/analytics/dashboard/project-activity', { params: { grain, periodFrom, periodTo } });
     },
-    dynamics(employeeId) {
-        return get(`/v1/analytics/employees/${employeeId}/development-dynamics`);
+    dynamics(employeeId, periodFrom, periodTo) {
+        return get(`/v1/analytics/employees/${employeeId}/development-dynamics`, { params: { periodFrom, periodTo } });
     },
     assessments(employeeId) {
         return get(`/v1/analytics/employees/${employeeId}/assessments`);
@@ -59,8 +59,18 @@ export const analyticsApi = {
     recommendations(id) {
         return get(`/v1/analytics/assessments/${id}/recommendations`);
     },
-    regenerateRecommendations(id) {
-        return axiosClient.post(`/v1/analytics/assessments/${id}/recommendations`).then((response) => response.data);
+    async regenerateRecommendations(id) {
+        const job = await axiosClient.post(`/v1/analytics/assessments/${id}/recommendations`).then((response) => response.data);
+        if (job?.jobId) {
+            await waitForJob(job.jobId, { requireResult: false });
+        }
+        return job;
+    },
+    updateRecommendation(assessmentId, recommendationId, content) {
+        return axiosClient.patch(
+            `/v1/analytics/assessments/${assessmentId}/recommendations/${recommendationId}`,
+            { content },
+        ).then((response) => response.data);
     },
     job(id) {
         return get(`/v1/analytics/jobs/${id}`);

@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { formatHours, timeApi } from '../../features/time/api/timeApi.js';
 import { EmployeePicker } from '../../features/employees/components/EmployeePicker.jsx';
+import { DateChip } from '../../features/analytics/charts/ChartToolbar.jsx';
 import { formatDate } from '../../shared/lib/format.js';
 import { enumLabel, statusTone } from '../../shared/lib/enums.js';
 import { getApiError } from '../../shared/api/errors.js';
@@ -17,7 +18,7 @@ import { Badge } from '../../shared/ui/Badge/Badge.jsx';
 import { Button } from '../../shared/ui/Button/Button.jsx';
 import { Card } from '../../shared/ui/Card/Card.jsx';
 import { DataTable, Pagination } from '../../shared/ui/DataTable/DataTable.jsx';
-import { Input, Select } from '../../shared/ui/Input/Input.jsx';
+import { Select } from '../../shared/ui/Input/Input.jsx';
 import { PageSizeField } from '../../shared/ui/ListFilters/ListFilters.jsx';
 import timeStyles from './TimePages.module.css';
 import { PageHeader } from '../../shared/ui/PageHeader/PageHeader.jsx';
@@ -104,12 +105,14 @@ export function TimesheetsPage() {
 
     return (
         <section className={page.sections}>
-            <PageHeader
-                title={t('time.timesheets')}
-                description={canReview ? t('time.managerSubtitle') : t('time.employeeSubtitle')}
-                actions={<Button onClick={() => create.mutate()} disabled={create.isPending}>{t('time.createWeek')}</Button>}
-            />
-            <TimeNav />
+            <div className={page.pageHead}>
+                <PageHeader
+                    title={t('time.timesheets')}
+                    description={canReview ? t('time.managerSubtitle') : t('time.employeeSubtitle')}
+                    actions={<Button onClick={() => create.mutate()} disabled={create.isPending}>{t('time.createWeek')}</Button>}
+                />
+                <TimeNav />
+            </div>
             <StatRow columns={3}>
                 <StatTile label={t('common.shownOf', { shown: rows.length, total: sheets.data?.totalElements ?? 0 })} value={sheets.data?.totalElements ?? 0} />
                 <StatTile label={t('time.pendingCount')} value={canReview ? (pending.data?.length ?? 0) : submitted} tone="accent" />
@@ -135,17 +138,15 @@ export function TimesheetsPage() {
                                 <option key={status} value={status}>{enumLabel(t, 'timesheetStatus', status)}</option>
                             ))}
                         </Select>
-                        <Input
-                            type="date"
+                        <DateChip
                             label={t('time.periodFrom')}
                             value={filters.periodStartFrom}
-                            onChange={(event) => setFilters({ ...filters, periodStartFrom: event.target.value, page: 0 })}
+                            onChange={(periodStartFrom) => setFilters({ ...filters, periodStartFrom, page: 0 })}
                         />
-                        <Input
-                            type="date"
+                        <DateChip
                             label={t('time.periodTo')}
                             value={filters.periodStartTo}
-                            onChange={(event) => setFilters({ ...filters, periodStartTo: event.target.value, page: 0 })}
+                            onChange={(periodStartTo) => setFilters({ ...filters, periodStartTo, page: 0 })}
                         />
                         <PageSizeField value={filters.size} onChange={(size) => setFilters({ ...filters, size, page: 0 })} />
                     </div>

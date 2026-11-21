@@ -10,7 +10,7 @@ import { unwrapPage } from '../../shared/lib/queryParams.js';
 import { catalogName } from '../../shared/lib/format.js';
 import { enumLabel, statusTone } from '../../shared/lib/enums.js';
 import { getApiError } from '../../shared/api/errors.js';
-import { canManageHr } from '../../shared/lib/roles.js';
+import { canManageTalent } from '../../shared/lib/roles.js';
 import { useAuthStore } from '../../store/authStore.js';
 import { useToastStore } from '../../store/toastStore.js';
 import { Button } from '../../shared/ui/Button/Button.jsx';
@@ -77,6 +77,11 @@ export function TalentReservePage() {
                         <strong className={styles.done}>{list.reduce((sum, item) => sum + (item.candidateCount || 0), 0)}</strong>
                     </div>
                 </div>
+                {canManageTalent(role) ? (
+                    <div className={styles.heroActions}>
+                        <Button onClick={() => setOpen(true)}>{t('talent.create')}</Button>
+                    </div>
+                ) : null}
             </div>
             <div className={styles.toolbar}>
                 <p className={styles.empty}>{t('talent.hint')}</p>
@@ -91,7 +96,6 @@ export function TalentReservePage() {
                         />
                         <PageSizeField value={listQuery.size} onChange={(size) => setListQuery({ ...listQuery, size, page: 0 })} />
                     </ListFilters>
-                    {canManageHr(role) ? <Button onClick={() => setOpen(true)}>{t('talent.create')}</Button> : null}
                 </div>
             </div>
             {query.isLoading ? <Skeleton rows={6} /> : null}

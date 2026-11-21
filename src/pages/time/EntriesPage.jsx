@@ -7,13 +7,14 @@ import { formatHours, timeApi } from '../../features/time/api/timeApi.js';
 import { projectApi } from '../../features/projects/api/projectApi.js';
 import { EmployeePicker } from '../../features/employees/components/EmployeePicker.jsx';
 import { unwrapPage } from '../../shared/lib/queryParams.js';
+import { DateChip } from '../../features/analytics/charts/ChartToolbar.jsx';
 import { formatDate } from '../../shared/lib/format.js';
 import { enumLabel, statusTone } from '../../shared/lib/enums.js';
 import { useEmployeeLabels, useWorkLabels } from '../../shared/lib/displayNames.js';
 import { canApproveTimesheets } from '../../shared/lib/roles.js';
 import { useAuthStore } from '../../store/authStore.js';
 import { Button } from '../../shared/ui/Button/Button.jsx';
-import { Input, Select } from '../../shared/ui/Input/Input.jsx';
+import { Select } from '../../shared/ui/Input/Input.jsx';
 import { Badge } from '../../shared/ui/Badge/Badge.jsx';
 import { Card } from '../../shared/ui/Card/Card.jsx';
 import { DataTable } from '../../shared/ui/DataTable/DataTable.jsx';
@@ -78,12 +79,14 @@ export function EntriesPage() {
 
     return (
         <section className={page.sections}>
-            <PageHeader
-                title={t('time.journal')}
-                description={t('time.journalSubtitle')}
-                actions={ownView ? <Button onClick={() => setCreateOpen(true)}>{t('time.newEntry')}</Button> : null}
-            />
-            <TimeNav />
+            <div className={page.pageHead}>
+                <PageHeader
+                    title={t('time.journal')}
+                    description={t('time.journalSubtitle')}
+                    actions={ownView ? <Button onClick={() => setCreateOpen(true)}>{t('time.newEntry')}</Button> : null}
+                />
+                <TimeNav />
+            </div>
             <Card>
                 <div className={page.row}>
                     {canReview ? (
@@ -95,17 +98,15 @@ export function EntriesPage() {
                             onChange={(event) => setFilters({ ...filters, employeeId: event.target.value })}
                         />
                     ) : null}
-                    <Input
-                        type="date"
+                    <DateChip
                         label={t('time.dateFrom')}
                         value={filters.workDateFrom}
-                        onChange={(event) => setFilters({ ...filters, workDateFrom: event.target.value })}
+                        onChange={(workDateFrom) => setFilters({ ...filters, workDateFrom })}
                     />
-                    <Input
-                        type="date"
+                    <DateChip
                         label={t('time.dateTo')}
                         value={filters.workDateTo}
-                        onChange={(event) => setFilters({ ...filters, workDateTo: event.target.value })}
+                        onChange={(workDateTo) => setFilters({ ...filters, workDateTo })}
                     />
                     <Select
                         label={t('time.project')}

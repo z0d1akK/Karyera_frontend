@@ -18,14 +18,69 @@ export function fullName(person) {
     return [person.lastName, person.firstName, person.middleName].filter(Boolean).join(' ') || '—';
 }
 
+export function localTodayIso(now = new Date()) {
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${now.getFullYear()}-${month}-${day}`;
+}
+
+export function utcTodayIso(now = new Date()) {
+    const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(now.getUTCDate()).padStart(2, '0');
+    return `${now.getUTCFullYear()}-${month}-${day}`;
+}
+
+export function utcWeekRange(now = new Date()) {
+    const weekday = now.getUTCDay() || 7;
+    const monday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - weekday + 1));
+    const sunday = new Date(Date.UTC(monday.getUTCFullYear(), monday.getUTCMonth(), monday.getUTCDate() + 6));
+    return { periodStart: utcTodayIso(monday), periodEnd: utcTodayIso(sunday) };
+}
+
+export function utcMonthStart(now = new Date()) {
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+}
+
+export function shiftUtcMonth(cursor, delta) {
+    return new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() + delta, 1));
+}
+
+function utcDate(value) {
+    if (value instanceof Date) {
+        return value;
+    }
+    const raw = String(value);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+        const [year, month, day] = raw.split('-').map(Number);
+        return new Date(Date.UTC(year, month - 1, day));
+    }
+    return parseISO(raw);
+}
+
+function formatUtc(date, pattern, language) {
+    const shifted = new Date(
+        date.getUTCFullYear(),
+        date.getUTCMonth(),
+        date.getUTCDate(),
+        date.getUTCHours(),
+        date.getUTCMinutes(),
+        date.getUTCSeconds(),
+    );
+    return format(shifted, pattern, { locale: locales[language] || ru });
+}
+
+export function formatUtcMonth(value, language = currentLang()) {
+    const lang = String(language || currentLang()).startsWith('en') ? 'en' : 'ru';
+    return formatUtc(utcDate(value), 'LLLL yyyy', lang);
+}
+
 export function formatDate(value, language = currentLang()) {
     if (!value) {
         return '—';
     }
 
     try {
-        const date = typeof value === 'string' ? parseISO(value) : value;
-        return format(date, 'dd.MM.yyyy', { locale: locales[language] || ru });
+        return formatUtc(utcDate(value), 'dd.MM.yyyy', language);
     } catch {
         return String(value);
     }
@@ -36,32 +91,25 @@ export function formatGrainDate(value, grain = 'DAY', language = currentLang()) 
         return '—';
     }
     try {
-        const raw = typeof value === 'string' ? value : value.toISOString?.() || String(value);
-        const date = parseISO(String(raw).slice(0, 10));
-        const locale = locales[language] || ru;
+        const date = utcDate(String(value).slice(0, 10));
         if (grain === 'YEAR') {
-            return format(date, 'yyyy', { locale });
+            return formatUtc(date, 'yyyy', language);
         }
         if (grain === 'MONTH') {
-            return format(date, 'LLL yyyy', { locale });
+            return formatUtc(date, 'LLL yyyy', language);
         }
-        return format(date, 'dd.MM.yyyy', { locale });
+        return formatUtc(date, 'dd.MM.yyyy', language);
     } catch {
         return formatDate(value, language);
     }
 }
 
 export function timezoneOffsetMinutes() {
-    return -new Date().getTimezoneOffset();
+    return 0;
 }
 
 export function timezoneOffsetLabel() {
-    const minutes = timezoneOffsetMinutes();
-    const sign = minutes >= 0 ? '+' : '-';
-    const absolute = Math.abs(minutes);
-    const hours = Math.floor(absolute / 60);
-    const rest = absolute % 60;
-    return rest ? `UTC${sign}${hours}:${String(rest).padStart(2, '0')}` : `UTC${sign}${hours}`;
+    return 'UTC';
 }
 
 export function formatDateTime(value, language = currentLang()) {
@@ -70,8 +118,7 @@ export function formatDateTime(value, language = currentLang()) {
     }
 
     try {
-        const date = typeof value === 'string' ? parseISO(value) : value;
-        return format(date, 'dd.MM.yyyy HH:mm', { locale: locales[language] || ru });
+        return `${formatUtc(utcDate(value), 'dd.MM.yyyy HH:mm', language)} UTC`;
     } catch {
         return String(value);
     }
@@ -110,8 +157,7 @@ export function formatMonthYear(value, language = currentLang()) {
     }
 
     try {
-        const date = typeof value === 'string' ? parseISO(value) : value;
-        return format(date, 'LLLL yyyy', { locale: locales[language] || ru });
+        return formatUtc(utcDate(value), 'LLLL yyyy', language);
     } catch {
         return String(value);
     }

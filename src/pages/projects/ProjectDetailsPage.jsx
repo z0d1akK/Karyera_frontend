@@ -7,7 +7,7 @@ import { projectApi } from '../../features/projects/api/projectApi.js';
 import { hoursLabel, timeApi } from '../../features/time/api/timeApi.js';
 import { queryKeys } from '../../shared/api/queryKeys.js';
 import { unwrapPage } from '../../shared/lib/queryParams.js';
-import { formatDate } from '../../shared/lib/format.js';
+import { formatDate, localTodayIso } from '../../shared/lib/format.js';
 import { enumLabel, statusTone } from '../../shared/lib/enums.js';
 import { useEmployeeNames, useWorkLabels } from '../../shared/lib/displayNames.js';
 import { getApiError } from '../../shared/api/errors.js';
@@ -113,7 +113,7 @@ export function ProjectDetailsPage() {
         onError,
     });
     const endAssignment = useMutation({
-        mutationFn: (row) => projectApi.endAssignment(row.id, { endDate: new Date().toISOString().slice(0, 10), expectedVersion: row.version }),
+        mutationFn: (row) => projectApi.endAssignment(row.id, { endDate: localTodayIso(), expectedVersion: row.version }),
         onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.projects.assignments(id) }),
         onError,
     });
@@ -194,6 +194,8 @@ export function ProjectDetailsPage() {
         tone: statusTone('projectStatus', data.status),
     };
     const team = assignments.data?.content || [];
+    const today = localTodayIso();
+    const membershipOpen = (row) => !row.endDate || String(row.endDate) >= today;
     const taskList = tasks.data?.content || [];
     const assigned = isAssignedToProject(team, employeeId);
     const canEdit = isProjectEditor(role, data, employeeId, { assigned });
@@ -294,7 +296,7 @@ export function ProjectDetailsPage() {
                                 <p className={styles.description}>{row.projectRoleName || t('projects.roleMissing')}</p>
                                 <div className={styles.row}><span>{t('projects.from')}</span><strong>{formatDate(row.startDate)}</strong></div>
                                 <div className={styles.row}><span>{t('projects.to')}</span><strong>{formatDate(row.endDate)}</strong></div>
-                                {canMembers && !row.endDate ? (
+                                {canMembers && membershipOpen(row) ? (
                                     <div className={styles.actions}>
                                         <Button variant="ghost" onClick={() => setEditingAssignment({
                                             id: row.id,

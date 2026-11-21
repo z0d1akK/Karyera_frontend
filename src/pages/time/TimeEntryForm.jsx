@@ -11,11 +11,8 @@ import { getApiError } from '../../shared/api/errors.js';
 import { useToastStore } from '../../store/toastStore.js';
 import { Button } from '../../shared/ui/Button/Button.jsx';
 import { Input, Select, Textarea } from '../../shared/ui/Input/Input.jsx';
+import { localTodayIso } from '../../shared/lib/format.js';
 import page from '../../shared/styles/page.module.css';
-
-function todayIso() {
-    return new Date().toISOString().slice(0, 10);
-}
 
 export function TimeEntryForm({ initialDate = '', onCancel, onSaved }) {
     const { t } = useTranslation();
@@ -24,7 +21,7 @@ export function TimeEntryForm({ initialDate = '', onCancel, onSaved }) {
     const [form, setForm] = useState({
         projectId: '',
         taskId: '',
-        workDate: initialDate || todayIso(),
+        workDate: initialDate || localTodayIso(),
         hours: '',
         description: '',
     });

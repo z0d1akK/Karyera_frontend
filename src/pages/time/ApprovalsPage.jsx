@@ -27,8 +27,10 @@ export function ApprovalsPage() {
 
     return (
         <section className={page.sections}>
-            <PageHeader title={t('time.approvals')} description={t('time.approvalsSubtitle')} />
-            <TimeNav />
+            <div className={page.pageHead}>
+                <PageHeader title={t('time.approvals')} description={t('time.approvalsSubtitle')} />
+                <TimeNav />
+            </div>
             <Card>
                 {pending.isLoading ? <Skeleton rows={4} /> : null}
                 {pending.isError ? (

@@ -2,21 +2,35 @@
     display: grid;
     flex-shrink: 0;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    margin-top: 16px;
-    margin-bottom: 24px;
+    margin-top: 0;
+    margin-bottom: 0;
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
 }
 
+.row:has(> :nth-child(1):last-child) {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.row:has(> :nth-child(2):last-child) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.row:has(> :nth-child(3):last-child),
 .cols3 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 @media (max-width: 900px) {
     .row,
+    .row:has(> :nth-child(3):last-child),
     .cols3 {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .row:has(> :nth-child(1):last-child) {
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 
@@ -26,7 +40,7 @@
     align-items: flex-start;
     gap: 4px;
     min-width: 0;
-    padding: 16px 20px;
+    padding: 12px 16px;
 }
 
 .tile span {
@@ -37,7 +51,7 @@
 }
 
 .tile strong {
-    font-size: 28px;
+    font-size: 24px;
     line-height: 1.2;
     color: var(--color-primary-dark);
     overflow: hidden;

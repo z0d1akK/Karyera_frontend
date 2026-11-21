@@ -3,13 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 
+import { DateChip } from '../../features/analytics/charts/ChartToolbar.jsx';
 import { employeeApi } from '../../features/employees/api/employeeApi.js';
 import { useCatalogs } from '../../features/employees/hooks/useCatalogs.js';
 import { queryKeys } from '../../shared/api/queryKeys.js';
 import { unwrapPage } from '../../shared/lib/queryParams.js';
 import { catalogName, fullName } from '../../shared/lib/format.js';
 import { enumLabel, statusTone } from '../../shared/lib/enums.js';
-import { PageHeader } from '../../shared/ui/PageHeader/PageHeader.jsx';
 import { Card } from '../../shared/ui/Card/Card.jsx';
 import { Input, Select } from '../../shared/ui/Input/Input.jsx';
 import { Button } from '../../shared/ui/Button/Button.jsx';
@@ -18,9 +18,9 @@ import { Badge } from '../../shared/ui/Badge/Badge.jsx';
 import { canManageHr } from '../../shared/lib/roles.js';
 import { useAuthStore } from '../../store/authStore.js';
 import { Skeleton } from '../../shared/ui/PageState/PageState.jsx';
-import { StatRow, StatTile } from '../../shared/ui/StatTile/StatTile.jsx';
 import { PageSizeField, SortField } from '../../shared/ui/ListFilters/ListFilters.jsx';
 import page from '../../shared/styles/page.module.css';
+import styles from '../../shared/styles/catalog.module.css';
 
 export function EmployeesPage() {
     const { t } = useTranslation();
@@ -43,13 +43,23 @@ export function EmployeesPage() {
 
     return (
         <section>
-            <PageHeader
-                title={t('employees.title')}
-                actions={canManageHr(role) ? <Button onClick={() => navigate('/app/employees/new')}>{t('employees.createCard')}</Button> : null}
-            />
-            <StatRow>
-                <StatTile label={t('employees.title')} value={pageData?.totalElements ?? 0} />
-            </StatRow>
+            <div className={styles.hero}>
+                <div>
+                    <h1>{t('employees.title')}</h1>
+                    <p>{t('employees.subtitle')}</p>
+                </div>
+                <div className={styles.stats}>
+                    <div className={styles.stat}>
+                        <span>{t('employees.count')}</span>
+                        <strong>{pageData?.totalElements ?? 0}</strong>
+                    </div>
+                </div>
+                {canManageHr(role) ? (
+                    <div className={styles.heroActions}>
+                        <Button onClick={() => navigate('/app/employees/new')}>{t('employees.createCard')}</Button>
+                    </div>
+                ) : null}
+            </div>
             <Card>
                 <div className={page.filterBar}>
                     <Input
@@ -96,17 +106,15 @@ export function EmployeesPage() {
                             <option key={status} value={status}>{enumLabel(t, 'employmentStatus', status)}</option>
                         ))}
                     </Select>
-                    <Input
-                        type="date"
+                    <DateChip
                         label={t('form.hireDateFrom')}
                         value={filters.hireDateFrom || ''}
-                        onChange={(e) => setFilters({ ...filters, hireDateFrom: e.target.value, page: 0 })}
+                        onChange={(hireDateFrom) => setFilters({ ...filters, hireDateFrom, page: 0 })}
                     />
-                    <Input
-                        type="date"
+                    <DateChip
                         label={t('form.hireDateTo')}
                         value={filters.hireDateTo || ''}
-                        onChange={(e) => setFilters({ ...filters, hireDateTo: e.target.value, page: 0 })}
+                        onChange={(hireDateTo) => setFilters({ ...filters, hireDateTo, page: 0 })}
                     />
                     <SortField
                         value={filters.sortBy}

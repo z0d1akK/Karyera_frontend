@@ -14,9 +14,8 @@ import { Button } from '../../shared/ui/Button/Button.jsx';
 import { Card } from '../../shared/ui/Card/Card.jsx';
 import { DataTable } from '../../shared/ui/DataTable/DataTable.jsx';
 import { Input, Select } from '../../shared/ui/Input/Input.jsx';
-import { PageHeader } from '../../shared/ui/PageHeader/PageHeader.jsx';
 import { PageState } from '../../shared/ui/PageState/PageState.jsx';
-import { AnalyticsNav } from './AnalyticsNav.jsx';
+import { AnalyticsPage } from './AnalyticsPage.jsx';
 import page from '../../shared/styles/page.module.css';
 
 const ASSESSMENT_TYPES = new Set(['POSITION_FIT', 'SKILL_GAPS', 'CAREER_RECOMMENDATIONS']);
@@ -74,9 +73,7 @@ export function ReportsPage() {
     }
 
     return (
-        <section className={page.sections}>
-            <PageHeader title={t('analyticsUi.reports')} />
-            <AnalyticsNav />
+        <AnalyticsPage title={t('analyticsUi.reports')} description={t('analyticsUi.reportsHint')}>
             {types.isError ? <PageState title={t('errors.loadFailed')} onAction={types.refetch} /> : null}
             <Card>
                 <div className={page.stack}>
@@ -134,7 +131,7 @@ export function ReportsPage() {
             </Card>
             {error ? <PageState title={error} /> : null}
             {preview ? <ReportPreview document={preview} /> : null}
-        </section>
+        </AnalyticsPage>
     );
 }
 

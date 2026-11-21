@@ -2,17 +2,21 @@
     display: flex;
     flex-shrink: 0;
     justify-content: space-between;
-    align-items: center;
-    gap: 16px;
+    align-items: flex-start;
+    gap: 16px 24px;
     margin-bottom: 20px;
 }
 
 .header h1 {
-    margin-bottom: 4px;
+    margin: 0 0 8px;
+    font-size: 28px;
+    line-height: 1.2;
 }
 
 .header p {
+    margin: 0;
     color: var(--color-secondary-text);
+    max-width: 560px;
 }
 
 .actions {

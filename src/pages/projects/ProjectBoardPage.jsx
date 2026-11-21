@@ -198,7 +198,7 @@ export function ProjectBoardPage() {
                             {canEdit ? (
                                 <div className={styles.columnActions}>
                                     {renaming?.id === column.id ? (
-                                        <div className={page.row}>
+                                        <div className={`${page.row} ${styles.columnRename}`}>
                                             <Input label={t('projects.renameColumn')} value={renaming.name} onChange={(e) => setRenaming({ ...renaming, name: e.target.value })} />
                                             <Button onClick={() => {
                                                 renameColumn.mutate({ columnId: column.id, name: renaming.name });
@@ -206,9 +206,7 @@ export function ProjectBoardPage() {
                                             }}>{t('common.save')}</Button>
                                             <Button variant="ghost" onClick={() => setRenaming(null)}>{t('common.cancel')}</Button>
                                         </div>
-                                    ) : (
-                                        <Button variant="ghost" onClick={() => setRenaming({ id: column.id, name: column.name })}>{t('common.edit')}</Button>
-                                    )}
+                                    ) : null}
                                     <Button variant="ghost" onClick={() => {
                                         const ids = columns.map((item) => item.id);
                                         const index = ids.indexOf(column.id);
@@ -225,6 +223,9 @@ export function ProjectBoardPage() {
                                             moveColumn.mutate(ids);
                                         }
                                     }}>{t('projects.moveDown')}</Button>
+                                    {renaming?.id === column.id ? null : (
+                                        <Button variant="ghost" onClick={() => setRenaming({ id: column.id, name: column.name })}>{t('common.edit')}</Button>
+                                    )}
                                     <Button variant="danger" onClick={() => removeColumn.mutate(column.id)}>{t('common.delete')}</Button>
                                 </div>
                             ) : null}

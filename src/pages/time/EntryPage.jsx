@@ -19,6 +19,7 @@ import { BackLink } from '../../shared/ui/BackLink/BackLink.jsx';
 import { PageState, Skeleton } from '../../shared/ui/PageState/PageState.jsx';
 import { TimeNav } from './TimeNav.jsx';
 import { Missing } from './timeDisplay.jsx';
+import { localTodayIso } from '../../shared/lib/format.js';
 import page from '../../shared/styles/page.module.css';
 import styles from './TimePages.module.css';
 
@@ -32,7 +33,7 @@ export function EntryPage() {
     const queryClient = useQueryClient();
     const push = useToastStore((state) => state.push);
     const selfId = useAuthStore((state) => state.employee?.id);
-    const [form, setForm] = useState(empty);
+    const [form, setForm] = useState(() => ({ ...empty, workDate: id ? '' : localTodayIso() }));
     const [reason, setReason] = useState('');
 
     const projects = useQuery({

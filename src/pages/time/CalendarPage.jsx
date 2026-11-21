@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { formatHours, timeApi } from '../../features/time/api/timeApi.js';
 import { EmployeePicker } from '../../features/employees/components/EmployeePicker.jsx';
 import { canApproveTimesheets } from '../../shared/lib/roles.js';
+import { localTodayIso } from '../../shared/lib/format.js';
 import { useAuthStore } from '../../store/authStore.js';
 import { Button } from '../../shared/ui/Button/Button.jsx';
 import { PageHeader } from '../../shared/ui/PageHeader/PageHeader.jsx';
@@ -48,7 +49,7 @@ export function CalendarPage() {
     });
     const logged = new Map((summary.data?.days || []).map((day) => [day.date, day.totalMinutes]));
     const byDate = new Map((calendar.data?.days || []).map((day) => [day.date, day]));
-    const today = new Date().toISOString().slice(0, 10);
+    const today = localTodayIso();
     const weekdayLabels = t('time.weekdays', { returnObjects: true });
     const title = cursor.toLocaleDateString(i18n.resolvedLanguage || 'ru', { month: 'long', year: 'numeric' });
     const offset = (range.start.getDay() + 6) % 7;
@@ -70,8 +71,10 @@ export function CalendarPage() {
 
     return (
         <section className={page.sections}>
-            <PageHeader title={t('time.calendar')} description={t('time.calendarSubtitle')} />
-            <TimeNav />
+            <div className={page.pageHead}>
+                <PageHeader title={t('time.calendar')} description={t('time.calendarSubtitle')} />
+                <TimeNav />
+            </div>
             <div className={timeStyles.toolbar}>
                 <h2 className={styles.monthTitle}>{title}</h2>
                 <div className={timeStyles.toolbarEnd}>

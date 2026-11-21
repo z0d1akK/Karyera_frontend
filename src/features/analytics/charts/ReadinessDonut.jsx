@@ -6,7 +6,7 @@ export function ReadinessDonut({ data }) {
     return (
         <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-                <Pie data={data} dataKey="employees" nameKey="name" innerRadius={58} outerRadius={88} paddingAngle={2}>
+                <Pie data={data} dataKey="employees" nameKey="name" innerRadius={48} outerRadius={72} paddingAngle={2} cy="42%">
                     {data.map((item, index) => (
                         <Cell key={item.name} fill={CHART_SERIES[index % CHART_SERIES.length]} />
                     ))}

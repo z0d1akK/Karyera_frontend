@@ -15,9 +15,11 @@ export function EmployeeForm({
     submitting,
     includeStatus = true,
     includeOrg = true,
+    includeDepartment = false,
     requireAssignment = false,
     submitLabel,
     onCancel,
+    errors = {},
 }) {
     const { t } = useTranslation();
     const [form, setForm] = useState(values || {});
@@ -39,7 +41,9 @@ export function EmployeeForm({
                     delete payload.hireDate;
                     delete payload.positionId;
                     delete payload.gradeId;
-                    delete payload.departmentId;
+                    if (!includeDepartment) {
+                        delete payload.departmentId;
+                    }
                     delete payload.specializationId;
                     delete payload.maxSubordinates;
                     delete payload.employmentStatus;
@@ -51,32 +55,38 @@ export function EmployeeForm({
             }}
         >
             <div className={page.grid}>
-                <Input label={t('form.lastName')} value={form.lastName || ''} onChange={set('lastName')} required />
-                <Input label={t('form.firstName')} value={form.firstName || ''} onChange={set('firstName')} required />
-                <Input label={t('form.middleName')} value={form.middleName || ''} onChange={set('middleName')} />
-                <Input label={t('form.email')} type="email" value={form.email || ''} onChange={set('email')} required />
-                <Input label={t('form.birthDate')} type="date" value={form.birthDate || ''} onChange={set('birthDate')} />
+                <Input label={t('form.lastName')} value={form.lastName || ''} onChange={set('lastName')} error={errors.lastName} required />
+                <Input label={t('form.firstName')} value={form.firstName || ''} onChange={set('firstName')} error={errors.firstName} required />
+                <Input label={t('form.middleName')} value={form.middleName || ''} onChange={set('middleName')} error={errors.middleName} />
+                <Input label={t('form.email')} type="email" value={form.email || ''} onChange={set('email')} error={errors.email} required />
+                <Input label={t('form.birthDate')} type="date" value={form.birthDate || ''} onChange={set('birthDate')} error={errors.birthDate} />
                 {includeOrg ? (
                 <>
-                <Input label={t('form.hireDate')} type="date" value={form.hireDate || ''} onChange={set('hireDate')} required />
-                <Select label={t('form.position')} value={form.positionId || ''} onChange={set('positionId')} required={requireAssignment}>
+                <Input label={t('form.hireDate')} type="date" value={form.hireDate || ''} onChange={set('hireDate')} error={errors.hireDate} required />
+                <Select label={t('form.position')} value={form.positionId || ''} onChange={set('positionId')} error={errors.positionId} required={requireAssignment}>
                     <option value="">{t('common.notSelected')}</option>
                     {(catalogs.positions || []).map((item) => (
                         <option key={item.id} value={item.id}>{item.name}</option>
                     ))}
                 </Select>
-                <Select label={t('form.grade')} value={form.gradeId || ''} onChange={set('gradeId')} required={requireAssignment}>
+                <Select label={t('form.grade')} value={form.gradeId || ''} onChange={set('gradeId')} error={errors.gradeId} required={requireAssignment}>
                     <option value="">{t('common.notSelected')}</option>
                     {(catalogs.grades || []).map((item) => (
                         <option key={item.id} value={item.id}>{item.name}</option>
                     ))}
                 </Select>
-                <Select label={t('form.department')} value={form.departmentId || ''} onChange={set('departmentId')}>
+                </>
+                ) : null}
+                {includeOrg || includeDepartment ? (
+                <Select label={t('form.department')} value={form.departmentId || ''} onChange={set('departmentId')} error={errors.departmentId}>
                     <option value="">{t('common.notSelected')}</option>
                     {(catalogs.departments || []).map((item) => (
                         <option key={item.id} value={item.id}>{item.name}</option>
                     ))}
                 </Select>
+                ) : null}
+                {includeOrg ? (
+                <>
                 <Select label={t('form.specialization')} value={form.specializationId || ''} onChange={set('specializationId')}>
                     <option value="">{t('common.notSelected')}</option>
                     {(catalogs.specializations || []).map((item) => (

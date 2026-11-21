@@ -9,7 +9,7 @@ import { unwrapPage } from '../../shared/lib/queryParams.js';
 import { formatDate } from '../../shared/lib/format.js';
 import { enumLabel, statusTone } from '../../shared/lib/enums.js';
 import { getApiError } from '../../shared/api/errors.js';
-import { canCreateProject } from '../../shared/lib/roles.js';
+import { ROLES, canCreateProject } from '../../shared/lib/roles.js';
 import { useAuthStore } from '../../store/authStore.js';
 import { useToastStore } from '../../store/toastStore.js';
 import { Button } from '../../shared/ui/Button/Button.jsx';
@@ -34,6 +34,7 @@ export function ProjectsPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const role = useAuthStore((s) => s.session?.role);
+    const seesAllProjects = role === ROLES.HR || role === ROLES.ADMIN;
     const employeeId = useAuthStore((s) => s.employee?.id);
     const push = useToastStore((s) => s.push);
     const queryClient = useQueryClient();
@@ -67,22 +68,15 @@ export function ProjectsPage() {
         queryKey: [...queryKeys.projects.all(listParams), employeeId],
         queryFn: async () => {
             const listed = unwrapPage(await projectApi.list(listParams));
-            const content = await Promise.all((listed.content || []).map(async (project) => {
-                if (!employeeId) {
-                    return project;
-                }
-                try {
-                    const assignments = unwrapPage(await projectApi.listAssignments(project.id, { page: 0, size: 100 }));
-                    const mine = (assignments.content || []).find((item) => item.employeeId === employeeId);
-                    return {
-                        ...project,
-                        joinedAt: mine?.startDate,
-                        leftAt: mine?.endDate,
-                    };
-                } catch {
-                    return project;
-                }
-            }));
+            if (!employeeId) {
+                return listed;
+            }
+            const participation = unwrapPage(await projectApi.listParticipation(employeeId));
+            const byProject = new Map((participation.content || []).map((item) => [item.projectId, item]));
+            const content = (listed.content || []).map((project) => {
+                const mine = byProject.get(project.id);
+                return mine ? { ...project, joinedAt: mine.startDate, leftAt: mine.endDate } : project;
+            });
             return { ...listed, content };
         },
     });
@@ -119,12 +113,12 @@ export function ProjectsPage() {
         <section>
             <div className={styles.hero}>
                 <div>
-                    <h1>{t('projects.title')}</h1>
-                    <p>{t('projects.subtitle')}</p>
+                    <h1>{t(seesAllProjects ? 'projects.titleAll' : 'projects.title')}</h1>
+                    <p>{t(seesAllProjects ? 'projects.subtitleAll' : 'projects.subtitle')}</p>
                 </div>
                 <div className={styles.stats}>
                     <div className={styles.stat}>
-                        <span>{t('projects.total')}</span>
+                        <span>{t(seesAllProjects ? 'projects.totalAll' : 'projects.total')}</span>
                         <strong>{counts.data?.total ?? query.data?.totalElements ?? 0}</strong>
                     </div>
                     <div className={styles.stat}>
@@ -187,16 +181,16 @@ export function ProjectsPage() {
                                     </div>
                                     <p className={styles.description}>{project.description || t('organization.noDescription')}</p>
                                     <div className={styles.row}>
-                                        <span>{t('projects.joinedAt')}</span>
-                                        <strong>{formatDate(project.joinedAt)}</strong>
+                                        <span>{t('projects.startDate')}</span>
+                                        <strong>{formatDate(project.startDate || project.joinedAt)}</strong>
                                     </div>
                                     <div className={styles.row}>
-                                        <span>{t('projects.leftAt')}</span>
-                                        <strong>{formatDate(project.leftAt)}</strong>
+                                        <span>{t('projects.endDate')}</span>
+                                        <strong>{formatDate(project.endDate || project.leftAt)}</strong>
                                     </div>
                                     <div className={styles.row}>
-                                        <span>{t('projects.deliveryManager')}</span>
-                                        <strong>{project.deliveryManager?.fullName || '—'}</strong>
+                                        <span>{t('projects.owner')}</span>
+                                        <strong>{project.projectManager?.fullName || project.deliveryManager?.fullName || '—'}</strong>
                                     </div>
                                     <button type="button" className={styles.more} onClick={() => navigate(`/app/projects/${project.id}`)}>
                                         {t('common.more')}
@@ -206,7 +200,7 @@ export function ProjectsPage() {
                         })}
                     </div>
                     {!projects.length ? <p className={styles.footer}>{t('projects.empty')}</p> : (
-                        <p className={styles.footer}>{t('projects.shown', { shown: projects.length, total: query.data?.totalElements || projects.length })}</p>
+                        <p className={styles.footer}>{t(seesAllProjects ? 'projects.shownAll' : 'projects.shown', { shown: projects.length, total: query.data?.totalElements || projects.length })}</p>
                     )}
                     <Pagination
                         page={query.data?.number || 0}

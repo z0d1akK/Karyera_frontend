@@ -84,5 +84,15 @@
 .sections {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 20px;
+}
+
+.pageHead {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.pageHead > * {
+    margin-bottom: 0;
 }

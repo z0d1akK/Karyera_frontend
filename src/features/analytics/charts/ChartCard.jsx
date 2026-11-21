@@ -7,7 +7,7 @@ import { Card } from '../../../shared/ui/Card/Card.jsx';
 import { PageState } from '../../../shared/ui/PageState/PageState.jsx';
 import styles from './ChartCard.module.css';
 
-export function ChartCard({ title, to, empty, compact, details, toolbar, caption, className = '', children }) {
+export function ChartCard({ title, to, empty, emptyTitle, compact, donut, details, toolbar, caption, className = '', children }) {
     const { t } = useTranslation();
     const [open, setOpen] = useState(false);
     return (
@@ -15,9 +15,8 @@ export function ChartCard({ title, to, empty, compact, details, toolbar, caption
             <div className={styles.body}>
                 <div className={styles.titleRow}>
                     <h2 className={styles.title}>{title}</h2>
-                    {toolbar || details || to ? (
+                    {details || to ? (
                         <div className={styles.actions}>
-                            {toolbar}
                             {to ? <Link className={styles.more} to={to}>{t('common.more')}</Link> : null}
                             {details ? (
                                 <Button variant="ghost" className={styles.tableBtn} onClick={() => setOpen((value) => !value)}>
@@ -27,8 +26,9 @@ export function ChartCard({ title, to, empty, compact, details, toolbar, caption
                         </div>
                     ) : null}
                 </div>
-                {empty ? <PageState title={t('analyticsUi.emptyChart')} /> : (
-                    <div className={`${styles.chart} ${compact ? styles.compact : ''}`}>{children}</div>
+                {toolbar || null}
+                {empty ? <PageState title={emptyTitle || t('analyticsUi.emptyChart')} /> : (
+                    <div className={`${styles.chart} ${compact ? styles.compact : ''} ${donut ? styles.donut : ''}`}>{children}</div>
                 )}
                 {caption ? <p className={styles.caption}>{caption}</p> : null}
                 {open ? <div className={styles.details}>{details}</div> : null}

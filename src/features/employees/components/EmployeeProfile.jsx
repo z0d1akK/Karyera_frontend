@@ -4,14 +4,15 @@ import { Briefcase, Building2, Mail } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { analyticsApi } from '../../analytics/api/analyticsApi.js';
 import { employeeApi } from '../api/employeeApi.js';
 import { projectApi } from '../../projects/api/projectApi.js';
 import { useCatalogs } from '../hooks/useCatalogs.js';
 import { queryKeys } from '../../../shared/api/queryKeys.js';
 import { unwrapPage } from '../../../shared/lib/queryParams.js';
-import { catalogName, formatDate, formatMonthYear, fullName, valueOrDash } from '../../../shared/lib/format.js';
+import { catalogName, formatDate, formatMonthYear, formatScorePercent, fullName, localTodayIso, valueOrDash } from '../../../shared/lib/format.js';
 import { enumLabel, statusTone } from '../../../shared/lib/enums.js';
-import { canManageHr, canSeeMilitary } from '../../../shared/lib/roles.js';
+import { canManageHr, canSeeMilitary, ROLES } from '../../../shared/lib/roles.js';
 import { useAuthStore } from '../../../store/authStore.js';
 import { useToastStore } from '../../../store/toastStore.js';
 import { getApiError } from '../../../shared/api/errors.js';
@@ -44,20 +45,32 @@ function Field({ label, value }) {
 
 export function EmployeeProfile({ employeeId, isSelf = false }) {
     const { t } = useTranslation();
-    const role = useAuthStore((state) => state.session?.role);
+    const session = useAuthStore((state) => state.session);
+    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+    const isReady = useAuthStore((state) => state.isReady);
+    const role = session?.role;
+    const linkQuery = useQuery({
+        queryKey: queryKeys.employees.byUser(session?.userId),
+        queryFn: () => employeeApi.getByUserId(session.userId),
+        enabled: isSelf && !employeeId && Boolean(isAuthenticated && session?.userId),
+        retry: 2,
+    });
+    const activeId = employeeId || (isSelf ? linkQuery.data?.id : undefined);
     const catalogs = useCatalogs();
     const push = useToastStore((state) => state.push);
     const queryClient = useQueryClient();
     const fileRef = useRef(null);
     const [tab, setTab] = useState('profile');
     const [editing, setEditing] = useState(false);
+    const [editingDepartment, setEditingDepartment] = useState(false);
     const [status, setStatus] = useState('');
     const [addOpen, setAddOpen] = useState(false);
+    const [formErrors, setFormErrors] = useState({});
 
     const query = useQuery({
-        queryKey: queryKeys.employees.one(employeeId),
-        queryFn: () => employeeApi.getById(employeeId),
-        enabled: Boolean(employeeId),
+        queryKey: queryKeys.employees.one(activeId),
+        queryFn: () => employeeApi.getById(activeId),
+        enabled: Boolean(activeId),
     });
 
     const types = useQuery({
@@ -72,60 +85,97 @@ export function EmployeeProfile({ employeeId, isSelf = false }) {
     });
 
     const projects = useQuery({
-        queryKey: ['employee-projects', employeeId],
-        enabled: Boolean(employeeId) && tab === 'projects',
+        queryKey: ['employee-projects', activeId],
+        enabled: Boolean(activeId) && tab === 'projects',
         queryFn: async () => {
             const listed = unwrapPage(await projectApi.list({ page: 0, size: 50, sortBy: 'name' }));
             const rows = [];
             for (const project of listed.content || []) {
                 try {
-                    const assignments = unwrapPage(await projectApi.listAssignments(project.id, { employeeId, page: 0, size: 20 }));
-                    const mine = (assignments.content || []).filter((item) => item.employeeId === employeeId);
+                    const assignments = unwrapPage(await projectApi.listAssignments(project.id, { employeeId: activeId, page: 0, size: 20 }));
+                    const mine = (assignments.content || []).filter((item) => item.employeeId === activeId);
                     if (!mine.length) {
                         continue;
                     }
-                    const tasks = unwrapPage(await projectApi.listTasks(project.id, { page: 0, size: 20, sortBy: 'taskNumber' }));
-                    rows.push({ project, assignments: mine, tasks: tasks.content || [] });
-                } catch {
-                    // Project is outside the viewer's scope.
+                    const assignmentIds = new Set(mine.map((item) => item.id));
+                    const tasks = unwrapPage(await projectApi.listTasks(project.id, { page: 0, size: 50, sortBy: 'taskNumber' }));
+                    const employeeTasks = (tasks.content || []).filter((task) =>
+                        (task.assignees || []).some((assignee) =>
+                            assignmentIds.has(assignee.assignmentId) || String(assignee.employeeId) === String(activeId)
+                        )
+                    );
+                    rows.push({ project, assignments: mine, tasks: employeeTasks });
+                } catch (error) {
+                    if (error?.response?.status === 403) {
+                        continue;
+                    }
+                    throw error;
                 }
             }
             return rows;
         },
     });
 
-    const invalidate = () => queryClient.invalidateQueries({ queryKey: queryKeys.employees.one(employeeId) });
+    const invalidate = () => queryClient.invalidateQueries({ queryKey: queryKeys.employees.one(activeId) });
     const onError = (error) => push({ type: 'error', message: getApiError(error).message });
     const onSaved = () => {
         invalidate();
         push({ type: 'success', message: t('common.saved') });
     };
 
+    const assessments = useQuery({
+        queryKey: ['analytics', 'assessments', activeId],
+        enabled: Boolean(activeId),
+        queryFn: () => analyticsApi.assessments(activeId),
+    });
+    const latestAssessment = (assessments.data || [])[0];
+
     const update = useMutation({
-        mutationFn: (payload) => employeeApi.update(employeeId, payload),
+        mutationFn: (payload) => employeeApi.update(activeId, payload),
         onSuccess: () => {
+            setFormErrors({});
             onSaved();
             setEditing(false);
         },
-        onError,
+        onError: (error) => {
+            const parsed = getApiError(error);
+            setFormErrors(parsed.fieldErrors || {});
+            push({ type: 'error', message: parsed.message });
+        },
     });
     const changeStatus = useMutation({
-        mutationFn: () => employeeApi.changeStatus(employeeId, status),
+        mutationFn: () => employeeApi.changeStatus(activeId, status),
         onSuccess: onSaved,
         onError,
     });
     const upload = useMutation({
-        mutationFn: (file) => employeeApi.uploadPhoto(employeeId, file),
+        mutationFn: (file) => employeeApi.uploadPhoto(activeId, file),
         onSuccess: onSaved,
         onError,
     });
     const removePhoto = useMutation({
-        mutationFn: () => employeeApi.deletePhoto(employeeId),
+        mutationFn: () => employeeApi.deletePhoto(activeId),
         onSuccess: onSaved,
         onError,
     });
+    const updateDepartment = useMutation({
+        mutationFn: (payload) => employeeApi.updateDepartment(query.data.department.id, payload),
+        onSuccess: () => {
+            onSaved();
+            setEditingDepartment(false);
+        },
+        onError,
+    });
 
-    if (!employeeId) {
+    if (!activeId) {
+        const waitingForLink = isSelf && Boolean(isAuthenticated && session?.userId)
+            && (!isReady || linkQuery.isLoading || linkQuery.isFetching || !linkQuery.isFetched);
+        if (waitingForLink) {
+            return <Skeleton rows={8} />;
+        }
+        if (isSelf && linkQuery.isError && getApiError(linkQuery.error).status !== 404) {
+            return <PageState title={t('profile.loadFailed')} onAction={() => linkQuery.refetch()} actionLabel={t('common.retry')} />;
+        }
         return <PageState title={t('profile.unavailable')} description={t('profile.unlinked')} />;
     }
 
@@ -142,8 +192,10 @@ export function EmployeeProfile({ employeeId, isSelf = false }) {
     }
 
     const employee = query.data;
-    const canEditPersonal = isSelf || canManageHr(role);
-    const canEditOrg = canManageHr(role);
+    const canEditOrg = role === ROLES.HR || role === ROLES.ADMIN;
+    const canEditPersonal = isSelf || canEditOrg || role === ROLES.MANAGER;
+    const canAssignDepartment = canEditOrg || (role === ROLES.MANAGER && !isSelf);
+    const canEditOwnDepartment = isSelf && role === ROLES.MANAGER && Boolean(employee?.department?.id);
     const addLabels = {
         skills: t('profile.addSkill'),
         experience: t('profile.addExperience'),
@@ -223,6 +275,13 @@ export function EmployeeProfile({ employeeId, isSelf = false }) {
                         <Field label={t('profile.middleName')} value={employee.middleName} />
                         <Field label={t('profile.employmentStatus')} value={enumLabel(t, 'employmentStatus', employee.employmentStatus)} />
                         <Field label={t('profile.position')} value={catalogName(employee.position)} />
+                        <Field label={t('profile.grade')} value={catalogName(employee.grade)} />
+                        <Field
+                            label={t('profile.development')}
+                            value={latestAssessment
+                                ? `${t('analyticsUi.score')}: ${formatScorePercent(latestAssessment.totalScore)}`
+                                : t('profile.noDevelopment')}
+                        />
                         <Field label={t('profile.specialization')} value={employee.specialization?.name} />
                         <Field label={t('profile.hireDate')} value={employee.hireDate ? formatMonthYear(employee.hireDate) : null} />
                         <Field label={t('profile.birthDate')} value={employee.birthDate ? formatDate(employee.birthDate) : null} />
@@ -231,6 +290,11 @@ export function EmployeeProfile({ employeeId, isSelf = false }) {
                     </div>
                     <div className={styles.actions}>
                         {canEditPersonal ? <Button onClick={() => setEditing(true)}>{t('common.edit')}</Button> : null}
+                        {canEditOwnDepartment ? (
+                            <Button variant="secondary" onClick={() => setEditingDepartment(true)}>
+                                {t('profile.editDepartment')}
+                            </Button>
+                        ) : null}
                         {canEditOrg ? (
                             <>
                                 <div className={styles.statusField}>
@@ -255,6 +319,7 @@ export function EmployeeProfile({ employeeId, isSelf = false }) {
                             submitting={update.isPending}
                             includeStatus={canEditOrg}
                             includeOrg={canEditOrg}
+                            includeDepartment={canAssignDepartment}
                             onCancel={() => setEditing(false)}
                             values={{
                                 firstName: employee.firstName,
@@ -270,15 +335,40 @@ export function EmployeeProfile({ employeeId, isSelf = false }) {
                                 employmentStatus: employee.employmentStatus,
                                 maxSubordinates: employee.maxSubordinates,
                             }}
+                            errors={formErrors}
                             onSubmit={(values) => update.mutate(values)}
                         />
+                    </Modal>
+                    <Modal
+                        open={editingDepartment}
+                        title={t('profile.editDepartment')}
+                        onClose={() => setEditingDepartment(false)}
+                    >
+                        <form
+                            className={styles.fields}
+                            onSubmit={(event) => {
+                                event.preventDefault();
+                                const form = new FormData(event.currentTarget);
+                                updateDepartment.mutate({
+                                    name: form.get('name'),
+                                    description: form.get('description'),
+                                });
+                            }}
+                        >
+                            <Input name="name" label={t('form.name')} defaultValue={employee.department?.name || ''} required />
+                            <Textarea name="description" label={t('form.description')} defaultValue={employee.department?.description || ''} />
+                            <div className={styles.actions}>
+                                <Button type="submit" disabled={updateDepartment.isPending}>{t('common.save')}</Button>
+                                <Button type="button" variant="ghost" onClick={() => setEditingDepartment(false)}>{t('common.cancel')}</Button>
+                            </div>
+                        </form>
                     </Modal>
                 </article>
             )}
             {tab === 'skills' && <SkillsTab employee={employee} canEdit={canEditPersonal} skills={catalogs.skills} addOpen={addOpen} onAddOpenChange={setAddOpen} onSaved={onSaved} onError={onError} />}
             {tab === 'experience' && <ExperienceTab employee={employee} canEdit={canEditPersonal} addOpen={addOpen} onAddOpenChange={setAddOpen} onSaved={onSaved} onError={onError} />}
             {tab === 'education' && <EducationTab employee={employee} canEdit={canEditPersonal} addOpen={addOpen} onAddOpenChange={setAddOpen} onSaved={onSaved} onError={onError} />}
-            {tab === 'military' && <MilitaryTab employee={employee} canEdit={canEditPersonal} onSaved={onSaved} onError={onError} />}
+            {tab === 'military' && <MilitaryTab employee={employee} canEdit={isSelf || canEditOrg} onSaved={onSaved} onError={onError} />}
             {tab === 'responsibilities' && (
                 <ResponsibilitiesTab
                     employee={employee}
@@ -304,7 +394,15 @@ export function EmployeeProfile({ employeeId, isSelf = false }) {
                         </article>
                     ))}
                     {projects.isLoading ? <Skeleton rows={3} /> : null}
-                    {!projects.isLoading && !projects.data?.length ? <p className={styles.empty}>{t('projects.empty')}</p> : null}
+                    {projects.isError ? (
+                        <PageState
+                            title={t('projects.loadFailed')}
+                            description={getApiError(projects.error).message}
+                            actionLabel={t('common.retry')}
+                            onAction={() => projects.refetch()}
+                        />
+                    ) : null}
+                    {!projects.isLoading && !projects.isError && !projects.data?.length ? <p className={styles.empty}>{t('projects.empty')}</p> : null}
                 </div>
             )}
         </section>
@@ -631,7 +729,7 @@ function ResponsibilitiesTab({ employee, canEdit, types, people, addOpen, onAddO
         onError,
     });
     const close = useMutation({
-        mutationFn: (id) => employeeApi.closeResponsibility(id, new Date().toISOString().slice(0, 10)),
+        mutationFn: (id) => employeeApi.closeResponsibility(id, localTodayIso()),
         onSuccess: onSaved,
         onError,
     });

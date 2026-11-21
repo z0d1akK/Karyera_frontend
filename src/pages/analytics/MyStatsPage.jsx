@@ -12,11 +12,9 @@ import { StartAssessment } from '../../features/analytics/StartAssessment.jsx';
 import { hoursLabel, timeApi } from '../../features/time/api/timeApi.js';
 import { formatDate, formatScorePercent } from '../../shared/lib/format.js';
 import { useAuthStore } from '../../store/authStore.js';
-import { PageHeader } from '../../shared/ui/PageHeader/PageHeader.jsx';
 import { PageState, Skeleton } from '../../shared/ui/PageState/PageState.jsx';
 import { StatRow, StatTile } from '../../shared/ui/StatTile/StatTile.jsx';
-import { AnalyticsNav } from './AnalyticsNav.jsx';
-import page from '../../shared/styles/page.module.css';
+import { AnalyticsPage } from './AnalyticsPage.jsx';
 
 function monday() {
     const now = new Date();
@@ -62,11 +60,9 @@ export function MyStatsPage() {
     const logged = Number(week.data?.approvedMinutes || 0) + Number(week.data?.pendingMinutes || 0) + Number(week.data?.draftMinutes || 0);
 
     return (
-        <section className={page.sections}>
-            <PageHeader title={t('analyticsUi.me')} />
-            <AnalyticsNav />
+        <AnalyticsPage title={t('analyticsUi.me')} description={t('analyticsUi.meHint')}>
             {week.isError || assessments.isError ? <PageState title={t('errors.loadFailed')} /> : null}
-            <StatRow>
+            <StatRow columns={3}>
                 <StatTile label={t('analyticsUi.weekHours')} value={hoursLabel(logged)} />
                 <StatTile label={t('analyticsUi.score')} value={formatScorePercent(latest?.totalScore)} tone="accent" />
                 <StatTile label={t('time.norm')} value={hoursLabel(week.data?.plannedMinutes)} />
@@ -93,6 +89,6 @@ export function MyStatsPage() {
                 positionId={employee.position?.id || employee.positionId || ''}
                 gradeId={employee.grade?.id || employee.gradeId || ''}
             />
-        </section>
+        </AnalyticsPage>
     );
 }

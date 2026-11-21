@@ -11,9 +11,8 @@ import { useCatalogs } from '../../features/employees/hooks/useCatalogs.js';
 import { catalogName } from '../../shared/lib/format.js';
 import { Card } from '../../shared/ui/Card/Card.jsx';
 import { DataTable } from '../../shared/ui/DataTable/DataTable.jsx';
-import { PageHeader } from '../../shared/ui/PageHeader/PageHeader.jsx';
 import { PageState, Skeleton } from '../../shared/ui/PageState/PageState.jsx';
-import { AnalyticsNav } from './AnalyticsNav.jsx';
+import { AnalyticsPage } from './AnalyticsPage.jsx';
 import page from '../../shared/styles/page.module.css';
 
 export function AnalyticsOverviewPage() {
@@ -25,29 +24,23 @@ export function AnalyticsOverviewPage() {
 
     if (overview.isLoading) {
         return (
-            <section className={page.sections}>
-                <PageHeader title={t('analyticsUi.overview')} />
-                <AnalyticsNav />
+            <AnalyticsPage title={t('analyticsUi.overview')} description={t('analyticsUi.overviewHint')}>
                 <Skeleton rows={4} />
-            </section>
+            </AnalyticsPage>
         );
     }
     if (overview.isError) {
         return (
-            <section className={page.sections}>
-                <PageHeader title={t('analyticsUi.overview')} />
-                <AnalyticsNav />
+            <AnalyticsPage title={t('analyticsUi.overview')} description={t('analyticsUi.overviewHint')}>
                 <PageState title={t('errors.loadFailed')} onAction={overview.refetch} actionLabel={t('common.retry')} />
-            </section>
+            </AnalyticsPage>
         );
     }
 
     const chartRows = mapDeficits(chartSkills.data?.deficits, catalogs);
 
     return (
-        <section className={page.sections}>
-            <PageHeader title={t('analyticsUi.overview')} />
-            <AnalyticsNav />
+        <AnalyticsPage title={t('analyticsUi.overview')} description={t('analyticsUi.overviewHint')}>
             <AnalyticsKpis overview={overview.data} />
             {Number(overview.data?.assessedEmployees || 0) === 0 ? (
                 <PageState title={t('analyticsUi.emptyDashboard')} description={t('analyticsUi.emptyDashboardHint')} />
@@ -69,6 +62,6 @@ export function AnalyticsOverviewPage() {
                     ]}
                 />
             </Card>
-        </section>
+        </AnalyticsPage>
     );
 }

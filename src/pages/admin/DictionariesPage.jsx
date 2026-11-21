@@ -29,6 +29,7 @@ const catalogs = {
         update: employeeApi.updateDepartment,
         activate: employeeApi.activateDepartment,
         deactivate: employeeApi.deactivateDepartment,
+        remove: employeeApi.deleteDepartment,
     },
     positions: {
         list: employeeApi.listPositions,
@@ -36,6 +37,7 @@ const catalogs = {
         update: employeeApi.updatePosition,
         activate: employeeApi.activatePosition,
         deactivate: employeeApi.deactivatePosition,
+        remove: employeeApi.deletePosition,
     },
     grades: {
         list: employeeApi.listGrades,
@@ -44,6 +46,7 @@ const catalogs = {
         activate: employeeApi.activateGrade,
         deactivate: employeeApi.deactivateGrade,
         extra: ['level'],
+        remove: employeeApi.deleteGrade,
     },
     specializations: {
         list: employeeApi.listSpecializations,
@@ -51,6 +54,7 @@ const catalogs = {
         update: employeeApi.updateSpecialization,
         activate: employeeApi.activateSpecialization,
         deactivate: employeeApi.deactivateSpecialization,
+        remove: employeeApi.deleteSpecialization,
     },
     skills: {
         list: employeeApi.listSkills,
@@ -59,6 +63,7 @@ const catalogs = {
         activate: employeeApi.activateSkill,
         deactivate: employeeApi.deactivateSkill,
         extra: ['category'],
+        remove: employeeApi.deleteSkill,
     },
     responsibilityTypes: {
         list: employeeApi.listResponsibilityTypes,
@@ -67,6 +72,7 @@ const catalogs = {
         activate: employeeApi.activateResponsibilityType,
         deactivate: employeeApi.deactivateResponsibilityType,
         extra: ['code', 'multipleAllowed'],
+        remove: employeeApi.deleteResponsibilityType,
     },
     projectRoles: {
         list: (params) => projectApi.listRoles(params),
@@ -75,6 +81,7 @@ const catalogs = {
         activate: (id) => projectApi.updateRole(id, { active: true }),
         deactivate: (id) => projectApi.updateRole(id, { active: false }),
         extra: ['code'],
+        remove: projectApi.deleteRole,
     },
     taskTypes: {
         list: (params) => projectApi.listTaskTypes(params),
@@ -83,6 +90,7 @@ const catalogs = {
         activate: (id) => projectApi.updateTaskType(id, { active: true }),
         deactivate: (id) => projectApi.updateTaskType(id, { active: false }),
         extra: ['code'],
+        remove: projectApi.deleteTaskType,
     },
 };
 
@@ -200,6 +208,7 @@ export function DictionariesPage() {
     });
     const activate = useMutation({ mutationFn: (id) => catalog.activate(id), onSuccess: invalidate, onError });
     const deactivate = useMutation({ mutationFn: (id) => catalog.deactivate(id), onSuccess: invalidate, onError });
+    const remove = useMutation({ mutationFn: (id) => catalog.remove(id), onSuccess: invalidate, onError });
 
     const rows = query.data?.content || [];
     const extra = catalog.extra || [];
@@ -291,6 +300,9 @@ export function DictionariesPage() {
                                     ) : (
                                         <Button variant="ghost" onClick={() => deactivate.mutate(row.id)}>{t('dictionaries.deactivate')}</Button>
                                     )}
+                                    {catalog.remove ? (
+                                        <Button variant="danger" onClick={() => remove.mutate(row.id)}>{t('dictionaries.delete')}</Button>
+                                    ) : null}
                                 </div>
                             ) : null,
                         },

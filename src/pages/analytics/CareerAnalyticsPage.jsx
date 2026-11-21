@@ -11,7 +11,6 @@ import { ScoreLineChart } from '../../features/analytics/charts/ScoreLineChart.j
 import {
     ACTIVITY_GRAINS,
     SCORE_GRAINS,
-    inPeriod,
     mapActivity,
     mapReadiness,
     mapScorePoints,
@@ -21,11 +20,8 @@ import {
 import { hoursLabel } from '../../features/time/api/timeApi.js';
 import { formatGrainDate, formatScorePercent } from '../../shared/lib/format.js';
 import { DataTable } from '../../shared/ui/DataTable/DataTable.jsx';
-import { Input } from '../../shared/ui/Input/Input.jsx';
-import { PageHeader } from '../../shared/ui/PageHeader/PageHeader.jsx';
 import { PageState, Skeleton } from '../../shared/ui/PageState/PageState.jsx';
-import { AnalyticsNav } from './AnalyticsNav.jsx';
-import page from '../../shared/styles/page.module.css';
+import { AnalyticsPage } from './AnalyticsPage.jsx';
 
 export function CareerAnalyticsPage() {
     const { t } = useTranslation();
@@ -37,57 +33,50 @@ export function CareerAnalyticsPage() {
     const [activityLast, setActivityLast] = useState(12);
     const readiness = useQuery({ queryKey: ['analytics', 'readiness'], queryFn: () => analyticsApi.readiness() });
     const development = useQuery({
-        queryKey: ['analytics', 'development', scoreGrain],
-        queryFn: () => analyticsApi.development(scoreGrain),
+        queryKey: ['analytics', 'development', scoreGrain, from, to],
+        queryFn: () => analyticsApi.development(scoreGrain, from || undefined, to || undefined),
     });
     const activity = useQuery({
-        queryKey: ['analytics', 'activity', activityGrain],
-        queryFn: () => analyticsApi.activity(activityGrain),
+        queryKey: ['analytics', 'activity', activityGrain, from, to],
+        queryFn: () => analyticsApi.activity(activityGrain, from || undefined, to || undefined),
     });
 
     const readinessRows = mapReadiness(readiness.data?.buckets, t);
     const developmentAll = useMemo(
-        () => mapScorePoints(
-            (development.data?.points || []).filter((item) => inPeriod(item.period, from, to)),
-            'period',
-            scoreGrain,
-        ),
-        [development.data, from, to, scoreGrain],
+        () => mapScorePoints(development.data?.points || [], 'period', scoreGrain),
+        [development.data, scoreGrain],
     );
     const developmentRows = takeLast(developmentAll, scoreLast);
     const activityAll = useMemo(
-        () => mapActivity(
-            (activity.data?.points || []).filter((item) => inPeriod(item.periodStart, from, to)),
-            activityGrain,
-        ),
-        [activity.data, from, to, activityGrain],
+        () => mapActivity(activity.data?.points || [], activityGrain),
+        [activity.data, activityGrain],
     );
     const activityRows = takeLast(activityAll, activityLast);
-
-    const periodFilters = (
-        <div className={page.grid} style={{ marginTop: 12 }}>
-            <Input type="date" label={t('analyticsUi.periodFrom')} value={from} onChange={(event) => setFrom(event.target.value)} />
-            <Input type="date" label={t('analyticsUi.periodTo')} value={to} onChange={(event) => setTo(event.target.value)} />
-        </div>
-    );
 
     const shown = (visible, total) => (total > visible.length
         ? t('analyticsUi.shownOf', { shown: visible.length, total })
         : null);
 
     if (readiness.isLoading) {
-        return <Skeleton rows={4} />;
+        return (
+            <AnalyticsPage title={t('analyticsUi.career')} description={t('analyticsUi.careerHint')}>
+                <Skeleton rows={4} />
+            </AnalyticsPage>
+        );
     }
     if (readiness.isError) {
-        return <PageState title={t('errors.loadFailed')} onAction={readiness.refetch} actionLabel={t('common.retry')} />;
+        return (
+            <AnalyticsPage title={t('analyticsUi.career')} description={t('analyticsUi.careerHint')}>
+                <PageState title={t('errors.loadFailed')} onAction={readiness.refetch} actionLabel={t('common.retry')} />
+            </AnalyticsPage>
+        );
     }
 
     return (
-        <section className={page.sections}>
-            <PageHeader title={t('analyticsUi.career')} />
-            <AnalyticsNav />
+        <AnalyticsPage title={t('analyticsUi.career')} description={t('analyticsUi.careerHint')}>
             <ChartCard
                 title={t('analyticsUi.readiness')}
+                donut
                 empty={!readinessRows.length}
                 details={(
                     <DataTable
@@ -111,21 +100,22 @@ export function CareerAnalyticsPage() {
                         onGrain={setScoreGrain}
                         last={scoreLast}
                         onLast={setScoreLast}
+                        from={from}
+                        to={to}
+                        onFrom={setFrom}
+                        onTo={setTo}
                     />
                 )}
                 caption={shown(developmentRows, developmentAll.length)}
                 details={(
-                    <>
-                        {periodFilters}
-                        <DataTable
-                            rows={developmentRows.map((item) => ({ ...item, id: item.period }))}
-                            columns={[
-                                { key: 'period', header: t('time.period'), render: (row) => formatGrainDate(row.period, scoreGrain) },
-                                { key: 'count', header: t('analyticsUi.assessed'), render: (row) => row.assessments },
-                                { key: 'average', header: t('analyticsUi.average'), render: (row) => formatScorePercent(row.averageScore) },
-                            ]}
-                        />
-                    </>
+                    <DataTable
+                        rows={developmentRows.map((item) => ({ ...item, id: item.period }))}
+                        columns={[
+                            { key: 'period', header: t('time.period'), render: (row) => formatGrainDate(row.period, scoreGrain) },
+                            { key: 'count', header: t('analyticsUi.assessed'), render: (row) => row.assessments },
+                            { key: 'average', header: t('analyticsUi.average'), render: (row) => formatScorePercent(row.averageScore) },
+                        ]}
+                    />
                 )}
             >
                 <ScoreLineChart data={developmentRows} />
@@ -140,25 +130,26 @@ export function CareerAnalyticsPage() {
                         onGrain={setActivityGrain}
                         last={activityLast}
                         onLast={setActivityLast}
+                        from={from}
+                        to={to}
+                        onFrom={setFrom}
+                        onTo={setTo}
                     />
                 )}
                 caption={shown(activityRows, activityAll.length)}
                 details={(
-                    <>
-                        {periodFilters}
-                        <DataTable
-                            rows={activityRows.map((item) => ({ ...item, id: item.periodStart }))}
-                            columns={[
-                                { key: 'period', header: t('time.period'), render: (row) => formatGrainDate(row.periodStart, activityGrain) },
-                                { key: 'minutes', header: t('time.logged'), render: (row) => hoursLabel(row.approvedMinutes) },
-                                { key: 'tasks', header: t('time.task'), render: (row) => row.completedTasks },
-                            ]}
-                        />
-                    </>
+                    <DataTable
+                        rows={activityRows.map((item) => ({ ...item, id: item.periodStart }))}
+                        columns={[
+                            { key: 'period', header: t('time.period'), render: (row) => formatGrainDate(row.periodStart, activityGrain) },
+                            { key: 'minutes', header: t('time.logged'), render: (row) => hoursLabel(row.approvedMinutes) },
+                            { key: 'tasks', header: t('time.task'), render: (row) => row.completedTasks },
+                        ]}
+                    />
                 )}
             >
                 <ActivityComboChart data={activityRows} />
             </ChartCard>
-        </section>
+        </AnalyticsPage>
     );
 }

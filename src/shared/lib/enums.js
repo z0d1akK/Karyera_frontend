@@ -86,4 +86,17 @@ const TONES = {
         CLOSED: 'warning',
         ARCHIVED: 'neutral',
     },
+    candidateStatus: {
+        NOMINATED: 'warning',
+        UNDER_REVIEW: 'accent',
+        APPROVED: 'success',
+        REJECTED: 'danger',
+        REMOVED: 'neutral',
+    },
+    candidateDecision: {
+        APPROVE: 'success',
+        REJECT: 'danger',
+        REQUEST_REVIEW: 'warning',
+        REMOVE: 'neutral',
+    },
 };

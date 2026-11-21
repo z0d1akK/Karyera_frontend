@@ -16,10 +16,10 @@
 .hero {
     display: flex;
     flex-wrap: wrap;
-    justify-content: space-between;
+    justify-content: flex-start;
     gap: 16px 24px;
     align-items: center;
-    padding: 24px 28px;
+    padding: 16px 20px;
     margin-bottom: 20px;
     background: var(--color-surface);
     border: 1px solid var(--color-border);
@@ -27,7 +27,7 @@
 }
 
 .hero h1 {
-    margin: 0 0 8px;
+    margin: 0 0 4px;
     font-size: 28px;
 }
 
@@ -37,11 +37,18 @@
     max-width: 560px;
 }
 
+.heroActions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
 .stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
     gap: 12px 20px;
-    flex: 1 1 280px;
+    flex: 0 1 auto;
     max-width: 100%;
 }
 
@@ -53,6 +60,11 @@
     min-width: 0;
     padding: 0 0 0 16px;
     border-left: 1px solid var(--color-border);
+}
+
+.stat:first-child {
+    padding-left: 0;
+    border-left: 0;
 }
 
 .stat span {
@@ -254,9 +266,15 @@
 .inlineActions {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-    text-align: right;
+    justify-content: flex-end;
+    gap: 12px;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+}
+
+.inlineActions .more {
+    margin-top: 0;
+    align-self: center;
 }
 
 .cardFooter {

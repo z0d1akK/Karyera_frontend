@@ -26,7 +26,7 @@ export function canCreateAccounts(role) {
 }
 
 export function canManageDevelopmentPlans(role) {
-    return hasRole(role, [ROLES.MANAGER, ROLES.HR]);
+    return hasRole(role, [ROLES.MANAGER, ROLES.HR, ROLES.ADMIN]);
 }
 
 export function canUpdateOwnDevelopment(role) {
@@ -58,11 +58,15 @@ export function canSeeOrganization(role) {
 }
 
 export function canSeeTalent(role) {
-    return hasRole(role, [ROLES.MANAGER, ROLES.HR]);
+    return hasRole(role, [ROLES.MANAGER, ROLES.HR, ROLES.ADMIN]);
+}
+
+export function canManageTalent(role) {
+    return hasRole(role, [ROLES.HR, ROLES.ADMIN]);
 }
 
 export function canSeeDevelopment(role) {
-    return hasRole(role, [ROLES.EMPLOYEE, ROLES.MANAGER, ROLES.HR]);
+    return hasRole(role, [ROLES.EMPLOYEE, ROLES.MANAGER, ROLES.HR, ROLES.ADMIN]);
 }
 
 export function canCreateProject(role) {
@@ -81,7 +85,7 @@ export function isAssignedToProject(assignments, employeeId) {
     return (assignments || []).some((row) => sameEmployee(row.employeeId, employeeId) && !row.endDate);
 }
 
-export function isProjectEditor(role, project, employeeId, extras = {}) {
+export function isProjectEditor(role, project, employeeId) {
     if (role === ROLES.ADMIN) {
         return true;
     }
@@ -90,20 +94,14 @@ export function isProjectEditor(role, project, employeeId, extras = {}) {
         return false;
     }
 
-    if (
-        sameEmployee(project.projectManagerId, employeeId)
+    return sameEmployee(project.projectManagerId, employeeId)
         || sameEmployee(project.projectManager?.employeeId, employeeId)
         || sameEmployee(project.projectManager?.id, employeeId)
         || sameEmployee(project.deliveryManagerId, employeeId)
         || sameEmployee(project.deliveryManager?.employeeId, employeeId)
-        || sameEmployee(project.deliveryManager?.id, employeeId)
-    ) {
-        return true;
-    }
-
-    return role === ROLES.MANAGER && Boolean(extras.assigned);
+        || sameEmployee(project.deliveryManager?.id, employeeId);
 }
 
-export function canManageProjectMembers(role, project, employeeId, extras = {}) {
-    return role === ROLES.HR || isProjectEditor(role, project, employeeId, extras);
+export function canManageProjectMembers(role, project, employeeId) {
+    return role === ROLES.HR || isProjectEditor(role, project, employeeId);
 }

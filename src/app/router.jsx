@@ -92,14 +92,14 @@ export const router = createBrowserRouter([
                     { path: '/app/career/assessments/:id/recommendations', element: <RecommendationsPage /> },
                     { path: '/app/career/assessments/:id', element: <AssessmentPage /> },
                     {
-                        element: <RoleRoute roles={[ROLES.EMPLOYEE, ROLES.MANAGER, ROLES.HR]} />,
+                        element: <RoleRoute roles={[ROLES.EMPLOYEE, ROLES.MANAGER, ROLES.HR, ROLES.ADMIN]} />,
                         children: [
                             { path: '/app/development', element: <DevelopmentPage /> },
                             { path: '/app/development/plans/:id', element: <DevelopmentPlanPage /> },
                         ],
                     },
                     {
-                        element: <RoleRoute roles={[ROLES.MANAGER, ROLES.HR]} />,
+                        element: <RoleRoute roles={[ROLES.MANAGER, ROLES.HR, ROLES.ADMIN]} />,
                         children: [
                             { path: '/app/talent-reserve', element: <TalentReservePage /> },
                             { path: '/app/talent-reserve/candidates/:id', element: <CandidatePage /> },

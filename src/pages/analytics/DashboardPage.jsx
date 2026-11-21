@@ -27,9 +27,8 @@ import { useCatalogs } from '../../features/employees/hooks/useCatalogs.js';
 import { hoursLabel } from '../../features/time/api/timeApi.js';
 import { formatGrainDate, formatScorePercent } from '../../shared/lib/format.js';
 import { DataTable } from '../../shared/ui/DataTable/DataTable.jsx';
-import { PageHeader } from '../../shared/ui/PageHeader/PageHeader.jsx';
 import { PageState, Skeleton } from '../../shared/ui/PageState/PageState.jsx';
-import { AnalyticsNav } from './AnalyticsNav.jsx';
+import { AnalyticsPage } from './AnalyticsPage.jsx';
 import page from '../../shared/styles/page.module.css';
 
 export function AnalyticsDashboardPage() {
@@ -41,18 +40,22 @@ export function AnalyticsDashboardPage() {
     const [scoreLast, setScoreLast] = useState(12);
     const [activityGrain, setActivityGrain] = useState('MONTH');
     const [activityLast, setActivityLast] = useState(12);
+    const [scoreFrom, setScoreFrom] = useState('');
+    const [scoreTo, setScoreTo] = useState('');
+    const [activityFrom, setActivityFrom] = useState('');
+    const [activityTo, setActivityTo] = useState('');
 
     const overview = useQuery({ queryKey: ['analytics', 'overview'], queryFn: () => analyticsApi.overview() });
     const deficits = useQuery({ queryKey: ['analytics', 'skill-deficits'], queryFn: () => analyticsApi.skillDeficits() });
     const readiness = useQuery({ queryKey: ['analytics', 'readiness'], queryFn: () => analyticsApi.readiness() });
     const departments = useQuery({ queryKey: ['analytics', 'departments'], queryFn: () => analyticsApi.departments() });
     const development = useQuery({
-        queryKey: ['analytics', 'development', scoreGrain],
-        queryFn: () => analyticsApi.development(scoreGrain),
+        queryKey: ['analytics', 'development', scoreGrain, scoreFrom, scoreTo],
+        queryFn: () => analyticsApi.development(scoreGrain, scoreFrom || undefined, scoreTo || undefined),
     });
     const activity = useQuery({
-        queryKey: ['analytics', 'activity', activityGrain],
-        queryFn: () => analyticsApi.activity(activityGrain),
+        queryKey: ['analytics', 'activity', activityGrain, activityFrom, activityTo],
+        queryFn: () => analyticsApi.activity(activityGrain, activityFrom || undefined, activityTo || undefined),
     });
 
     const deficitAll = mapDeficits(deficits.data?.deficits, catalogs);
@@ -73,20 +76,16 @@ export function AnalyticsDashboardPage() {
 
     if (overview.isLoading) {
         return (
-            <section className={page.sections}>
-                <PageHeader title={t('analyticsUi.dashboard')} />
-                <AnalyticsNav />
+            <AnalyticsPage title={t('analyticsUi.dashboard')} description={t('analyticsUi.dashboardHint')}>
                 <Skeleton rows={5} />
-            </section>
+            </AnalyticsPage>
         );
     }
     if (overview.isError) {
         return (
-            <section className={page.sections}>
-                <PageHeader title={t('analyticsUi.dashboard')} />
-                <AnalyticsNav />
+            <AnalyticsPage title={t('analyticsUi.dashboard')} description={t('analyticsUi.dashboardHint')}>
                 <PageState title={t('errors.loadFailed')} onAction={overview.refetch} actionLabel={t('common.retry')} />
-            </section>
+            </AnalyticsPage>
         );
     }
 
@@ -95,9 +94,7 @@ export function AnalyticsDashboardPage() {
         : null);
 
     return (
-        <section className={page.sections}>
-            <PageHeader title={t('analyticsUi.dashboard')} description={t('analyticsUi.dashboardHint')} />
-            <AnalyticsNav />
+        <AnalyticsPage title={t('analyticsUi.dashboard')} description={t('analyticsUi.dashboardHint')}>
             <AnalyticsKpis overview={overview.data} />
             {Number(overview.data?.assessedEmployees || 0) === 0 ? (
                 <PageState title={t('analyticsUi.emptyDashboard')} description={t('analyticsUi.emptyDashboardHint')} />
@@ -122,6 +119,7 @@ export function AnalyticsDashboardPage() {
                     </ChartCard>
                     <ChartCard
                         title={t('analyticsUi.readiness')}
+                        donut
                         empty={!readinessRows.length}
                         details={(
                             <DataTable
@@ -158,6 +156,7 @@ export function AnalyticsDashboardPage() {
                         className={page.spanAll}
                         title={t('analyticsUi.development')}
                         empty={!development.isFetching && !developmentRows.length}
+                        emptyTitle={t('analyticsUi.emptyPeriod')}
                         toolbar={(
                             <ChartToolbar
                                 grains={SCORE_GRAINS}
@@ -165,6 +164,10 @@ export function AnalyticsDashboardPage() {
                                 onGrain={setScoreGrain}
                                 last={scoreLast}
                                 onLast={setScoreLast}
+                                from={scoreFrom}
+                                to={scoreTo}
+                                onFrom={setScoreFrom}
+                                onTo={setScoreTo}
                             />
                         )}
                         caption={shown(developmentRows, developmentAll.length)}
@@ -185,6 +188,7 @@ export function AnalyticsDashboardPage() {
                         className={page.spanAll}
                         title={t('analyticsUi.activity')}
                         empty={!activity.isFetching && !activityRows.length}
+                        emptyTitle={t('analyticsUi.emptyPeriod')}
                         toolbar={(
                             <ChartToolbar
                                 grains={ACTIVITY_GRAINS}
@@ -192,6 +196,10 @@ export function AnalyticsDashboardPage() {
                                 onGrain={setActivityGrain}
                                 last={activityLast}
                                 onLast={setActivityLast}
+                                from={activityFrom}
+                                to={activityTo}
+                                onFrom={setActivityFrom}
+                                onTo={setActivityTo}
                             />
                         )}
                         caption={shown(activityRows, activityAll.length)}
@@ -210,6 +218,6 @@ export function AnalyticsDashboardPage() {
                     </ChartCard>
                 </div>
             )}
-        </section>
+        </AnalyticsPage>
     );
 }

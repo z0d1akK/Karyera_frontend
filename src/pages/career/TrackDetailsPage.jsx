@@ -40,7 +40,7 @@ export function TrackDetailsPage() {
     const [editingNode, setEditingNode] = useState(null);
     const [trackName, setTrackName] = useState('');
     const [trackDescription, setTrackDescription] = useState('');
-    const [transition, setTransition] = useState({ sourceNodeId: '', targetNodeId: '', transitionType: 'PROMOTION' });
+    const [transition, setTransition] = useState({ sourceNodeId: '', targetNodeId: '', transitionType: 'PROMOTION', description: '' });
     const [trackOpen, setTrackOpen] = useState(false);
     const [nodeOpen, setNodeOpen] = useState(false);
     const [transitionOpen, setTransitionOpen] = useState(false);
@@ -82,8 +82,16 @@ export function TrackDetailsPage() {
         },
         onError,
     });
-    const publish = useMutation({ mutationFn: () => careerApi.publishTrack(id), onSuccess: invalidate, onError });
-    const archive = useMutation({ mutationFn: () => careerApi.archiveTrack(id), onSuccess: invalidate, onError });
+    const publish = useMutation({
+        mutationFn: () => careerApi.publishTrack(id, { expectedVersion: query.data?.version }),
+        onSuccess: invalidate,
+        onError,
+    });
+    const archive = useMutation({
+        mutationFn: () => careerApi.archiveTrack(id, { expectedVersion: query.data?.version }),
+        onSuccess: invalidate,
+        onError,
+    });
     const saveTrack = useMutation({
         mutationFn: (payload) => careerApi.updateTrack(id, payload),
         onSuccess: () => {
@@ -223,6 +231,7 @@ export function TrackDetailsPage() {
                                     <p className={styles.path}>
                                         {source ? nodeTitle(source) : '—'} → {target ? nodeTitle(target) : '—'}
                                     </p>
+                                    <p className={styles.path}>{item.description || t('career.transitionRequirementsHint')}</p>
                                 </div>
                                 {canEdit && draft ? (
                                     <Button variant="danger" onClick={() => removeTransition.mutate(item.id)}>
@@ -318,6 +327,13 @@ export function TrackDetailsPage() {
                                 <option key={type} value={type}>{enumLabel(t, 'transitionType', type)}</option>
                             ))}
                         </Select>
+                        <div className={page.spanAll}>
+                            <Textarea
+                                label={t('career.transitionRequirements')}
+                                value={transition.description || ''}
+                                onChange={(e) => setTransition({ ...transition, description: e.target.value })}
+                            />
+                        </div>
                     </div>
                     <div className={page.row}>
                         <Button onClick={() => addTransition.mutate()}>{t('career.addTransition')}</Button>

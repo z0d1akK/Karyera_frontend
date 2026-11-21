@@ -53,8 +53,13 @@
 }
 
 .compact {
-    height: 220px;
-    min-height: 220px;
+    height: 180px;
+    min-height: 180px;
+}
+
+.chart.donut {
+    height: 400px;
+    min-height: 400px;
 }
 
 .toolbar {
@@ -62,6 +67,7 @@
     flex-wrap: wrap;
     gap: 8px;
     align-items: center;
+    width: 100%;
 }
 
 .group {
@@ -130,4 +136,102 @@
 
 .details {
     flex: 0 0 auto;
+}
+
+.period {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 36px;
+    padding: 3px 6px 3px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    background: var(--color-background);
+}
+
+.periodSep {
+    color: var(--color-secondary-text);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.dateWrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+    min-width: 5.75rem;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: var(--color-surface);
+    box-shadow: 0 1px 2px rgba(44, 32, 19, 0.12);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    overflow: hidden;
+}
+
+.dateWrap:focus-within {
+    box-shadow: 0 0 0 2px rgba(212, 163, 44, 0.35);
+}
+
+.dateWrap.dateFieldControl {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    justify-content: flex-start;
+    padding: 0 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    box-shadow: none;
+    font-size: var(--font-size-sm);
+    font-weight: 400;
+}
+
+.dateWrap.dateFieldControl:focus-within {
+    border-color: var(--color-primary-accent);
+    box-shadow: 0 0 0 2px rgba(212, 163, 44, 0.12);
+}
+
+.dateValue {
+    color: var(--color-primary-dark);
+}
+
+.datePlaceholder {
+    color: var(--color-secondary-text);
+}
+
+.dateNative {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.periodClear {
+    min-height: 28px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-secondary-text);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.periodClear:hover {
+    color: var(--color-primary-dark);
+    background: rgba(44, 32, 19, 0.06);
 }

@@ -16,7 +16,7 @@ export function DataTable({ columns, rows, empty, onRowClick }) {
                 <thead>
                     <tr>
                         {columns.map((column) => (
-                            <th key={column.key}>{column.header}</th>
+                            <th key={column.key} className={cellClass(column)}>{column.header}</th>
                         ))}
                     </tr>
                 </thead>
@@ -28,7 +28,7 @@ export function DataTable({ columns, rows, empty, onRowClick }) {
                             onClick={() => onRowClick?.(row)}
                         >
                             {columns.map((column) => (
-                                <td key={column.key} className={column.wrap ? styles.wrapCell : undefined}>
+                                <td key={column.key} className={cellClass(column)}>
                                     {column.render ? column.render(row) : row[column.key]}
                                 </td>
                             ))}
@@ -38,6 +38,14 @@ export function DataTable({ columns, rows, empty, onRowClick }) {
             </table>
         </div>
     );
+}
+
+function cellClass(column) {
+    return [
+        column.wrap ? styles.wrapCell : '',
+        column.align === 'right' ? styles.right : '',
+        column.nowrap ? styles.nowrap : '',
+    ].filter(Boolean).join(' ') || undefined;
 }
 
 export function Pagination({ page, totalPages, onChange }) {

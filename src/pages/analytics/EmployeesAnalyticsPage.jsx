@@ -9,10 +9,9 @@ import { unwrapPage } from '../../shared/lib/queryParams.js';
 import { catalogName, fullName } from '../../shared/lib/format.js';
 import { Card } from '../../shared/ui/Card/Card.jsx';
 import { DataTable } from '../../shared/ui/DataTable/DataTable.jsx';
-import { PageHeader } from '../../shared/ui/PageHeader/PageHeader.jsx';
 import { Input, Select } from '../../shared/ui/Input/Input.jsx';
 import { PageState, Skeleton } from '../../shared/ui/PageState/PageState.jsx';
-import { AnalyticsNav } from './AnalyticsNav.jsx';
+import { AnalyticsPage } from './AnalyticsPage.jsx';
 import page from '../../shared/styles/page.module.css';
 
 export function EmployeesAnalyticsPage() {
@@ -33,11 +32,9 @@ export function EmployeesAnalyticsPage() {
     });
 
     return (
-        <section className={page.sections}>
-            <PageHeader title={t('analyticsUi.employees')} />
-            <AnalyticsNav />
+        <AnalyticsPage title={t('analyticsUi.employees')} description={t('analyticsUi.employeesHint')}>
             <Card>
-                <div className={page.grid}>
+                <div className={page.filterBar}>
                     <Input label={t('employees.lastName')} value={filters.lastName} onChange={(event) => setFilters({ ...filters, lastName: event.target.value })} />
                     <Select label={t('employees.department')} value={filters.departmentId} onChange={(event) => setFilters({ ...filters, departmentId: event.target.value })}>
                         <option value="">{t('common.all')}</option>
@@ -64,6 +61,6 @@ export function EmployeesAnalyticsPage() {
                 />
             ) : null}
             </Card>
-        </section>
+        </AnalyticsPage>
     );
 }

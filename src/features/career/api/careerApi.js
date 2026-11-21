@@ -32,11 +32,11 @@ export const careerApi = {
     deleteTransition(id) {
         return axiosClient.delete(`/v1/career/transitions/${id}`);
     },
-    publishTrack(id) {
-        return axiosClient.post(`/v1/career/tracks/${id}/publish`).then((r) => r.data);
+    publishTrack(id, payload) {
+        return axiosClient.post(`/v1/career/tracks/${id}/publish`, payload).then((r) => r.data);
     },
-    archiveTrack(id) {
-        return axiosClient.post(`/v1/career/tracks/${id}/archive`).then((r) => r.data);
+    archiveTrack(id, payload) {
+        return axiosClient.post(`/v1/career/tracks/${id}/archive`, payload).then((r) => r.data);
     },
     availableTracks(employeeId) {
         return axiosClient.get(`/v1/career/employees/${employeeId}/available-tracks`).then((r) => r.data);
@@ -163,6 +163,9 @@ export const careerApi = {
     },
     nominate(id, payload) {
         return axiosClient.post(`/v1/career/talent-reserves/${id}/candidates`, payload).then((r) => r.data);
+    },
+    includeScreening(id, employeeIds) {
+        return axiosClient.post(`/v1/career/talent-reserves/${id}/screening-candidates`, { employeeIds }).then((r) => r.data);
     },
     startScreening(id, payload) {
         return axiosClient.post(`/v1/career/talent-reserves/${id}/screenings`, payload).then((r) => r.data);

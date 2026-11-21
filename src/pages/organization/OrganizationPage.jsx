@@ -105,15 +105,23 @@ function DepartmentTree({ departmentId }) {
                 }));
                 rows = (all.content || []).filter((person) => String(person.department?.id || person.departmentId) === String(departmentId));
             }
-            const people = await Promise.all(rows.map((person) => (
-                employeeApi.getById(person.id).catch(() => person)
-            )));
+            const people = await Promise.all(rows.map((person) => employeeApi.getById(person.id)));
             return uniquePeople(people);
         },
     });
 
     if (query.isLoading) {
         return <Skeleton rows={4} />;
+    }
+
+    if (query.isError) {
+        return (
+            <PageState
+                title={t('organization.loadFailed')}
+                actionLabel={t('common.retry')}
+                onAction={() => query.refetch()}
+            />
+        );
     }
 
     const people = query.data || [];

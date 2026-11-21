@@ -56,6 +56,9 @@ export const projectApi = {
     listAssignments(projectId, params) {
         return get(`/v1/projects/${projectId}/assignments`, params);
     },
+    listParticipation(employeeId) {
+        return get('/v1/assignments/search', { employeeId, page: 0, size: 100, sortBy: 'startDate', sortDirection: 'DESC' });
+    },
     assign(projectId, payload) {
         return axiosClient.post(`/v1/projects/${projectId}/assignments`, payload).then((r) => r.data);
     },
