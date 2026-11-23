@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Check, ChevronLeft, ChevronRight, Pencil, Trash2, X } from 'lucide-react';
 import { DndContext, PointerSensor, closestCorners, useDraggable, useDroppable, useSensor, useSensors } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -70,6 +71,7 @@ export function ProjectBoardPage() {
 
     const [columnForm, setColumnForm] = useState({ code: '', name: '', isInitial: false, isTerminal: false });
     const [renaming, setRenaming] = useState(null);
+    const [boardName, setBoardName] = useState('');
     const project = useQuery({ queryKey: queryKeys.projects.one(id), queryFn: () => projectApi.getById(id) });
     const assignments = useQuery({
         queryKey: [...queryKeys.projects.assignments(id), { page: 0, size: 100 }],
@@ -116,6 +118,11 @@ export function ProjectBoardPage() {
     });
     const removeColumn = useMutation({
         mutationFn: (columnId) => projectApi.deleteColumn(columnId),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.projects.board(id) }),
+        onError: (error) => push({ type: 'error', message: getApiError(error).message }),
+    });
+    const renameBoard = useMutation({
+        mutationFn: () => projectApi.updateBoard(board.data.id, { name: boardName || board.data.name, expectedVersion: board.data.version }),
         onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.projects.board(id) }),
         onError: (error) => push({ type: 'error', message: getApiError(error).message }),
     });
@@ -179,56 +186,108 @@ export function ProjectBoardPage() {
             <BackLink to={`/app/projects/${id}`}>{t('projects.backToProject')}</BackLink>
             <PageHeader
                 title={board.data?.name || 'Kanban'}
-                actions={(
-                    <>
-                        {canEdit ? <Button variant="secondary" onClick={() => setColumnOpen(true)}>{t('projects.addColumn')}</Button> : null}
-                        <Button onClick={() => setOpen(true)}>{t('projects.createTask')}</Button>
-                    </>
-                )}
+                actions={canEdit ? (
+                    <form className={styles.toolbar} onSubmit={(event) => { event.preventDefault(); renameBoard.mutate(); }}>
+                        <div className={styles.nameField}>
+                            <Input
+                                label={t('projects.boardName')}
+                                value={boardName || board.data?.name || ''}
+                                onChange={(event) => setBoardName(event.target.value)}
+                            />
+                        </div>
+                        <Button type="submit">{t('common.save')}</Button>
+                        <Button type="button" variant="secondary" onClick={() => setColumnOpen(true)}>{t('projects.addColumn')}</Button>
+                        <Button type="button" onClick={() => setOpen(true)}>{t('projects.createTask')}</Button>
+                    </form>
+                ) : null}
             />
             <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={onDragEnd}>
                 <div className={styles.frame}>
                     <div className={styles.board}>
-                    {columns.map((column) => (
+                    {columns.map((column, index) => (
                         <BoardColumn key={column.id} column={column}>
                             <header>
-                                <h3>{column.name}</h3>
-                                <span>{column.taskCount ?? column.tasks?.length ?? 0}</span>
+                                {renaming?.id === column.id ? (
+                                    <form
+                                        className={styles.rename}
+                                        onSubmit={(event) => {
+                                            event.preventDefault();
+                                            renameColumn.mutate({ columnId: column.id, name: renaming.name });
+                                            setRenaming(null);
+                                        }}
+                                    >
+                                        <input
+                                            className={styles.renameInput}
+                                            aria-label={t('projects.renameColumn')}
+                                            value={renaming.name}
+                                            onChange={(event) => setRenaming({ ...renaming, name: event.target.value })}
+                                        />
+                                        <button type="submit" className={styles.iconBtn} aria-label={t('common.save')}>
+                                            <Check size={14} />
+                                        </button>
+                                        <button type="button" className={styles.iconBtn} aria-label={t('common.cancel')} onClick={() => setRenaming(null)}>
+                                            <X size={14} />
+                                        </button>
+                                    </form>
+                                ) : (
+                                    <>
+                                        <h3>{column.name}</h3>
+                                        <span className={styles.count}>{column.taskCount ?? column.tasks?.length ?? 0}</span>
+                                        {canEdit ? (
+                                            <div className={styles.columnActions}>
+                                                <button
+                                                    type="button"
+                                                    className={styles.iconBtn}
+                                                    aria-label={t('projects.moveUp')}
+                                                    disabled={index === 0}
+                                                    onClick={() => {
+                                                        if (index <= 0) {
+                                                            return;
+                                                        }
+                                                        const ids = columns.map((item) => item.id);
+                                                        [ids[index - 1], ids[index]] = [ids[index], ids[index - 1]];
+                                                        moveColumn.mutate(ids);
+                                                    }}
+                                                >
+                                                    <ChevronLeft size={14} />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className={styles.iconBtn}
+                                                    aria-label={t('projects.moveDown')}
+                                                    disabled={index === columns.length - 1}
+                                                    onClick={() => {
+                                                        if (index < 0 || index >= columns.length - 1) {
+                                                            return;
+                                                        }
+                                                        const ids = columns.map((item) => item.id);
+                                                        [ids[index + 1], ids[index]] = [ids[index], ids[index + 1]];
+                                                        moveColumn.mutate(ids);
+                                                    }}
+                                                >
+                                                    <ChevronRight size={14} />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className={styles.iconBtn}
+                                                    aria-label={t('common.edit')}
+                                                    onClick={() => setRenaming({ id: column.id, name: column.name })}
+                                                >
+                                                    <Pencil size={14} />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className={`${styles.iconBtn} ${styles.iconDanger}`}
+                                                    aria-label={t('common.delete')}
+                                                    onClick={() => removeColumn.mutate(column.id)}
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </div>
+                                        ) : null}
+                                    </>
+                                )}
                             </header>
-                            {canEdit ? (
-                                <div className={styles.columnActions}>
-                                    {renaming?.id === column.id ? (
-                                        <div className={`${page.row} ${styles.columnRename}`}>
-                                            <Input label={t('projects.renameColumn')} value={renaming.name} onChange={(e) => setRenaming({ ...renaming, name: e.target.value })} />
-                                            <Button onClick={() => {
-                                                renameColumn.mutate({ columnId: column.id, name: renaming.name });
-                                                setRenaming(null);
-                                            }}>{t('common.save')}</Button>
-                                            <Button variant="ghost" onClick={() => setRenaming(null)}>{t('common.cancel')}</Button>
-                                        </div>
-                                    ) : null}
-                                    <Button variant="ghost" onClick={() => {
-                                        const ids = columns.map((item) => item.id);
-                                        const index = ids.indexOf(column.id);
-                                        if (index > 0) {
-                                            [ids[index - 1], ids[index]] = [ids[index], ids[index - 1]];
-                                            moveColumn.mutate(ids);
-                                        }
-                                    }}>{t('projects.moveUp')}</Button>
-                                    <Button variant="ghost" onClick={() => {
-                                        const ids = columns.map((item) => item.id);
-                                        const index = ids.indexOf(column.id);
-                                        if (index >= 0 && index < ids.length - 1) {
-                                            [ids[index + 1], ids[index]] = [ids[index], ids[index + 1]];
-                                            moveColumn.mutate(ids);
-                                        }
-                                    }}>{t('projects.moveDown')}</Button>
-                                    {renaming?.id === column.id ? null : (
-                                        <Button variant="ghost" onClick={() => setRenaming({ id: column.id, name: column.name })}>{t('common.edit')}</Button>
-                                    )}
-                                    <Button variant="danger" onClick={() => removeColumn.mutate(column.id)}>{t('common.delete')}</Button>
-                                </div>
-                            ) : null}
                             <div className={styles.cards}>
                             {(column.tasks || []).map((task) => (
                                 <BoardCard

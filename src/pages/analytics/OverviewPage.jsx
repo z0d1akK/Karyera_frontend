@@ -6,20 +6,20 @@ import { analyticsApi } from '../../features/analytics/api/analyticsApi.js';
 import { AnalyticsKpis } from '../../features/analytics/AnalyticsKpis.jsx';
 import { ChartCard } from '../../features/analytics/charts/ChartCard.jsx';
 import { DeficitsBarChart } from '../../features/analytics/charts/DeficitsBarChart.jsx';
-import { mapDeficits } from '../../features/analytics/charts/chartMappers.js';
+import { mapDeficits, takeTop } from '../../features/analytics/charts/chartMappers.js';
 import { useCatalogs } from '../../features/employees/hooks/useCatalogs.js';
-import { catalogName } from '../../shared/lib/format.js';
 import { Card } from '../../shared/ui/Card/Card.jsx';
 import { DataTable } from '../../shared/ui/DataTable/DataTable.jsx';
 import { PageState, Skeleton } from '../../shared/ui/PageState/PageState.jsx';
 import { AnalyticsPage } from './AnalyticsPage.jsx';
 import page from '../../shared/styles/page.module.css';
 
+const OVERVIEW_DEFICIT_LIMIT = 8;
+
 export function AnalyticsOverviewPage() {
     const { t } = useTranslation();
     const catalogs = useCatalogs();
     const overview = useQuery({ queryKey: ['analytics', 'overview'], queryFn: () => analyticsApi.overview() });
-    const skills = useQuery({ queryKey: ['analytics', 'skills'], queryFn: () => analyticsApi.skills() });
     const chartSkills = useQuery({ queryKey: ['analytics', 'skill-deficits'], queryFn: () => analyticsApi.skillDeficits() });
 
     if (overview.isLoading) {
@@ -37,7 +37,8 @@ export function AnalyticsOverviewPage() {
         );
     }
 
-    const chartRows = mapDeficits(chartSkills.data?.deficits, catalogs);
+    const chartRows = takeTop(mapDeficits(chartSkills.data?.deficits, catalogs), OVERVIEW_DEFICIT_LIMIT);
+    const chartHeight = Math.max(168, chartRows.length * 48 + 36);
 
     return (
         <AnalyticsPage title={t('analyticsUi.overview')} description={t('analyticsUi.overviewHint')}>
@@ -45,19 +46,27 @@ export function AnalyticsOverviewPage() {
             {Number(overview.data?.assessedEmployees || 0) === 0 ? (
                 <PageState title={t('analyticsUi.emptyDashboard')} description={t('analyticsUi.emptyDashboardHint')} />
             ) : null}
-            <ChartCard title={t('analyticsUi.deficits')} to="/app/analytics/dashboard" empty={!chartRows.length} compact>
-                <DeficitsBarChart data={chartRows} />
-            </ChartCard>
+            {chartSkills.isError ? (
+                <PageState title={t('errors.loadFailed')} onAction={chartSkills.refetch} actionLabel={t('common.retry')} />
+            ) : (
+                <ChartCard
+                    title={t('analyticsUi.deficits')}
+                    to="/app/analytics/dashboard"
+                    empty={!chartSkills.isLoading && !chartRows.length}
+                    height={chartHeight}
+                >
+                    <DeficitsBarChart data={chartRows} />
+                </ChartCard>
+            )}
             <Card>
                 <div className={page.sectionHead}>
                     <h2 className={page.sectionTitle}>{t('analyticsUi.deficits')}</h2>
-                    <Link className={page.sectionMore} to="/app/analytics/employees">{t('common.more')}</Link>
+                    <Link className={page.sectionMore} to="/app/analytics/dashboard">{t('common.more')}</Link>
                 </div>
-                {skills.isError ? <PageState title={t('errors.loadFailed')} onAction={skills.refetch} actionLabel={t('common.retry')} /> : null}
                 <DataTable
-                    rows={(skills.data?.deficits || []).map((item) => ({ ...item, id: item.skillId }))}
+                    rows={chartRows}
                     columns={[
-                        { key: 'skill', header: t('analyticsUi.skill'), render: (row) => row.skillName || catalogName(catalogs.skills?.find((skill) => skill.id === row.skillId)) },
+                        { key: 'skill', header: t('analyticsUi.skill'), render: (row) => row.name },
                         { key: 'count', header: t('analyticsUi.employeesCount'), render: (row) => row.employees },
                     ]}
                 />

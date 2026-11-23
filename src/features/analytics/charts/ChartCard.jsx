@@ -7,7 +7,7 @@ import { Card } from '../../../shared/ui/Card/Card.jsx';
 import { PageState } from '../../../shared/ui/PageState/PageState.jsx';
 import styles from './ChartCard.module.css';
 
-export function ChartCard({ title, to, empty, emptyTitle, compact, donut, details, toolbar, caption, className = '', children }) {
+export function ChartCard({ title, to, empty, emptyTitle, compact, donut, details, toolbar, caption, height, className = '', children }) {
     const { t } = useTranslation();
     const [open, setOpen] = useState(false);
     return (
@@ -28,7 +28,12 @@ export function ChartCard({ title, to, empty, emptyTitle, compact, donut, detail
                 </div>
                 {toolbar || null}
                 {empty ? <PageState title={emptyTitle || t('analyticsUi.emptyChart')} /> : (
-                    <div className={`${styles.chart} ${compact ? styles.compact : ''} ${donut ? styles.donut : ''}`}>{children}</div>
+                    <div
+                        className={`${styles.chart} ${compact ? styles.compact : ''} ${donut ? styles.donut : ''}`}
+                        style={height ? { height, minHeight: height } : undefined}
+                    >
+                        {children}
+                    </div>
                 )}
                 {caption ? <p className={styles.caption}>{caption}</p> : null}
                 {open ? <div className={styles.details}>{details}</div> : null}

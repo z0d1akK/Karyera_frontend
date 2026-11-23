@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -8,10 +7,7 @@ import { RecommendationText, recommendationList } from '../../features/analytics
 import { StartAssessment } from '../../features/analytics/StartAssessment.jsx';
 import { enumLabel, statusTone } from '../../shared/lib/enums.js';
 import { getApiError } from '../../shared/api/errors.js';
-import { canManageDevelopmentPlans } from '../../shared/lib/roles.js';
 import { useAuthStore } from '../../store/authStore.js';
-import { useToastStore } from '../../store/toastStore.js';
-import { Textarea } from '../../shared/ui/Input/Input.jsx';
 import { Badge } from '../../shared/ui/Badge/Badge.jsx';
 import { Button } from '../../shared/ui/Button/Button.jsx';
 import { Card } from '../../shared/ui/Card/Card.jsx';
@@ -25,11 +21,7 @@ export function RecommendationsPage() {
     const { id } = useParams();
     const { t } = useTranslation();
     const queryClient = useQueryClient();
-    const push = useToastStore((state) => state.push);
     const employee = useAuthStore((state) => state.employee);
-    const role = useAuthStore((state) => state.session?.role);
-    const canEdit = canManageDevelopmentPlans(role);
-    const [draft, setDraft] = useState('');
     const fromNav = !id;
 
     const assessments = useQuery({
@@ -51,14 +43,6 @@ export function RecommendationsPage() {
             queryClient.invalidateQueries({ queryKey: ['analytics', 'assessment', assessmentId] });
         },
     });
-    const saveText = useMutation({
-        mutationFn: ({ recommendationId, content }) => analyticsApi.updateRecommendation(assessmentId, recommendationId, content),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['analytics', 'recommendations', assessmentId] });
-        },
-        onError: (error) => push({ type: 'error', message: getApiError(error).message }),
-    });
-
     if ((fromNav && assessments.isLoading) || (assessmentId && query.isLoading)) {
         return fromNav ? (
             <AnalyticsPage title={t('analyticsUi.recommendations')} description={t('analyticsUi.recommendationsHint')}>
@@ -110,24 +94,6 @@ export function RecommendationsPage() {
                         {failed ? <p>{t('analyticsUi.generationFailed')}</p> : null}
                         {item.errorCode === 'INSUFFICIENT_DATA' ? <p>{t('analyticsUi.insufficient')}</p> : null}
                         {view ? <RecommendationText content={item.content} /> : null}
-                        {canEdit && (item.status === 'COMPLETED' || item.status === 'FALLBACK') ? (
-                            <div className={page.stack}>
-                                <Textarea
-                                    label={t('analyticsUi.editRecommendation')}
-                                    value={draft || (typeof item.content === 'string' ? item.content : JSON.stringify(item.content, null, 2))}
-                                    onChange={(event) => setDraft(event.target.value)}
-                                />
-                                <Button
-                                    onClick={() => saveText.mutate({
-                                        recommendationId: item.id,
-                                        content: draft || (typeof item.content === 'string' ? item.content : JSON.stringify(item.content)),
-                                    })}
-                                    disabled={saveText.isPending}
-                                >
-                                    {t('common.save')}
-                                </Button>
-                            </div>
-                        ) : null}
                     </Card>
                 );
             })}

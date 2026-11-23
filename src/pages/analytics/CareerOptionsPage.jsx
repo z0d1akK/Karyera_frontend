@@ -66,7 +66,7 @@ export function CareerOptionsPage() {
     );
     const errorText = start.isError ? getApiError(start.error).message : '';
     const from = typeof location.state?.from === 'string' ? location.state.from : null;
-    const backTo = from || (!isSelf && employeeId ? `/app/analytics/employees/${employeeId}` : null);
+    const backTo = from || (isSelf ? '/app/career' : `/app/analytics/employees/${employeeId}`);
     const readyCount = options.filter((row) => row.mandatoryRequirementsMet).length;
     const bestScore = options.reduce((best, row) => {
         const value = scoreToPercent(row.totalScore);

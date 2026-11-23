@@ -17,9 +17,8 @@ export function getApiError(error) {
         ? detail
         : mapped
         ? i18n.t(mapped)
-        : status === 403
-            ? i18n.t('errors.forbidden')
-            : firstField || data?.message || (error?.message && error.message !== code ? error.message : null) || i18n.t('errors.requestFailed');
+        : firstField || data?.message || (status === 403 ? i18n.t('errors.forbidden') : null)
+            || (error?.message && error.message !== code ? error.message : null) || i18n.t('errors.requestFailed');
 
     return {
         status,

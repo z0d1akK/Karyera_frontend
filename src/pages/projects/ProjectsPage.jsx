@@ -182,11 +182,11 @@ export function ProjectsPage() {
                                     <p className={styles.description}>{project.description || t('organization.noDescription')}</p>
                                     <div className={styles.row}>
                                         <span>{t('projects.startDate')}</span>
-                                        <strong>{formatDate(project.startDate || project.joinedAt)}</strong>
+                                        <strong>{formatDate(project.startDate)}</strong>
                                     </div>
                                     <div className={styles.row}>
                                         <span>{t('projects.endDate')}</span>
-                                        <strong>{formatDate(project.endDate || project.leftAt)}</strong>
+                                        <strong>{formatDate(project.endDate)}</strong>
                                     </div>
                                     <div className={styles.row}>
                                         <span>{t('projects.owner')}</span>

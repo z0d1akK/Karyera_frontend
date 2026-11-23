@@ -53,6 +53,39 @@ export const timeApi = {
     weeklySummary(employeeId, weekStart) {
         return get(`/v1/time/employees/${employeeId}/weekly-summary`, { weekStart });
     },
+    entryAudit(id) {
+        return axiosClient.get(`/v1/time/entries/${id}/audit`).then((response) => response.data);
+    },
+    employeeTimesheets(employeeId, params) {
+        return get(`/v1/time/employees/${employeeId}/timesheets`, params);
+    },
+    employeeWorkload(employeeId, periodStart, periodEnd) {
+        return get(`/v1/time/employees/${employeeId}/workload`, { periodStart, periodEnd });
+    },
+    projectTimeSummary(projectId, periodStart, periodEnd) {
+        return get(`/v1/time/projects/${projectId}/time-summary`, { periodStart, periodEnd });
+    },
+    teamWorkload(periodStart, periodEnd) {
+        return get('/v1/time/teams/workload', { periodStart, periodEnd });
+    },
+    listSchedules(params) {
+        return get('/v1/time/work-schedules', params);
+    },
+    getSchedule(id) {
+        return axiosClient.get(`/v1/time/work-schedules/${id}`).then((response) => response.data);
+    },
+    createSchedule(payload) {
+        return axiosClient.post('/v1/time/work-schedules', payload).then((response) => response.data);
+    },
+    updateSchedule(id, payload) {
+        return axiosClient.patch(`/v1/time/work-schedules/${id}`, payload).then((response) => response.data);
+    },
+    assignSchedule(employeeId, payload) {
+        return axiosClient.post(`/v1/time/employees/${employeeId}/work-schedules`, payload).then((response) => response.data);
+    },
+    employeeSchedules(employeeId) {
+        return axiosClient.get(`/v1/time/employees/${employeeId}/work-schedules`).then((response) => response.data);
+    },
 };
 
 export function hoursLabel(minutes) {

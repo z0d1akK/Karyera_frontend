@@ -43,24 +43,106 @@
     border-radius: var(--radius-lg);
 }
 
-.column header {
+.toolbar {
     display: flex;
-    justify-content: space-between;
-    flex: 0 0 auto;
-    margin-bottom: 12px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: flex-end;
+    gap: 8px;
 }
 
-.columnActions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+.nameField {
+    width: 220px;
+    flex: 0 0 auto;
+}
+
+.toolbar :global(button) {
+    flex: 0 0 auto;
+    min-height: 44px;
+}
+
+.column header {
+    display: flex;
     align-items: center;
     gap: 8px;
     flex: 0 0 auto;
-    margin-bottom: 12px;
+    min-height: 36px;
+    margin-bottom: 10px;
 }
 
-.columnRename {
-    grid-column: 1 / -1;
+.column header h3 {
+    margin: 0;
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 15px;
+    line-height: 1.3;
+}
+
+.count {
+    flex: 0 0 auto;
+    color: var(--color-secondary-text);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.columnActions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 4px;
+}
+
+.iconBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 8px);
+    background: var(--color-surface);
+    color: var(--color-primary-dark);
+    cursor: pointer;
+}
+
+.iconBtn:hover:not(:disabled) {
+    background: rgba(44, 32, 19, 0.06);
+}
+
+.iconBtn:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+.iconDanger {
+    color: var(--color-error);
+}
+
+.iconDanger:hover:not(:disabled) {
+    background: rgba(199, 92, 78, 0.1);
+}
+
+.rename {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    align-items: center;
+    gap: 6px;
+}
+
+.renameInput {
+    min-width: 0;
+    flex: 1;
+    min-height: 32px;
+    padding: 0 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    font-size: 13px;
 }
 
 .cards {

@@ -52,11 +52,15 @@ export function takeLast(items, limit) {
 }
 
 export function mapDeficits(items, catalogs) {
-    return (items || []).map((item) => ({
-        ...item,
-        name: item.skillName || catalogs.skills?.find((skill) => skill.id === item.skillId)?.name || item.skillId,
-        employees: Number(item.employees || 0),
-    }));
+    return (items || []).map((item) => {
+        const skill = catalogs.skills?.find((entry) => String(entry.id) === String(item.skillId));
+        return {
+            ...item,
+            id: item.skillId,
+            name: item.skillName || skill?.name || String(item.skillId || '—'),
+            employees: Number(item.employees || 0),
+        };
+    });
 }
 
 export function mapReadiness(buckets, t) {

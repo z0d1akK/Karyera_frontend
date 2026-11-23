@@ -74,12 +74,32 @@ export function DevelopmentPage() {
     const progress = useQuery({
         queryKey: queryKeys.career.progress(employeeId),
         enabled: Boolean(employeeId),
-        queryFn: () => careerApi.getProgress(employeeId),
+        retry: false,
+        queryFn: async () => {
+            try {
+                return await careerApi.getProgress(employeeId);
+            } catch (error) {
+                if ([403, 404].includes(error?.response?.status)) {
+                    return { progressPercent: 0, overallProgress: 0 };
+                }
+                throw error;
+            }
+        },
     });
     const plans = useQuery({
         queryKey: [...queryKeys.career.plans(employeeId), listQuery],
         enabled: Boolean(employeeId),
-        queryFn: async () => unwrapPage(await careerApi.listPlans(employeeId, listQuery)),
+        retry: false,
+        queryFn: async () => {
+            try {
+                return unwrapPage(await careerApi.listPlans(employeeId, listQuery));
+            } catch (error) {
+                if ([403, 404].includes(error?.response?.status)) {
+                    return { content: [], totalElements: 0, totalPages: 0, number: 0, size: listQuery.size };
+                }
+                throw error;
+            }
+        },
     });
 
     const create = useMutation({

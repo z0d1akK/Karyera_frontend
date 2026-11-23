@@ -51,6 +51,22 @@ export function useWorkLabels(rows) {
         queryFn: async () => unwrapPage(await projectApi.list({ page: 0, size: 100, sortBy: 'name' })).content || [],
     });
     const projectIds = [...new Set((rows || []).map((row) => row.projectId).filter(Boolean))];
+    const missingProjects = projectIds.filter((id) => !(projects.data || []).some((item) => String(item.id) === String(id)));
+    const extraProjects = useQueries({
+        queries: missingProjects.map((id) => ({
+            queryKey: ['projects', id],
+            queryFn: () => projectApi.getById(id),
+            staleTime: 60_000,
+            retry: false,
+        })),
+    });
+    const extraNames = {};
+    missingProjects.forEach((id, index) => {
+        const project = extraProjects[index]?.data;
+        if (project?.name) {
+            extraNames[String(id)] = project.name;
+        }
+    });
     const taskQueries = useQueries({
         queries: projectIds.map((projectId) => ({
             queryKey: ['projects', projectId, 'task-labels'],
@@ -60,7 +76,7 @@ export function useWorkLabels(rows) {
     const tasks = taskQueries.flatMap((query) => query.data || []);
 
     return {
-        projectName: (id) => (projects.data || []).find((item) => item.id === id)?.name || null,
+        projectName: (id) => extraNames[String(id)] || (projects.data || []).find((item) => String(item.id) === String(id))?.name || null,
         taskTitle: (id) => {
             const found = tasks.find((item) => String(item.id) === String(id));
             return found?.title || found?.key || null;

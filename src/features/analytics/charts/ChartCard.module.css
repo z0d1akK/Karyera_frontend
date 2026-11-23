@@ -49,7 +49,7 @@
     height: 280px;
     min-height: 280px;
     flex: 0 0 auto;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .compact {
@@ -181,7 +181,7 @@
     display: flex;
     width: 100%;
     min-width: 0;
-    min-height: 44px;
+    min-height: 40px;
     justify-content: flex-start;
     padding: 0 14px;
     border: 1px solid var(--color-border);
@@ -215,6 +215,27 @@
     border: 0;
     opacity: 0;
     cursor: pointer;
+}
+
+.dateClear {
+    position: relative;
+    z-index: 2;
+    margin-left: auto;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-secondary-text);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.dateClear:hover {
+    color: var(--color-primary-dark);
+    background: rgba(44, 32, 19, 0.08);
 }
 
 .periodClear {

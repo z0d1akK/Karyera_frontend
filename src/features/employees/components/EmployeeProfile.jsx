@@ -1,18 +1,20 @@
 import { useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Briefcase, Building2, Mail } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Briefcase, Building2, Mail, UserRound } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { analyticsApi } from '../../analytics/api/analyticsApi.js';
 import { employeeApi } from '../api/employeeApi.js';
+import { authApi } from '../../auth/api/authApi.js';
 import { projectApi } from '../../projects/api/projectApi.js';
 import { useCatalogs } from '../hooks/useCatalogs.js';
 import { queryKeys } from '../../../shared/api/queryKeys.js';
 import { unwrapPage } from '../../../shared/lib/queryParams.js';
 import { catalogName, formatDate, formatMonthYear, formatScorePercent, fullName, localTodayIso, valueOrDash } from '../../../shared/lib/format.js';
+import { useEmployeeLabels } from '../../../shared/lib/displayNames.js';
 import { enumLabel, statusTone } from '../../../shared/lib/enums.js';
-import { canManageHr, canSeeMilitary, ROLES } from '../../../shared/lib/roles.js';
+import { canCreateAccounts, canManageHr, canSeeMilitary, ROLES } from '../../../shared/lib/roles.js';
 import { useAuthStore } from '../../../store/authStore.js';
 import { useToastStore } from '../../../store/toastStore.js';
 import { getApiError } from '../../../shared/api/errors.js';
@@ -21,6 +23,7 @@ import { Badge } from '../../../shared/ui/Badge/Badge.jsx';
 import { Button } from '../../../shared/ui/Button/Button.jsx';
 import { Input, Select, Textarea } from '../../../shared/ui/Input/Input.jsx';
 import { PageState, Skeleton } from '../../../shared/ui/PageState/PageState.jsx';
+import { DataTable } from '../../../shared/ui/DataTable/DataTable.jsx';
 import { Modal } from '../../../shared/ui/Modal/Modal.jsx';
 import { BackLink } from '../../../shared/ui/BackLink/BackLink.jsx';
 import { EmployeeForm } from './EmployeeForm.jsx';
@@ -38,14 +41,22 @@ function Field({ label, value }) {
     return (
         <div className={styles.field}>
             <span className={styles.label}>{label}</span>
-            <div className={styles.value}>{valueOrDash(value)}</div>
+            <div className={styles.value}>{value && typeof value === 'object' ? value : valueOrDash(value)}</div>
         </div>
     );
 }
 
+function lineManagerOf(employee) {
+    return (employee?.responsibilities || []).find((row) => (
+        !row.endDate && row.responsibilityType?.code === 'LINE_MANAGER'
+    ));
+}
+
 export function EmployeeProfile({ employeeId, isSelf = false }) {
     const { t } = useTranslation();
+    const navigate = useNavigate();
     const session = useAuthStore((state) => state.session);
+    const currentEmployeeId = useAuthStore((state) => state.employee?.id);
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
     const isReady = useAuthStore((state) => state.isReady);
     const role = session?.role;
@@ -72,6 +83,23 @@ export function EmployeeProfile({ employeeId, isSelf = false }) {
         queryFn: () => employeeApi.getById(activeId),
         enabled: Boolean(activeId),
     });
+    const account = useQuery({
+        queryKey: ['users', 'by-employee', activeId],
+        enabled: Boolean(activeId) && role === ROLES.ADMIN,
+        queryFn: () => authApi.getUserByEmployee(activeId),
+        retry: false,
+    });
+    const subordinates = useQuery({
+        queryKey: ['employees', 'subordinates', activeId],
+        enabled: Boolean(activeId),
+        queryFn: () => employeeApi.listResponsibilitiesByResponsible(activeId),
+        retry: false,
+    });
+    const removeEmployee = useMutation({
+        mutationFn: () => employeeApi.deleteEmployee(activeId),
+        onSuccess: () => navigate('/app/employees'),
+        onError: (error) => push({ type: 'error', message: getApiError(error).message }),
+    });
 
     const types = useQuery({
         queryKey: ['responsibility-types'],
@@ -88,29 +116,15 @@ export function EmployeeProfile({ employeeId, isSelf = false }) {
         queryKey: ['employee-projects', activeId],
         enabled: Boolean(activeId) && tab === 'projects',
         queryFn: async () => {
-            const listed = unwrapPage(await projectApi.list({ page: 0, size: 50, sortBy: 'name' }));
+            const participation = unwrapPage(await projectApi.listParticipation(activeId));
             const rows = [];
-            for (const project of listed.content || []) {
-                try {
-                    const assignments = unwrapPage(await projectApi.listAssignments(project.id, { employeeId: activeId, page: 0, size: 20 }));
-                    const mine = (assignments.content || []).filter((item) => item.employeeId === activeId);
-                    if (!mine.length) {
-                        continue;
-                    }
-                    const assignmentIds = new Set(mine.map((item) => item.id));
-                    const tasks = unwrapPage(await projectApi.listTasks(project.id, { page: 0, size: 50, sortBy: 'taskNumber' }));
-                    const employeeTasks = (tasks.content || []).filter((task) =>
-                        (task.assignees || []).some((assignee) =>
-                            assignmentIds.has(assignee.assignmentId) || String(assignee.employeeId) === String(activeId)
-                        )
-                    );
-                    rows.push({ project, assignments: mine, tasks: employeeTasks });
-                } catch (error) {
-                    if (error?.response?.status === 403) {
-                        continue;
-                    }
-                    throw error;
-                }
+            for (const assignment of participation.content || []) {
+                const project = await projectApi.getById(assignment.projectId);
+                const tasks = unwrapPage(await projectApi.listTasks(project.id, { page: 0, size: 50, sortBy: 'taskNumber' }));
+                const employeeTasks = (tasks.content || []).filter((task) =>
+                    (task.assignees || []).some((assignee) => String(assignee.employeeId) === String(activeId))
+                );
+                rows.push({ project, assignments: [assignment], tasks: employeeTasks });
             }
             return rows;
         },
@@ -129,6 +143,9 @@ export function EmployeeProfile({ employeeId, isSelf = false }) {
         queryFn: () => analyticsApi.assessments(activeId),
     });
     const latestAssessment = (assessments.data || [])[0];
+    const managerRelation = lineManagerOf(query.data);
+    const managerId = managerRelation?.responsibleEmployee?.id || managerRelation?.responsibleEmployeeId;
+    const managerName = useEmployeeLabels(managerId ? [managerId] : []);
 
     const update = useMutation({
         mutationFn: (payload) => employeeApi.update(activeId, payload),
@@ -193,8 +210,13 @@ export function EmployeeProfile({ employeeId, isSelf = false }) {
 
     const employee = query.data;
     const canEditOrg = role === ROLES.HR || role === ROLES.ADMIN;
-    const canEditPersonal = isSelf || canEditOrg || role === ROLES.MANAGER;
-    const canAssignDepartment = canEditOrg || (role === ROLES.MANAGER && !isSelf);
+    const isLineManager = (employee.responsibilities || []).some((row) =>
+        !row.endDate
+        && row.responsibilityType?.code === 'LINE_MANAGER'
+        && String(row.responsibleEmployee?.id) === String(currentEmployeeId)
+    );
+    const canEditPersonal = isSelf || canEditOrg || isLineManager;
+    const canAssignDepartment = canEditOrg || (isLineManager && !isSelf);
     const canEditOwnDepartment = isSelf && role === ROLES.MANAGER && Boolean(employee?.department?.id);
     const addLabels = {
         skills: t('profile.addSkill'),
@@ -234,6 +256,16 @@ export function EmployeeProfile({ employeeId, isSelf = false }) {
                         <span className={styles.metaItem}><Briefcase size={16} /> {catalogName(employee.position)}</span>
                         <span className={styles.metaItem}><Building2 size={16} /> {catalogName(employee.department)}</span>
                         <span className={styles.metaItem}><Mail size={16} /> {valueOrDash(employee.email)}</span>
+                        {managerId ? (
+                            <span className={styles.metaItem}>
+                                <UserRound size={16} />
+                                <Link to={`/app/employees/${managerId}`}>
+                                    {fullName(managerRelation?.responsibleEmployee) !== '—'
+                                        ? fullName(managerRelation.responsibleEmployee)
+                                        : (managerName(managerId) || t('profile.lineManager'))}
+                                </Link>
+                            </span>
+                        ) : null}
                     </div>
                     {canEditPersonal ? (
                         <div className={styles.actions}>
@@ -252,8 +284,16 @@ export function EmployeeProfile({ employeeId, isSelf = false }) {
                             />
                             <Button variant="secondary" onClick={() => fileRef.current?.click()}>{t('profile.uploadPhoto')}</Button>
                             {employee.profilePhoto ? <Button variant="ghost" onClick={() => removePhoto.mutate()}>{t('profile.removePhoto')}</Button> : null}
+                            {canCreateAccounts(role) && employee.employmentStatus === 'TERMINATED' ? (
+                                <Button variant="danger" onClick={() => removeEmployee.mutate()}>{t('profile.deleteEmployee')}</Button>
+                            ) : null}
+                            {account.data?.id ? <Link to={`/app/admin/users/${account.data.id}`}>{t('profile.openAccount')}</Link> : null}
                         </div>
                     ) : null}
+                    {canCreateAccounts(role) && employee.employmentStatus === 'TERMINATED' && !canEditPersonal ? (
+                        <Button variant="danger" onClick={() => removeEmployee.mutate()}>{t('profile.deleteEmployee')}</Button>
+                    ) : null}
+                    {account.data?.id && !canEditPersonal ? <Link to={`/app/admin/users/${account.data.id}`}>{t('profile.openAccount')}</Link> : null}
                 </div>
             </div>
             <Tabs
@@ -405,7 +445,76 @@ export function EmployeeProfile({ employeeId, isSelf = false }) {
                     {!projects.isLoading && !projects.isError && !projects.data?.length ? <p className={styles.empty}>{t('projects.empty')}</p> : null}
                 </div>
             )}
+            {tab === 'profile' && (subordinates.data || []).length ? (
+                <SubordinatesBlock rows={Array.isArray(subordinates.data) ? subordinates.data : subordinates.data?.content || []} />
+            ) : null}
         </section>
+    );
+}
+
+function SubordinatesBlock({ rows }) {
+    const { t } = useTranslation();
+    const navigate = useNavigate();
+    const people = (rows || []).filter((row) => !row.endDate && (row.employeeId || row.employee?.id));
+    const ids = people.map((row) => row.employeeId || row.employee?.id);
+    const cards = useQuery({
+        queryKey: ['employees', 'subordinate-cards', ...ids],
+        enabled: ids.length > 0,
+        queryFn: async () => {
+            const list = await Promise.all(ids.map((id) => employeeApi.getById(id).catch(() => null)));
+            return Object.fromEntries(ids.map((id, index) => [String(id), list[index]]));
+        },
+    });
+    if (!people.length) {
+        return null;
+    }
+    return (
+        <article className={`${styles.panel} ${styles.subordinates}`}>
+            <h2>{t('profile.subordinates')}</h2>
+            <DataTable
+                rows={people.map((row) => {
+                    const id = row.employeeId || row.employee?.id;
+                    return { ...row, id, card: cards.data?.[String(id)] };
+                })}
+                onRowClick={(row) => navigate(`/app/employees/${row.id}`)}
+                columns={[
+                    {
+                        key: 'name',
+                        header: t('employees.fullName'),
+                        render: (row) => (
+                            <Link to={`/app/employees/${row.id}`} onClick={(event) => event.stopPropagation()}>
+                                {fullName(row.card) !== '—' ? fullName(row.card) : row.id}
+                            </Link>
+                        ),
+                    },
+                    {
+                        key: 'position',
+                        header: t('employees.position'),
+                        render: (row) => catalogName(row.card?.position),
+                    },
+                    {
+                        key: 'grade',
+                        header: t('employees.grade'),
+                        render: (row) => catalogName(row.card?.grade),
+                    },
+                    {
+                        key: 'type',
+                        header: t('profile.responsibilityType'),
+                        render: (row) => row.responsibilityType?.name || '—',
+                    },
+                    {
+                        key: 'status',
+                        header: t('employees.status'),
+                        nowrap: true,
+                        render: (row) => (
+                            <Badge tone={statusTone('employmentStatus', row.card?.employmentStatus)}>
+                                {enumLabel(t, 'employmentStatus', row.card?.employmentStatus)}
+                            </Badge>
+                        ),
+                    },
+                ]}
+            />
+        </article>
     );
 }
 
@@ -748,7 +857,16 @@ function ResponsibilitiesTab({ employee, canEdit, types, people, addOpen, onAddO
             {items.map((item) => (
                 <article key={item.id} className={styles.panel}>
                     <div className={styles.fields}>
-                        <Field label={t('profile.responsible')} value={item.responsibleEmployee?.fullName || nameOf(item.responsibleEmployeeId)} />
+                        <Field
+                            label={t('profile.responsible')}
+                            value={item.responsibleEmployee?.id || item.responsibleEmployeeId ? (
+                                <Link to={`/app/employees/${item.responsibleEmployee?.id || item.responsibleEmployeeId}`}>
+                                    {fullName(item.responsibleEmployee) !== '—'
+                                        ? fullName(item.responsibleEmployee)
+                                        : nameOf(item.responsibleEmployeeId || item.responsibleEmployee?.id)}
+                                </Link>
+                            ) : null}
+                        />
                         <Field label={t('profile.responsibilityType')} value={item.responsibilityType?.name || item.responsibilityTypeId} />
                         <Field label={t('profile.startDate')} value={item.startDate ? formatDate(item.startDate) : null} />
                         <Field label={t('profile.endDate')} value={item.endDate ? formatDate(item.endDate) : null} />

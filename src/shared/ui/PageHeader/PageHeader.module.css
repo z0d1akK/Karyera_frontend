@@ -23,5 +23,6 @@
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
-    align-items: center;
+    align-items: flex-end;
+    justify-content: flex-end;
 }

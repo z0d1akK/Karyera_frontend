@@ -33,6 +33,8 @@ import { CalendarPage } from '../pages/time/CalendarPage.jsx';
 import { TimesheetsPage } from '../pages/time/TimesheetsPage.jsx';
 import { TimesheetDetailsPage } from '../pages/time/TimesheetDetailsPage.jsx';
 import { ApprovalsPage } from '../pages/time/ApprovalsPage.jsx';
+import { SchedulesPage } from '../pages/time/SchedulesPage.jsx';
+import { WorkloadPage } from '../pages/time/WorkloadPage.jsx';
 import { AnalyticsOverviewPage } from '../pages/analytics/OverviewPage.jsx';
 import { AnalyticsDashboardPage } from '../pages/analytics/DashboardPage.jsx';
 import { EmployeesAnalyticsPage } from '../pages/analytics/EmployeesAnalyticsPage.jsx';
@@ -115,13 +117,14 @@ export const router = createBrowserRouter([
                     {
                         element: <RoleRoute roles={[ROLES.MANAGER, ROLES.HR, ROLES.ADMIN]} />,
                         children: [
+                            { path: '/app/time/workload', element: <WorkloadPage /> },
                             { path: '/app/time/approvals', element: <ApprovalsPage /> },
+                            { path: '/app/time/schedules', element: <SchedulesPage /> },
                         ],
                     },
                     { path: '/app/analytics/me', element: <MyStatsPage /> },
                     { path: '/app/analytics/me/recommendations', element: <RecommendationsPage /> },
                     { path: '/app/analytics/me/career-options', element: <CareerOptionsPage /> },
-                    { path: '/app/analytics/employees/:id/career-options', element: <CareerOptionsPage /> },
                     {
                         element: <RoleRoute roles={[ROLES.EMPLOYEE, ROLES.MANAGER, ROLES.HR, ROLES.ADMIN]} />,
                         children: [
@@ -135,6 +138,7 @@ export const router = createBrowserRouter([
                             { path: '/app/analytics/dashboard', element: <AnalyticsDashboardPage /> },
                             { path: '/app/analytics/employees', element: <EmployeesAnalyticsPage /> },
                             { path: '/app/analytics/employees/:id', element: <EmployeeAnalyticsPage /> },
+                            { path: '/app/analytics/employees/:id/career-options', element: <CareerOptionsPage /> },
                             { path: '/app/analytics/career', element: <CareerAnalyticsPage /> },
                         ],
                     },

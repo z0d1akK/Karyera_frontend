@@ -4,16 +4,16 @@ import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { careerApi } from '../../features/career/api/careerApi.js';
+import { analyticsApi } from '../../features/analytics/api/analyticsApi.js';
 import { useCatalogs } from '../../features/employees/hooks/useCatalogs.js';
 import { EmployeePicker } from '../../features/employees/components/EmployeePicker.jsx';
 import { queryKeys } from '../../shared/api/queryKeys.js';
 import { unwrapPage } from '../../shared/lib/queryParams.js';
-import { formatScorePercent } from '../../shared/lib/format.js';
+import { formatDate, formatScorePercent } from '../../shared/lib/format.js';
 import { enumLabel, statusTone } from '../../shared/lib/enums.js';
 import { useEmployeeNames } from '../../shared/lib/displayNames.js';
 import { getApiError } from '../../shared/api/errors.js';
 import { canManageTalent } from '../../shared/lib/roles.js';
-import { employeeApi } from '../../features/employees/api/employeeApi.js';
 import { useAuthStore } from '../../store/authStore.js';
 import { useToastStore } from '../../store/toastStore.js';
 import { PageHeader } from '../../shared/ui/PageHeader/PageHeader.jsx';
@@ -23,7 +23,7 @@ import { Button } from '../../shared/ui/Button/Button.jsx';
 import { Select, Textarea } from '../../shared/ui/Input/Input.jsx';
 import { DataTable, Pagination } from '../../shared/ui/DataTable/DataTable.jsx';
 import { Badge } from '../../shared/ui/Badge/Badge.jsx';
-import { Skeleton } from '../../shared/ui/PageState/PageState.jsx';
+import { PageState, Skeleton } from '../../shared/ui/PageState/PageState.jsx';
 import { StatRow, StatTile } from '../../shared/ui/StatTile/StatTile.jsx';
 import { Alert } from '../../shared/ui/Alert/Alert.jsx';
 import { Input } from '../../shared/ui/Input/Input.jsx';
@@ -31,6 +31,18 @@ import { Modal } from '../../shared/ui/Modal/Modal.jsx';
 import page from '../../shared/styles/page.module.css';
 import styles from '../../shared/styles/catalog.module.css';
 import { decisionTypes } from './candidateDecisions.js';
+
+function sortScreeningResults(rows = []) {
+    return [...rows].sort((left, right) => {
+        if ((left.rank == null) !== (right.rank == null)) {
+            return left.rank == null ? 1 : -1;
+        }
+        if (left.rank != null && right.rank != null && left.rank !== right.rank) {
+            return left.rank - right.rank;
+        }
+        return Number(right.score || 0) - Number(left.score || 0);
+    });
+}
 
 function CompositionTable({ title, counts, labelHeader, countHeader }) {
     const rows = Object.entries(counts || {})
@@ -43,10 +55,10 @@ function CompositionTable({ title, counts, labelHeader, countHeader }) {
         <>
             <h3 className={page.sectionTitle}>{title}</h3>
             <DataTable
-                rows={rows}
+                rows={rows.map((row) => ({ ...row, id: row.name }))}
                 columns={[
-                    { key: 'name', header: labelHeader, render: (row) => row.name },
-                    { key: 'count', header: countHeader, render: (row) => row.count },
+                    { key: 'name', header: labelHeader, width: '72%' },
+                    { key: 'count', header: countHeader, align: 'right', nowrap: true, width: '28%' },
                 ]}
             />
         </>
@@ -66,8 +78,6 @@ export function TalentReserveDetailsPage() {
     const [nominationOpen, setNominationOpen] = useState(false);
     const [screeningError, setScreeningError] = useState('');
     const [screeningJob, setScreeningJob] = useState(null);
-    const [screeningOpen, setScreeningOpen] = useState(false);
-    const [screeningForm, setScreeningForm] = useState({ positionId: '', gradeId: '', departmentId: '' });
     const [selectedScreening, setSelectedScreening] = useState([]);
     const [decideFor, setDecideFor] = useState(null);
     const [decision, setDecision] = useState({ decision: 'APPROVE', comment: '' });
@@ -127,30 +137,15 @@ export function TalentReserveDetailsPage() {
         refetchInterval: (query) => (query.state.data?.status === 'COMPLETED' || query.state.data?.status === 'FAILED' ? false : 2000),
         queryFn: () => careerApi.getScreening(id, screeningJobId),
     });
-    const screeningPreview = useQuery({
-        queryKey: ['screening-preview', screeningForm],
-        enabled: screeningOpen,
-        queryFn: async () => unwrapPage(await employeeApi.list({
-            page: 0,
-            size: 10,
-            sortBy: 'lastName',
-            positionId: screeningForm.positionId || undefined,
-            gradeId: screeningForm.gradeId || undefined,
-            departmentId: screeningForm.departmentId || undefined,
-            employmentStatus: 'ACTIVE',
-        })),
+    const analyticScreenings = useQuery({
+        queryKey: ['analytics', 'talent-screenings', id],
+        queryFn: async () => unwrapPage(await analyticsApi.listScreenings({ page: 0, size: 50 })),
+        retry: false,
     });
     const screening = useMutation({
-        mutationFn: () => careerApi.startScreening(id, {
-            type: 'FILTER',
-            activeOnly: true,
-            positionId: screeningForm.positionId || undefined,
-            gradeId: screeningForm.gradeId || undefined,
-            departmentId: screeningForm.departmentId || undefined,
-        }),
+        mutationFn: () => careerApi.startScreening(id),
         onSuccess: (data) => {
             setScreeningError('');
-            setScreeningOpen(false);
             setScreeningJob(data);
             invalidateReserve();
             push({ type: 'success', message: t('talent.screeningStarted') });
@@ -189,6 +184,10 @@ export function TalentReserveDetailsPage() {
         return <Skeleton />;
     }
 
+    if (reserve.isError || !reserve.data) {
+        return <PageState title={getApiError(reserve.error).message} actionLabel={t('common.retry')} onAction={() => reserve.refetch()} />;
+    }
+
     const data = reserve.data;
 
     return (
@@ -203,14 +202,9 @@ export function TalentReserveDetailsPage() {
                             {data.status === 'ACTIVE' ? <Button onClick={() => setNominationOpen(true)}>{t('talent.nominate')}</Button> : null}
                             {data.status === 'DRAFT' ? <Button onClick={() => activate.mutate()}>{t('talent.activate')}</Button> : null}
                             {data.status === 'ACTIVE' ? (
-                                <Button onClick={() => {
-                                    setScreeningForm({
-                                        positionId: data.targetPositionId || '',
-                                        gradeId: data.targetGradeId || '',
-                                        departmentId: '',
-                                    });
-                                    setScreeningOpen(true);
-                                }}>{t('talent.screening')}</Button>
+                                <Button onClick={() => screening.mutate()} disabled={screening.isPending}>
+                                    {t('talent.screening')}
+                                </Button>
                             ) : null}
                             {data.status !== 'CLOSED' && data.status !== 'ARCHIVED' ? (
                                 <Button variant="secondary" onClick={() => setEdit({
@@ -254,6 +248,34 @@ export function TalentReserveDetailsPage() {
                     <p className={page.meta}>{t('talent.screeningEmpty')}</p>
                 )}
                 {screeningResults.data?.explanationText ? <p>{screeningResults.data.explanationText}</p> : null}
+                {(() => {
+                    const history = (analyticScreenings.data?.content || [])
+                        .filter((row) => String(row.reserveId) === String(id))
+                        .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+                    if (history.length <= 1) {
+                        return null;
+                    }
+                    return (
+                        <Select
+                            label={t('talent.screeningHistory')}
+                            value={screeningJobId || ''}
+                            onChange={(event) => {
+                                const selected = history.find((row) => String(row.jobId) === event.target.value);
+                                setScreeningJob({ jobId: event.target.value, status: selected?.status });
+                            }}
+                        >
+                            {history.map((row) => (
+                                <option key={row.jobId || row.id} value={row.jobId}>
+                                    {formatDate(row.createdAt || row.completedAt)}
+                                    {' · '}
+                                    {enumLabel(t, 'screeningStatus', row.status)}
+                                    {' · '}
+                                    {row.evaluatedCount ?? 0}/{row.candidateCount ?? 0}
+                                </option>
+                            ))}
+                        </Select>
+                    );
+                })()}
                 {manageTalent && selectedScreening.length ? (
                     <Button onClick={() => includeScreening.mutate()} disabled={includeScreening.isPending}>
                         {t('talent.includeSelected')}
@@ -261,11 +283,12 @@ export function TalentReserveDetailsPage() {
                 ) : null}
                 {screeningResults.data?.results?.length ? (
                     <DataTable
-                        rows={screeningResults.data.results}
+                        rows={sortScreeningResults(screeningResults.data.results)}
                         columns={[
                             {
                                 key: 'pick',
                                 header: '',
+                                width: '6%',
                                 render: (row) => (manageTalent && row.employeeId ? (
                                     <input
                                         type="checkbox"
@@ -279,11 +302,11 @@ export function TalentReserveDetailsPage() {
                                     />
                                 ) : null),
                             },
-                            { key: 'rank', header: t('analyticsUi.rank'), render: (row) => row.rank ?? '—' },
-                            { key: 'employee', header: t('talent.candidate'), render: (row) => employeeName(row.employeeId) },
-                            { key: 'score', header: t('analyticsUi.score'), render: (row) => formatScorePercent(row.score) },
-                            { key: 'eligibility', header: t('talent.status'), render: (row) => enumLabel(t, 'eligibilityStatus', row.eligibilityStatus) },
-                            { key: 'reason', header: t('common.reason'), render: (row) => row.exclusionReason || '—' },
+                            { key: 'rank', header: t('analyticsUi.rank'), align: 'right', nowrap: true, width: '10%', render: (row) => row.rank ?? '—' },
+                            { key: 'employee', header: t('talent.candidate'), width: '22%', render: (row) => employeeName(row.employeeId) },
+                            { key: 'score', header: t('analyticsUi.score'), align: 'right', nowrap: true, width: '12%', render: (row) => formatScorePercent(row.score) },
+                            { key: 'eligibility', header: t('talent.status'), width: '18%', render: (row) => enumLabel(t, 'eligibilityStatus', row.eligibilityStatus) },
+                            { key: 'reason', header: t('common.reason'), wrap: true, width: '32%', render: (row) => row.exclusionReason || '—' },
                         ]}
                     />
                 ) : null}
@@ -379,37 +402,6 @@ export function TalentReserveDetailsPage() {
                         </div>
                     </div>
                 ) : null}
-            </Modal>
-            <Modal open={screeningOpen} title={t('talent.screening')} onClose={() => setScreeningOpen(false)}>
-                <div className={page.stack}>
-                    <Select label={t('talent.position')} value={screeningForm.positionId} onChange={(e) => setScreeningForm({ ...screeningForm, positionId: e.target.value })}>
-                        <option value="">{t('common.select')}</option>
-                        {catalogs.positions.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-                    </Select>
-                    <Select label={t('talent.grade')} value={screeningForm.gradeId} onChange={(e) => setScreeningForm({ ...screeningForm, gradeId: e.target.value })}>
-                        <option value="">{t('common.select')}</option>
-                        {catalogs.grades.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-                    </Select>
-                    <Select label={t('employees.department')} value={screeningForm.departmentId} onChange={(e) => setScreeningForm({ ...screeningForm, departmentId: e.target.value })}>
-                        <option value="">{t('common.select')}</option>
-                        {catalogs.departments.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-                    </Select>
-                    <p className={page.meta}>{t('talent.previewCount', { count: screeningPreview.data?.totalElements ?? 0 })}</p>
-                    <DataTable
-                        empty={t('talent.emptyPreview')}
-                        rows={screeningPreview.data?.content || []}
-                        columns={[
-                            { key: 'name', header: t('talent.employee'), render: (row) => `${row.lastName || ''} ${row.firstName || ''}`.trim() },
-                            { key: 'position', header: t('talent.position'), render: (row) => row.position?.name || '—' },
-                        ]}
-                    />
-                    <div className={page.row}>
-                        <Button onClick={() => screening.mutate()} disabled={screening.isPending || !(screeningForm.positionId || screeningForm.gradeId || screeningForm.departmentId)}>
-                            {t('talent.confirmScreening')}
-                        </Button>
-                        <Button variant="ghost" onClick={() => setScreeningOpen(false)}>{t('common.cancel')}</Button>
-                    </div>
-                </div>
             </Modal>
             <Modal
                 open={Boolean(decideFor)}

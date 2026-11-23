@@ -28,12 +28,12 @@ export function EmployeePicker({
     const excluded = new Set(excludeIds.filter(Boolean));
 
     const query = useQuery({
-        queryKey: searchable ? ['employee-picker', 'directory'] : ['employee-picker', lastName, pageNumber],
+        queryKey: ['employee-picker', lastName, pageNumber],
         queryFn: async () => unwrapPage(await employeeApi.list({
-            page: searchable ? 0 : pageNumber,
-            size: searchable ? 100 : 20,
+            page: pageNumber,
+            size: 20,
             sortBy: 'lastName',
-            lastName: searchable ? undefined : (lastName || undefined),
+            lastName: lastName || undefined,
         })),
         enabled: !searchable || open,
     });

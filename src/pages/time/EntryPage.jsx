@@ -50,6 +50,11 @@ export function EntryPage() {
         enabled: !isNew,
         queryFn: () => timeApi.getEntry(id),
     });
+    const audit = useQuery({
+        queryKey: ['time', 'entry', id, 'audit'],
+        enabled: !isNew,
+        queryFn: () => timeApi.entryAudit(id),
+    });
 
     useEffect(() => {
         if (!entry.data) {
@@ -162,6 +167,17 @@ export function EntryPage() {
                     />
                     {!form.description ? <p className={styles.hint}><Missing>{t('time.descriptionMissing')}</Missing></p> : null}
                     {editable ? <Button onClick={() => save.mutate()} disabled={save.isPending}>{t('common.save')}</Button> : null}
+                    {!isNew ? (
+                        <div>
+                            <h2 className={page.sectionTitle}>{t('time.audit')}</h2>
+                            {(Array.isArray(audit.data) ? audit.data : audit.data?.content || []).map((row, index) => (
+                                <p key={row.id || index} className={page.meta}>
+                                    {row.action || row.eventType || row.createdAt}: {row.reason || row.comment || row.changedBy || ''}
+                                </p>
+                            ))}
+                            {audit.isError ? <p>{getApiError(audit.error).message}</p> : null}
+                        </div>
+                    ) : null}
                     {editable && !isNew ? (
                         <>
                             <Textarea label={t('time.voidReason')} value={reason} onChange={(event) => setReason(event.target.value)} />

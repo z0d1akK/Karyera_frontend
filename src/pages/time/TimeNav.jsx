@@ -13,7 +13,9 @@ export function TimeNav() {
         { to: '/app/time/timesheets', label: t('time.timesheets') },
     ];
     if (canApproveTimesheets(role)) {
+        items.push({ to: '/app/time/workload', label: t('time.workload') });
         items.push({ to: '/app/time/approvals', label: t('time.approvals') });
+        items.push({ to: '/app/time/schedules', label: t('time.schedules') });
     }
     return <SectionNav items={items} />;
 }

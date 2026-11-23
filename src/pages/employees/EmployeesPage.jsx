@@ -17,7 +17,8 @@ import { DataTable, Pagination } from '../../shared/ui/DataTable/DataTable.jsx';
 import { Badge } from '../../shared/ui/Badge/Badge.jsx';
 import { canManageHr } from '../../shared/lib/roles.js';
 import { useAuthStore } from '../../store/authStore.js';
-import { Skeleton } from '../../shared/ui/PageState/PageState.jsx';
+import { PageState, Skeleton } from '../../shared/ui/PageState/PageState.jsx';
+import { getApiError } from '../../shared/api/errors.js';
 import { PageSizeField, SortField } from '../../shared/ui/ListFilters/ListFilters.jsx';
 import page from '../../shared/styles/page.module.css';
 import styles from '../../shared/styles/catalog.module.css';
@@ -41,24 +42,28 @@ export function EmployeesPage() {
 
     const pageData = query.data;
 
+    if (query.isError) {
+        return <PageState title={getApiError(query.error).message} actionLabel={t('common.retry')} onAction={() => query.refetch()} />;
+    }
+
     return (
         <section>
             <div className={styles.hero}>
-                <div>
+                <div className={styles.heroCopy}>
                     <h1>{t('employees.title')}</h1>
                     <p>{t('employees.subtitle')}</p>
                 </div>
-                <div className={styles.stats}>
-                    <div className={styles.stat}>
+                <div className={styles.heroAside}>
+                    <div className={styles.heroMetric}>
                         <span>{t('employees.count')}</span>
                         <strong>{pageData?.totalElements ?? 0}</strong>
                     </div>
+                    {canManageHr(role) ? (
+                        <div className={styles.heroActions}>
+                            <Button onClick={() => navigate('/app/employees/new')}>{t('employees.createCard')}</Button>
+                        </div>
+                    ) : null}
                 </div>
-                {canManageHr(role) ? (
-                    <div className={styles.heroActions}>
-                        <Button onClick={() => navigate('/app/employees/new')}>{t('employees.createCard')}</Button>
-                    </div>
-                ) : null}
             </div>
             <Card>
                 <div className={page.filterBar}>

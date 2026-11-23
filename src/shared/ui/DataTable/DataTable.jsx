@@ -16,19 +16,19 @@ export function DataTable({ columns, rows, empty, onRowClick }) {
                 <thead>
                     <tr>
                         {columns.map((column) => (
-                            <th key={column.key} className={cellClass(column)}>{column.header}</th>
+                            <th key={column.key} className={cellClass(column)} style={cellStyle(column)}>{column.header}</th>
                         ))}
                     </tr>
                 </thead>
                 <tbody>
-                    {rows.map((row) => (
+                    {rows.map((row, index) => (
                         <tr
-                            key={row.id}
+                            key={row.id || row.jobId || row.name || index}
                             className={onRowClick ? styles.clickable : undefined}
                             onClick={() => onRowClick?.(row)}
                         >
                             {columns.map((column) => (
-                                <td key={column.key} className={cellClass(column)}>
+                                <td key={column.key} className={cellClass(column)} style={cellStyle(column)}>
                                     {column.render ? column.render(row) : row[column.key]}
                                 </td>
                             ))}
@@ -46,6 +46,10 @@ function cellClass(column) {
         column.align === 'right' ? styles.right : '',
         column.nowrap ? styles.nowrap : '',
     ].filter(Boolean).join(' ') || undefined;
+}
+
+function cellStyle(column) {
+    return column.width ? { width: column.width } : undefined;
 }
 
 export function Pagination({ page, totalPages, onChange }) {

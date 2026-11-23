@@ -164,13 +164,15 @@ export function CareerPage() {
                         )}
                         <div className={styles.cardFooter}>
                             {active && active.status !== 'CANCELLED' && active.status !== 'ACHIEVED' ? (
-                                <Button variant="secondary" onClick={() => {
-                                    setEditingId(active.id);
+                                <Button variant="secondary" onClick={async () => {
+                                    const latest = await careerApi.getGoal(active.id);
+                                    setEditingId(latest.id);
                                     setForm({
-                                        targetPositionId: active.targetPositionId || '',
-                                        targetGradeId: active.targetGradeId || '',
-                                        motivation: active.motivation || '',
-                                        targetDate: active.targetDate || '',
+                                        targetPositionId: latest.targetPositionId || '',
+                                        targetGradeId: latest.targetGradeId || '',
+                                        motivation: latest.motivation || '',
+                                        targetDate: latest.targetDate || '',
+                                        expectedVersion: latest.version,
                                     });
                                     setGoalOpen(true);
                                 }}>{t('common.edit')}</Button>

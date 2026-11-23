@@ -63,6 +63,25 @@
     padding: 20px 24px;
 }
 
+.subordinates {
+    margin-top: 16px;
+    padding: 20px 24px 12px;
+}
+
+.subordinates h2 {
+    margin: 0 0 12px;
+}
+
+.metaItem a {
+    color: var(--color-accent);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.metaItem a:hover {
+    color: var(--color-primary-dark);
+}
+
 .fields {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

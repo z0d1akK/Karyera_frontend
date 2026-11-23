@@ -5,8 +5,8 @@ import inputStyles from '../../../shared/ui/Input/Input.module.css';
 import { LAST_OPTIONS, TOP_OPTIONS } from './chartMappers.js';
 import styles from './ChartCard.module.css';
 
-export function DateChip({ value, onChange, min, max, emptyLabel, ariaLabel, label }) {
-    const { i18n } = useTranslation();
+export function DateChip({ value, onChange, min, max, emptyLabel, ariaLabel, label, allowClear }) {
+    const { t, i18n } = useTranslation();
     const mask = String(i18n.resolvedLanguage || i18n.language || '').startsWith('en') ? 'dd.mm.yyyy' : 'дд.мм.гггг';
     const shown = value ? formatDate(value) : (emptyLabel || (label ? mask : ''));
     const control = (
@@ -23,6 +23,20 @@ export function DateChip({ value, onChange, min, max, emptyLabel, ariaLabel, lab
                 max={max || undefined}
                 onChange={(event) => onChange(event.target.value)}
             />
+            {allowClear && value ? (
+                <button
+                    type="button"
+                    className={styles.dateClear}
+                    aria-label={t('common.clear')}
+                    onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        onChange('');
+                    }}
+                >
+                    ×
+                </button>
+            ) : null}
         </>
     );
 

@@ -103,6 +103,18 @@ export const analyticsApi = {
         const done = await waitForJob(job.jobId);
         return done.resultId;
     },
+    listScreenings(params) {
+        return get('/v1/analytics/talent-screenings', { params });
+    },
+    getScreening(id) {
+        return get(`/v1/analytics/talent-screenings/${id}`);
+    },
+    screeningResults(id, params) {
+        return get(`/v1/analytics/talent-screenings/${id}/results`, { params });
+    },
+    screeningResult(id, employeeId) {
+        return get(`/v1/analytics/talent-screenings/${id}/results/${employeeId}`);
+    },
     async startCareerOptions(employeeId, payload) {
         const job = await axiosClient.post(`/v1/analytics/employees/${employeeId}/career-options`, payload)
             .then((response) => response.data);

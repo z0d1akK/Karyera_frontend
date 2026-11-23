@@ -49,6 +49,10 @@ export function canApproveTimesheets(role) {
     return hasRole(role, [ROLES.MANAGER, ROLES.HR, ROLES.ADMIN]);
 }
 
+export function canManageWorkSchedules(role) {
+    return hasRole(role, [ROLES.HR, ROLES.ADMIN]);
+}
+
 export function canSeeMilitary(role) {
     return hasRole(role, [ROLES.HR, ROLES.ADMIN]);
 }
@@ -86,7 +90,7 @@ export function isAssignedToProject(assignments, employeeId) {
 }
 
 export function isProjectEditor(role, project, employeeId) {
-    if (role === ROLES.ADMIN) {
+    if (role === ROLES.ADMIN || role === ROLES.HR) {
         return true;
     }
 
@@ -103,5 +107,5 @@ export function isProjectEditor(role, project, employeeId) {
 }
 
 export function canManageProjectMembers(role, project, employeeId) {
-    return role === ROLES.HR || isProjectEditor(role, project, employeeId);
+    return isProjectEditor(role, project, employeeId);
 }
