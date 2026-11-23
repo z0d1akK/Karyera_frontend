@@ -5,7 +5,7 @@ import { MainLayout } from '../layouts/mainLayout/MainLayout.jsx';
 import { GuestRoute, ProtectedRoute, RoleRoute } from './guards.jsx';
 import { LoginPage } from '../pages/login/LoginPage.jsx';
 import { ChangeInitialPasswordPage } from '../pages/login/ChangeInitialPasswordPage.jsx';
-import { ForbiddenPage, NotFoundPage, StubPage } from '../pages/public/StatusPages.jsx';
+import { ForbiddenPage, NotFoundPage } from '../pages/public/StatusPages.jsx';
 import { ProfilePage, EmployeeDetailsPage } from '../pages/profile/ProfilePage.jsx';
 import { EmployeesPage } from '../pages/employees/EmployeesPage.jsx';
 import { OrganizationPage } from '../pages/organization/OrganizationPage.jsx';
@@ -149,7 +149,6 @@ export const router = createBrowserRouter([
                             { path: '/app/admin/users/new', element: <CreateUserPage /> },
                             { path: '/app/admin/users/:id', element: <UserDetailsPage /> },
                             { path: '/app/admin/dictionaries', element: <DictionariesPage /> },
-                            { path: '/app/admin/settings', element: <StubPage titleKey="navigation.settings" textKey="stubs.settings" /> },
                         ],
                     },
                 ],

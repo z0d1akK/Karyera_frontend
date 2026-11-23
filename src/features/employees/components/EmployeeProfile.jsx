@@ -120,10 +120,13 @@ export function EmployeeProfile({ employeeId, isSelf = false }) {
             const rows = [];
             for (const assignment of participation.content || []) {
                 const project = await projectApi.getById(assignment.projectId);
-                const tasks = unwrapPage(await projectApi.listTasks(project.id, { page: 0, size: 50, sortBy: 'taskNumber' }));
-                const employeeTasks = (tasks.content || []).filter((task) =>
-                    (task.assignees || []).some((assignee) => String(assignee.employeeId) === String(activeId))
-                );
+                const tasks = unwrapPage(await projectApi.listTasks(project.id, {
+                    page: 0,
+                    size: 50,
+                    sortBy: 'taskNumber',
+                    assigneeEmployeeId: activeId,
+                }));
+                const employeeTasks = tasks.content || [];
                 rows.push({ project, assignments: [assignment], tasks: employeeTasks });
             }
             return rows;
@@ -204,6 +207,9 @@ export function EmployeeProfile({ employeeId, isSelf = false }) {
         const parsed = getApiError(query.error);
         if (parsed.status === 403) {
             return <PageState title={t('profile.forbidden')} />;
+        }
+        if (parsed.status === 404) {
+            return <PageState title={t('profile.notFound')} />;
         }
         return <PageState title={t('profile.loadFailed')} onAction={query.refetch} actionLabel={t('common.retry')} />;
     }

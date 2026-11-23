@@ -67,8 +67,45 @@ export function CareerOptionsPage() {
     const errorText = start.isError ? getApiError(start.error).message : '';
     const from = typeof location.state?.from === 'string' ? location.state.from : null;
     const backTo = from || (isSelf ? '/app/career' : `/app/analytics/employees/${employeeId}`);
-    const readyCount = options.filter((row) => row.mandatoryRequirementsMet).length;
-    const bestScore = options.reduce((best, row) => {
+    const renderOption = (row, index, ready) => {
+        const total = scoreToPercent(row.totalScore) ?? 0;
+        const skills = scoreToPercent(row.skillScore) ?? 0;
+        return (
+            <Card key={row.assessmentId || `${row.targetPositionId}-${ready ? 'r' : 'u'}-${index}`}>
+                <div className={styles.optionHead}>
+                    <div className={styles.optionTitle}>
+                        <Badge>{ready ? t('analyticsUi.optionRank', { rank: index + 1 }) : t('analyticsUi.optionUnranked')}</Badge>
+                        <h2>{positionName(row)}</h2>
+                        <p className={styles.optionMeta}>{gradeName(row)}</p>
+                    </div>
+                    <ProgressRing value={total} />
+                </div>
+                <div className={styles.scores}>
+                    <div className={styles.bars}>
+                        <ProgressBar value={total} label={t('analyticsUi.score')} />
+                        <ProgressBar value={skills} label={t('analyticsUi.skillScore')} />
+                    </div>
+                    <div className={styles.facts}>
+                        <Badge tone={ready ? 'success' : 'danger'}>
+                            {ready ? t('analyticsUi.mandatoryMet') : t('analyticsUi.mandatoryNotMet')}
+                        </Badge>
+                        <Badge tone={Number(row.missingSkillsCount) > 0 ? 'warning' : 'success'}>
+                            {t('analyticsUi.missingSkillsCount')}: {row.missingSkillsCount ?? 0}
+                        </Badge>
+                    </div>
+                </div>
+                {row.assessmentId ? (
+                    <div className={page.row}>
+                        <Link to={`/app/career/assessments/${row.assessmentId}`}>{t('analyticsUi.openAssessment')}</Link>
+                    </div>
+                ) : null}
+            </Card>
+        );
+    };
+    const ranked = options.filter((row) => row.mandatoryRequirementsMet);
+    const unranked = options.filter((row) => !row.mandatoryRequirementsMet);
+    const readyCount = ranked.length;
+    const bestScore = ranked.reduce((best, row) => {
         const value = scoreToPercent(row.totalScore);
         if (value == null) {
             return best;
@@ -133,42 +170,12 @@ export function CareerOptionsPage() {
                             <p className={styles.trackMeta}>{start.data.interpretationSummary}</p>
                         </Card>
                     ) : null}
-                    {options.length ? options.map((row, index) => {
-                        const total = scoreToPercent(row.totalScore) ?? 0;
-                        const skills = scoreToPercent(row.skillScore) ?? 0;
-                        const ready = Boolean(row.mandatoryRequirementsMet);
-                        return (
-                            <Card key={row.assessmentId || `${row.targetPositionId}-${index}`}>
-                                <div className={styles.optionHead}>
-                                    <div className={styles.optionTitle}>
-                                        <Badge>{t('analyticsUi.optionRank', { rank: index + 1 })}</Badge>
-                                        <h2>{positionName(row)}</h2>
-                                        <p className={styles.optionMeta}>{gradeName(row)}</p>
-                                    </div>
-                                    <ProgressRing value={total} />
-                                </div>
-                                <div className={styles.scores}>
-                                    <div className={styles.bars}>
-                                        <ProgressBar value={total} label={t('analyticsUi.score')} />
-                                        <ProgressBar value={skills} label={t('analyticsUi.skillScore')} />
-                                    </div>
-                                    <div className={styles.facts}>
-                                        <Badge tone={ready ? 'success' : 'danger'}>
-                                            {ready ? t('analyticsUi.mandatoryMet') : t('analyticsUi.mandatoryNotMet')}
-                                        </Badge>
-                                        <Badge tone={Number(row.missingSkillsCount) > 0 ? 'warning' : 'success'}>
-                                            {t('analyticsUi.missingSkillsCount')}: {row.missingSkillsCount ?? 0}
-                                        </Badge>
-                                    </div>
-                                </div>
-                                {row.assessmentId ? (
-                                    <div className={page.row}>
-                                        <Link to={`/app/career/assessments/${row.assessmentId}`}>{t('analyticsUi.openAssessment')}</Link>
-                                    </div>
-                                ) : null}
-                            </Card>
-                        );
-                    }) : (
+                    {options.length ? (
+                        <>
+                            {ranked.map((row, index) => renderOption(row, index, true))}
+                            {unranked.map((row, index) => renderOption(row, index, false))}
+                        </>
+                    ) : (
                         <PageState title={t('common.noData')} description={t('analyticsUi.optionsEmpty')} />
                     )}
                 </>

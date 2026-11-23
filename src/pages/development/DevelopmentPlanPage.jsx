@@ -101,9 +101,12 @@ export function DevelopmentPlanPage() {
         onError,
     });
     const saveActivity = useMutation({
-        mutationFn: ({ id: activityId, ...payload }) => careerApi.updateActivity(
+        mutationFn: ({ id: activityId, version, ...payload }) => careerApi.updateActivity(
             activityId,
-            Object.fromEntries(Object.entries(payload).filter(([, value]) => value !== '')),
+            {
+                ...Object.fromEntries(Object.entries(payload).filter(([, value]) => value !== '')),
+                expectedVersion: version,
+            },
         ),
         onSuccess: () => {
             setEditingActivity(null);
